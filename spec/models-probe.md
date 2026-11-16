@@ -46,6 +46,24 @@ body: <!doctype html><html lang="zh-CN"> ...
 | `infra/llm` 真实调用 | ✅ 通过（返回"接通"），说明 provider 注册表 + ProfileStore + 传输层端到端可用 |
 | 图像生成 | ❌ 待另配（当前 503 `model_unconfigured`） |
 
+## 4.1 图像中转站实测（`http://43.130.31.50:18807/v1`）
+
+`GET /v1/models` 正常，返回 10 个：`iamge2`、`gpt_image_2.5`、`gpt_image_1_5`、
+`nano_banana`、`nano_banana_pro`、`nano_banana_2`、`seedream_4`、`seedream_4_5`、
+`seedream_5`、`flux_pro`。
+
+| 尝试 | 结果 |
+|---|---|
+| `gpt_image_2`（你给的模型名） | **502 空响应**，约 6~9s，四次重试与换 `size`/`response_format` 均一致 |
+| `gpt_image_2.5` / `seedream_4` / `flux_pro` / `nano_banana` | **403** `api key not allowed for model ...` |
+| `GPT-IMAGE-2`（大小写变体） | 404 `unknown model`（说明模型名本身是对的，大小写敏感） |
+
+判断：**这把 key 只授权 `gpt_image_2`，但该模型的上游当前返回 502**，不是接入问题，
+也不是权限问题（权限错会是 403）。网关没有把上游错误体透传出来，所以只能看到空响应。
+
+已把配置写进 `data/model-config.json`（`model=gpt_image_2`），上游恢复后无需改代码即可出图；
+当前调用会得到明确错误：`图像服务返回 502: 上游空响应（多为服务端 502/网关错误）`。
+
 ## 5. 建议
 
 1. 日常对话/写作用 `gpt-5-6-sol`；长文与代码审阅用 `claude-opus-5-5`

@@ -110,7 +110,10 @@ def generate(config: ImageConfig, prompt: str, *,
     status, body = (transport or UrllibTransport()).post_json(
         endpoint(config.base_url), headers, payload, config.timeout)
     if status >= 400:
-        raise ImageError("internal", f"图像服务返回 {status}: {str(body)[:200]}", status)
+        detail = str(body.get("error") or body.get("message") or "").strip()
+        if not detail:
+            detail = "上游空响应（多为服务端 502/网关错误）"
+        raise ImageError("internal", f"图像服务返回 {status}: {detail[:200]}", status)
     data = (body.get("data") or [{}])[0]
     encoded = data.get("b64_json")
     if encoded:
