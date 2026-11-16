@@ -26,6 +26,8 @@ from typing import Any
 from app import APP_NAME, __version__
 from app.api import Request, Response, Router, parse_query
 from app.api import license as license_api
+from app.api import rewrite as rewrite_api
+from app.api import storage as storage_api
 from app.api import subtitle as subtitle_api
 from app.api import system as system_api
 from app.api import visual as visual_api
@@ -36,6 +38,7 @@ from domain.subtitle import SubtitleService, SubtitleStore
 from domain.visual import VisualService
 from domain.visual.assist import VisualAssist
 from domain.visual.library import LibraryStore
+from domain.workspace import DocStore
 from domain.visual.store import VisualStore
 from domain.voice import VoiceService
 from domain.voice.store import VoiceJobStore
@@ -308,6 +311,8 @@ def main(argv: list[str] | None = None) -> int:
         + ("；像素修补可用" if subtitle_service.capabilities()["localRepair"][0]
            else "；像素修补不可用（缺 ffmpeg/numpy）")))
 
+    workspace = DocStore(data_dir / "workspace.db", files_root=data_dir / "workspace")
+
     router = Router()
     system_api.build(router, store, app_name=APP_NAME, version=__version__,
                      port_ref=_port_ref, on_shutdown=request_shutdown,
@@ -316,6 +321,8 @@ def main(argv: list[str] | None = None) -> int:
     license_api.build(router, license_service)
     voice_api.build(router, voice_service)
     visual_api.build(router, visual_service)
+    rewrite_api.build(router, workspace)
+    storage_api.build(router, workspace, data_dir=data_dir, install_root=ROOT)
     visual_extra.build(router, visual_service, visual_library,
                        images=ImageConfig.load(data_dir / "model-config.json"),
                        task_store=store,
@@ -350,6 +357,7 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         server.shutdown()
         server.server_close()
+        workspace.close()
         visual_library.close()
         if visual_service.store is not None:
             visual_service.store.close()

@@ -115,6 +115,24 @@ body: <!doctype html><html lang="zh-CN"> ...
 
 注意：该站是 **http 明文 + IP 直连**，key 在公网传输可被嗅探；只在这类内网/测试场景使用。
 
+## 4.4 第三把 key（`sk-1d63…`）归属排查
+
+你说"baseurl 应该是原 exe 指向的网址"，实测**原 exe 那两家都不认这把 key**：
+
+| 目标 | 结果 |
+|---|---|
+| `https://dashscope.aliyuncs.com/compatible-mode/v1`（原 qwen） | **401** `Incorrect API key provided` |
+| `https://ark.cn-beijing.volces.com/api/v3`（原 doubao） | **401** `The API key format is incorrect` |
+| `http://43.130.31.50:18813/v1`（KIE 中转） | **401** `invalid api key` |
+| `http://43.130.31.50:18807/v1`（图像站） | `/models` 200（公开目录），但任何出图 **401** |
+| `https://new.api.edu.gr/v1` | **429** `rate_limit_exceeded`（≠401，说明 key 被识别，但额度/速率被打满） |
+
+同一时刻用旧 key（`mk-…`）请求 `new.api.edu.gr/v1/models` → **200，6430 字节**，
+所以 429 不是 IP 限流，是这把新 key 自身的配额问题。
+
+**结论**：新 key 属于 `new.api.edu.gr`，目前不可用（429）；图像继续用 `18813 + sk-kie-…`；
+LLM 继续用 `mk-…`。等新 key 恢复后把 `data/llm-profiles.json` 的 `apiKey` 换掉即可，无需改代码。
+
 ## 5. 建议
 
 1. 日常对话/写作用 `gpt-5-6-sol`；长文与代码审阅用 `claude-opus-5-5`
