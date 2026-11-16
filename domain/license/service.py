@@ -110,6 +110,26 @@ class LicenseStore:
                 (digest, ",".join(features), int(days), note, time.time()))
         return key, {"cardHash": digest[:16], "days": days, "features": list(features)}
 
+    def import_card(self, key: str, *, days: int = 0,
+                    features: tuple[str, ...] = DEFAULT_FEATURES,
+                    note: str = "") -> dict[str, Any]:
+        """把**外部已有卡密**登记进库（老格式/手工发放的卡）。
+
+        与 `issue()` 的区别：不生成新卡号，只按传入字符串的哈希入库，
+        这样旧格式（8 段 4 位）也能被激活，不必强迫用户换卡。
+        """
+        text = (key or "").strip()
+        if len(normalize(text)) < 16:
+            raise LicenseError("invalid_card", "卡密长度不足，无法导入。")
+        digest = card_hash(text)
+        with self._lock:
+            self._conn.execute(
+                "INSERT OR REPLACE INTO cards (card_hash, features, days, note, created_at)"
+                " VALUES (?,?,?,?,?)",
+                (digest, ",".join(features), int(days), note, time.time()))
+        return {"cardHash": digest[:16], "days": days, "features": list(features),
+                "mask": mask_card(text)}
+
     def revoke(self, key: str) -> bool:
         with self._lock:
             cur = self._conn.execute("UPDATE cards SET revoked=1 WHERE card_hash=?",

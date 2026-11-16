@@ -85,8 +85,15 @@ class Handler(BaseHTTPRequestHandler):
     static_dir: Path = ROOT / "static"
 
     def _serve_static(self, url_path: str) -> bool:
-        """非 /api 请求交给 static/（桌面壳与浏览器直接用同一套前端）。"""
-        rel = url_path.lstrip("/") or "index.html"
+        """非 /api 请求交给 static/（桌面壳与浏览器直接用同一套前端）。
+
+        前端页面里资源引用写的是绝对路径 `/static/xxx.js`（旧服务端就是这么挂的），
+        所以这里要同时支持 `/static/x` 与 `/x` 两种写法，否则所有 JS/CSS 全 404。
+        """
+        path = url_path
+        if path.startswith("/static/"):
+            path = path[len("/static"):]
+        rel = path.lstrip("/") or "index.html"
         if rel.endswith("/"):
             rel += "index.html"
         target = (self.static_dir / rel).resolve()
