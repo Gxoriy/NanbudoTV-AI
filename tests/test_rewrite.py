@@ -76,8 +76,48 @@ class RewriteRoutesTest(unittest.TestCase):
     def test_missing_project_404(self) -> None:
         self.assertEqual(self.call("GET", "/api/breakdown/project?id=nope").status, 404)
 
+    def test_quotes_are_free(self) -> None:
+        for path in ("/api/breakdown/quote", "/api/prompt-reverse/quote",
+                     "/api/novel-screenplay/quote", "/api/script-alignment/quote"):
+            resp = self.call("POST", path, {})
+            self.assertEqual(resp.status, 200, path)
+            self.assertEqual(resp.payload["estimatedPoints"], 0.0, path)
+
+    def test_project_delete_rename(self) -> None:
+        created = self.call("POST", "/api/rewrite-projects/save",
+                            {"name": "第1集"}).payload["project"]
+        renamed = self.call("POST", "/api/rewrite-projects/rename",
+                            {"id": created["id"], "name": "第1集-改"})
+        self.assertEqual(renamed.payload["project"]["name"], "第1集-改")
+        self.assertEqual(self.call("POST", "/api/rewrite-projects/delete",
+                                   {"id": created["id"]}).status, 200)
+        self.assertEqual(self.call("GET", "/api/rewrite-projects").payload["projects"], [])
+
+    def test_breakdown_media_and_outputs(self) -> None:
+        relative = self.store.save_file("breakdown", "v.mp4", b"VIDEO")
+        project = self.store.create("breakdown", "拆解", {"sourceFile": relative,
+                                                         "outputs": [{"name": "x"}]})
+        media = self.call("GET", f"/api/breakdown/media?id={project['id']}")
+        self.assertEqual(media.status, 200)
+        self.assertEqual(media.raw, b"VIDEO")
+        outputs = self.call("GET", f"/api/breakdown/outputs?id={project['id']}")
+        self.assertEqual(outputs.payload["outputs"], [{"name": "x"}])
+
+    def test_prompt_reverse_upload_and_to_canvas(self) -> None:
+        self.assertEqual(self.call("POST", "/api/prompt-reverse/upload").status, 400)
+        raw = Request(method="POST", path="/api/prompt-reverse/upload", query={},
+                      headers={"x-filename": "a.png"}, body=b"IMG")
+        self.assertEqual(self.router.dispatch(raw).status, 200)
+        created = self.store.create("prompt_reverse", "素材",
+                                    {"file": "", "prompt": "霓虹"})
+        converted = self.call("POST", "/api/prompt-reverse/to-canvas",
+                              {"id": created["id"]})
+        self.assertEqual(converted.status, 200)
+        canvas = self.store.get(converted.payload["canvasId"])
+        self.assertEqual(canvas["payload"]["from"], "prompt_reverse")
+
     def test_llm_routes_are_explicit_501(self) -> None:
-        for path in ("/api/breakdown/quote", "/api/prompt-reverse/analyze",
+        for path in ("/api/prompt-reverse/analyze",
                      "/api/novel-screenplay/start", "/api/original/recommend"):
             resp = self.call("POST", path, {})
             self.assertEqual(resp.status, 501, path)
