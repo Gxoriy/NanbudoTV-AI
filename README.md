@@ -10,7 +10,7 @@
 
 ## 1. 当前进度（诚实版）
 
-路由覆盖率 **44.9%**（119/265），下表的"覆盖"指新内核已注册同路径或同前缀：
+路由覆盖率 **58.1%**（154/265），下表的"覆盖"指新内核已注册同路径或同前缀：
 
 | 域 | 覆盖 | 说明 |
 |---|---|---|
@@ -22,7 +22,8 @@
 | S2 授权 | 3/7 | status / activate / refresh（自建卡密） |
 | S3 运行时 | 3/7 | health、runtime、model-profiles |
 | S5 外壳 | 1/7 | shutdown |
-| D5 电商 / D6 采集 | **0** | 仍在旧实现里，未迁移 |
+| D5 电商 | 18/18 | 展示柜/项目/批次/工作台/门店 CRUD 已实现，营销生成 501 |
+| D6 采集 | 17/17 | 下载记录与流媒体已实现；11 条浏览器采集路由返回 501 rowser_required（Playwright 已探测到） |
 
 未迁移的路由统一返回 `501 {"error":"not_migrated"}`，不会静默 404 或假装成功。
 随时可跑 `python tools/audit_coverage.py` 复核。
@@ -107,6 +108,8 @@ data/               运行时数据（gitignore；任务库、卡密库、上传
 | 配音 | `/api/voices/{catalog,quote}`、`/api/video-voice/{status,source,quote,generate,observe}` |
 | 视觉 | `/api/visual/{styles,style,_nodes,projects,project,settings,profile,usage,points,models,media,style/create,style/delete}` |
 | 画布 | `/api/canvas/{list,document,save,create,styles,upload,media,run-status,quote,saved,assets/,location,reveal,disconnect}` |
+| 电商 | /api/ecommerce-showcase、/api/ecommerce{,/save,/upload,/batch/,/workbench/*}、/api/store/{projects,create,project,save,prepare,result,quote,upload} |
+| 采集 | /api/hall/{downloads,downloads/cover,downloads/stream,episodes,rank} |
 | 素材库 | `/api/asset-library/{,add,delete,media,upload}` |
 | 角色 | `/api/characters{,,/library,/manage,/upload,/media,/quote,/hall,/combine,/image-models}` |
 

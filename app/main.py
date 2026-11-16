@@ -26,6 +26,8 @@ from typing import Any
 from app import APP_NAME, __version__
 from app.api import Request, Response, Router, parse_query
 from app.api import license as license_api
+from app.api import commerce as commerce_api
+from app.api import hall as hall_api
 from app.api import rewrite as rewrite_api
 from app.api import storage as storage_api
 from app.api import subtitle as subtitle_api
@@ -322,6 +324,8 @@ def main(argv: list[str] | None = None) -> int:
     voice_api.build(router, voice_service)
     visual_api.build(router, visual_service)
     rewrite_api.build(router, workspace)
+    commerce_api.build(router, workspace)
+    hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
     storage_api.build(router, workspace, data_dir=data_dir, install_root=ROOT)
     visual_extra.build(router, visual_service, visual_library,
                        images=ImageConfig.load(data_dir / "model-config.json"),
