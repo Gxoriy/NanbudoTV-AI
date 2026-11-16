@@ -40,7 +40,8 @@ def _upload(req: Request, store, folder: str) -> Response:
 
 
 def build(router: Router, service: VisualService, library, *,
-          images=None, task_store=None, transport=None, assist=None) -> None:
+          images=None, task_store=None, transport=None, assist=None,
+          videos=None, video_pipeline=None) -> None:
     store = library
     if store is None:
         return
@@ -50,8 +51,15 @@ def build(router: Router, service: VisualService, library, *,
 
     from domain.visual.assist import AssistError
     from infra.media.images import ImageConfig, ImageError, generate as gen_image
+    from infra.media.videos import VideoConfig, VideoError
+    from infra.media import videos as video_api
 
     image_config = images or ImageConfig()
+    video_config = videos or VideoConfig()
+    if video_pipeline is None:
+        from domain.visual.video import VideoPipeline
+
+        video_pipeline = VideoPipeline(library, task_store, video_config)
 
     def _run_image(task_id: str, kind: str, project_id: str, prompt: str,
                    extra: dict | None = None) -> None:
@@ -119,6 +127,33 @@ def build(router: Router, service: VisualService, library, *,
     def episode_frame(req: Request) -> Response:
         """分镜单帧出图：与封面同一条生成链路，额外带上场景序号。"""
         return _start_generation(req, "frame")
+
+    def _start_video(req: Request, kind: str) -> Response:
+        """视频生成：建上游任务 → 后台轮询 → 落库；前端用现成 /api/tasks 轮询。"""
+        body = req.json()
+        prompt = str(body.get("prompt") or body.get("requirement") or "").strip()
+        result = video_pipeline.start(
+            kind, prompt=prompt, project_id=str(body.get("projectId") or ""),
+            duration=str(body.get("duration") or "") or None,
+            aspect_ratio=str(body.get("aspectRatio") or body.get("aspect_ratio") or "") or None,
+            version=str(body.get("version") or "") or None,
+            images=body.get("images") or [])
+        if not result.get("ok"):
+            return Response.error(int(result.get("status") or 400),
+                                  str(result.get("error") or "invalid_input"),
+                                  str(result.get("message") or ""))
+        return Response(200, result)
+
+    def episode_video(req: Request) -> Response:
+        return _start_video(req, "video")
+
+    def episode_video_observe(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        task_id = str(body.get("taskId") or body.get("id") or "")
+        public = video_pipeline.observe(task_id)
+        if public is None:
+            return Response.error(404, "not_found", "任务不存在。")
+        return Response(200, {"ok": True, "task": public})
 
     def owner_of(req: Request) -> str:
         return (req.headers.get("x-device-code") or "").strip()[:64]
@@ -406,6 +441,10 @@ def build(router: Router, service: VisualService, library, *,
                     methods=("GET", "POST"))
     router.register("D2", "/api/visual/episode/frame", episode_frame,
                     methods=("GET", "POST"))
+    router.register("D2", "/api/visual/episode/video", episode_video,
+                    methods=("GET", "POST"))
+    router.register("D2", "/api/visual/episode/video/observe", episode_video_observe,
+                    methods=("GET", "POST"))
     router.register("D2", "/api/visual/asset/generate", asset_generate,
                     methods=("GET", "POST"))
 
@@ -414,9 +453,7 @@ def build(router: Router, service: VisualService, library, *,
                  "/api/visual/project/scenes",
                  "/api/visual/assets/analyze", "/api/visual/assets/delete",
                  "/api/visual/cut-storyboard",
-                 "/api/visual/episode-cut", "/api/visual/script-storyboard",
-                 "/api/visual/episode/video",
-                 "/api/visual/episode/video/observe", "/api/visual/episode/video/reset",
+                 "/api/visual/episode-cut", "/api/visual/script-storyboard", "/api/visual/episode/video/reset",
                  "/api/visual/episode/settings", "/api/visual/episode/state",
                  "/api/visual/episode/prompt", "/api/visual/episode/references",
                  "/api/visual/video-preview", "/api/visual/archive",

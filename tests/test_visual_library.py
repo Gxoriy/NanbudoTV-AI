@@ -134,11 +134,19 @@ class LibraryRoutesTest(unittest.TestCase):
     # ---------- 模型缺失 ----------
     def test_model_dependent_routes_are_explicit_501(self) -> None:
         for path in ("/api/visual/project/scenes",
-                     "/api/visual/episode/video", "/api/visual/macro/state"):
+                     "/api/visual/macro/state"):
             resp = self.call("POST", path, {})
             self.assertEqual(resp.status, 501, path)
             self.assertEqual(resp.payload["error"], "model_required", path)
             self.assertIn("模型", resp.payload["message"])
+
+    def test_video_routes_validate_input(self) -> None:
+        """视频生成已接通：缺提示词是 400（不是 501），未配置模型才是 503。"""
+        resp = self.call("POST", "/api/visual/episode/video", {})
+        self.assertEqual(resp.status, 400)
+        resp = self.call("POST", "/api/visual/episode/video", {"prompt": "x"})
+        self.assertEqual(resp.status, 503)
+        self.assertEqual(resp.payload["error"], "model_unconfigured")
 
 
 if __name__ == "__main__":

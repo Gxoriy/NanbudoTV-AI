@@ -45,12 +45,14 @@ from domain.ai import TextAssist
 from domain.visual import VisualService
 from domain.visual.assist import VisualAssist
 from domain.visual.library import LibraryStore
+from domain.visual.video import VideoPipeline
 from domain.workspace import DocStore
 from domain.visual.store import VisualStore
 from domain.voice import VoiceService
 from domain.voice.store import VoiceJobStore
 from infra import llm
 from infra.media.images import ImageConfig
+from infra.media.videos import VideoConfig
 from infra.obs import HealthRegistry, install as install_logging
 from infra.tasks import TaskStore
 
@@ -340,8 +342,11 @@ def main(argv: list[str] | None = None) -> int:
     media_extra.build(router, workspace, data_dir=data_dir,
                       voice_service=voice_service)
     visual_api.build(router, visual_service)
+    video_pipeline = VideoPipeline(visual_library, store,
+                                   VideoConfig.load(data_dir / "model-config.json"))
     visual_tail.build(router, visual_service, visual_library, store=workspace,
-                      assist=TextAssist(data_dir / "llm-profiles.json"))
+                      assist=TextAssist(data_dir / "llm-profiles.json"),
+                      video_pipeline=video_pipeline)
     history_api.build(router, workspace, outputs_root=data_dir / "outputs")
     rewrite_api.build(router, workspace,
                       assist=TextAssist(data_dir / "llm-profiles.json"),
@@ -350,6 +355,7 @@ def main(argv: list[str] | None = None) -> int:
     hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
     storage_api.build(router, workspace, data_dir=data_dir, install_root=ROOT)
     visual_extra.build(router, visual_service, visual_library,
+                        video_pipeline=video_pipeline,
                        images=ImageConfig.load(data_dir / "model-config.json"),
                        task_store=store,
                        assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))

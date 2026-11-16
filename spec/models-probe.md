@@ -162,6 +162,42 @@ LLM 继续用 `mk-…`。等新 key 恢复后把 `data/llm-profiles.json` 的 `a
 结论：视频链路暂不可用，`macro/media/submit`、`episode/video` 仍诚实返回 501。
 KIE 的 `createTask` 与图像共用同一套轮询，参数一旦明确可直接复用 `infra/media/images.py` 的 kie 分支。
 
+## 4.7 视频生成：`api.lk888.ai`（AI 幻核）—— 账号池已恢复，协议已落地
+
+文档页 `https://huanhe.lk666.ai/apidoc` 是 **SPA**，`web_fetch` 只能拿到外壳；
+用本项目自己的 Playwright 渲染后提取到正文（脚本 `.local/deploy/apidoc_dump.js`）。
+
+**BASE_URL 是 `https://api.lk888.ai`**（注意不是 `api.lk666.ai`，后者是另一个网关）。
+
+```
+POST /v1/media/generate
+{"model":"seedance-2.0-anci","prompt":"...",
+ "params":{"version":"快速|标准","duration":"4~15","aspect_ratio":"16:9|9:16|1:1|4:3|3:4",
+            "resolution":"720p","mode":"cankaosheng","images":[...]},
+ "notify_url":"https://..."}                      # 可选回调
+-> {"code":200,"data":{"task_id":225249649}}
+
+GET /v1/media/status?task_id=225249649
+-> {"state":"pending|running|success|failed","is_final":bool,"progress":"45%",
+    "result_url":"https://...mp4","result_type":"video","error":"","cost":4.7124}
+```
+
+要点：
+
+1. **只能看 `state` 与 `is_final`**，`status`/`status_group` 是中文展示字段（"处理中"），写判断逻辑会踩坑。
+2. **同名的另一个网关 `api.lk666.ai` 收录 254 个模型，但创建任务一律 503 no available account**；
+   `api.lk888.ai` 的 191 个模型**账号池可用**（任务能建、能出片）。
+3. 模型 ID 写法不同：这里用点号版本（`seedance-2.0-anci`），不是斜杠形式。
+
+实测（真实出片）：
+
+```
+task 225249649 -> state=success is_final=true progress=100
+result_url=https://tos.lingkeai.vip/uploads/2026.11/16/20261116164656_18e87a34….mp4
+cost=4.7124
+下载 2677202 字节，ffprobe: h264 / 720x1280 / 4.04s
+```
+
 ## 5. 建议
 
 1. 日常对话/写作用 `gpt-5-6-sol`；长文与代码审阅用 `claude-opus-5-5`

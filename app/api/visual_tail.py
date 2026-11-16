@@ -25,7 +25,7 @@ VIDEO_REQUIRED = "该功能需要视频生成模型（kling/seedance），当前
 
 
 def build(router: Router, service: VisualService, library, *,
-          store: DocStore, assist=None) -> None:
+          store: DocStore, assist=None, video_pipeline=None) -> None:
     def _file(relative: str, ctype: str | None = None) -> Response:
         path = library.file_path(relative)
         if path is None:
@@ -269,8 +269,26 @@ def build(router: Router, service: VisualService, library, *,
     def macro_media_catalog(_req: Request) -> Response:
         return Response(200, {"ok": True, "media": [], "message": VIDEO_REQUIRED})
 
-    def macro_submit(_req: Request) -> Response:
-        return Response.error(501, "model_required", VIDEO_REQUIRED)
+    def macro_media_submit(req: Request) -> Response:
+        """媒体提交：走与分镜视频同一条管线（上游 /v1/media/generate）。"""
+        if video_pipeline is None:
+            return Response.error(501, "model_required", VIDEO_REQUIRED)
+        body = req.json()
+        prompt = str(body.get("prompt") or body.get("requirement") or "").strip()
+        result = video_pipeline.start(
+            "macro", prompt=prompt, project_id=str(body.get("projectId") or ""),
+            duration=str(body.get("duration") or "") or None,
+            aspect_ratio=str(body.get("aspectRatio") or body.get("aspect_ratio") or "") or None,
+            version=str(body.get("version") or "") or None,
+            images=body.get("images") or [])
+        if not result.get("ok"):
+            return Response.error(int(result.get("status") or 400),
+                                  str(result.get("error") or "invalid_input"),
+                                  str(result.get("message") or ""))
+        return Response(200, result)
+
+    router.register("D2", "/api/visual/macro/media/submit", macro_media_submit,
+                    methods=("POST",))
 
     def macro_media_quote(_req: Request) -> Response:
         return macro_quote(_req)
@@ -354,8 +372,6 @@ def build(router: Router, service: VisualService, library, *,
                     methods=("POST",))
     router.register("D2", "/api/visual/macro/media/observe", macro_media_observe)
     router.register("D2", "/api/visual/macro/media/catalog", macro_media_catalog)
-    router.register("D2", "/api/visual/macro/media/submit", macro_submit,
-                    methods=("POST",))
 
     router.register("D2", "/api/visual/scene-videos/archive", macro_scene_videos_archive,
                     methods=("GET", "POST"))
