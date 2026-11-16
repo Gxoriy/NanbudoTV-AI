@@ -52,6 +52,13 @@ function out(payload) {
   try {
     context = await chromium.launchPersistentContext(profile, { headless: true });
     const page = context.pages()[0] || (await context.newPage());
+    const captured = [];                       // 网络里出现的媒体直链
+    page.on('response', (resp) => {
+      const url = resp.url();
+      if (/\.(mp4|m3u8|mov)(\?|$)/i.test(url) && !captured.includes(url)) {
+        captured.push(url);
+      }
+    });
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
     await page.waitForTimeout(1500);
 
@@ -63,6 +70,9 @@ function out(payload) {
       const videos = Array.from(document.querySelectorAll('video'))
         .map((v) => v.currentSrc || v.src || '')
         .filter((src) => src && src.startsWith('http'));
+      const audios = Array.from(document.querySelectorAll('audio,source'))
+        .map((a) => a.currentSrc || a.src || '')
+        .filter((src) => src && src.startsWith('http'));
       const images = Array.from(document.querySelectorAll('img'))
         .map((i) => i.currentSrc || i.src || '')
         .filter((src) => src && src.startsWith('http'))
@@ -71,13 +81,30 @@ function out(payload) {
         title: document.title || '',
         description: pick('meta[name="description"]', 'content'),
         cover: pick('meta[property="og:image"]', 'content') || images[0] || '',
-        videos: Array.from(new Set(videos)),
+        videos: Array.from(new Set([...videos, ...audios])),
         images,
         url: location.href,
       };
     });
 
-    out({ ok: true, data });
+    let payload = data;
+    if (args.mode === 'download') {
+      // 用浏览器上下文下载：能复用系统代理、Cookie、UA，裸 urllib 常常连不上或 403
+      const target = (data.videos || [])[0];
+      if (!target) {
+        out({ ok: false, code: 'not_found', message: '页面里没找到可下载的视频地址。' });
+        return;
+      }
+      const resp = await context.request.get(target, { timeout: 600000 });
+      if (!resp.ok()) {
+        out({ ok: false, code: 'download_failed', message: `下载返回 ${resp.status()}` });
+        return;
+      }
+      const buffer = await resp.body();
+      fs.writeFileSync(args.outPath, buffer);
+      payload = { ...data, filePath: args.outPath, bytes: buffer.length };
+    }
+    out({ ok: true, data: payload });
   } catch (error) {
     out({ ok: false, code: 'browse_failed', message: String(error && error.message || error) });
     process.exitCode = 5;

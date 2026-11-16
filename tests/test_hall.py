@@ -105,10 +105,26 @@ class HallRoutesTest(unittest.TestCase):
         self.assertEqual(self.call("POST", "/api/link/analyze").status, 400)
 
     def test_browser_routes_report_missing_engine(self) -> None:
+        # watch 需要链接；缺链接是 400，不是 501
         resp = self.call("POST", "/api/watch/open")
-        self.assertEqual(resp.status, 501)
-        self.assertEqual(resp.payload["error"], "browser_required")
-        self.assertIn("Playwright", resp.payload["message"])
+        self.assertEqual(resp.status, 400)
+        self.assertEqual(resp.payload["error"], "invalid_input")
+        status = self.call("GET", "/api/watch/status")
+        self.assertTrue(status.payload["ok"])
+        self.assertFalse(status.payload["running"])
+
+    def test_link_download_requires_url(self) -> None:
+        self.assertEqual(self.call("POST", "/api/link/download").status, 400)
+        self.assertEqual(self.call("POST", "/api/link/import").status, 400)
+        self.assertEqual(self.call("POST", "/api/hall/series/download").status, 400)
+
+    def test_series_transcribe_requires_target(self) -> None:
+        self.assertEqual(self.call("POST", "/api/hall/series/transcribe").status, 400)
+        resp = self.router.dispatch(Request(
+            method="POST", path="/api/hall/series/transcribe", query={},
+            headers={"content-type": "application/json"},
+            body=json.dumps({"file": "nope.mp4"}).encode()))
+        self.assertEqual(resp.status, 404)
 
 
 class ProbeTest(unittest.TestCase):
