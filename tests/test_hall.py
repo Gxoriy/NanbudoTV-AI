@@ -72,6 +72,38 @@ class HallRoutesTest(unittest.TestCase):
         self.assertEqual(self.call("GET", "/api/hall/rank").status, 400)
         self.assertEqual(self.call("GET", "/api/hall/rank?type=hot").payload["items"], [])
 
+    def test_link_analyze_returns_structured_result(self) -> None:
+        from infra.browser.runner import AnalyzeResult
+        router = Router()
+        hall_api.build(router, self.store, downloads_root=self.root / "downloads",
+                       analyze_runner=lambda url: AnalyzeResult(
+                           url=url, title="测试页", cover="https://cdn/x.jpg",
+                           videos=["https://cdn/v.mp4"]))
+        resp = router.dispatch(Request(method="POST", path="/api/link/analyze",
+                                       query={}, headers={"content-type": "application/json"},
+                                       body=json.dumps({"url": "https://example.com/a"}).encode()))
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.payload["title"], "测试页")
+        self.assertEqual(resp.payload["videos"], ["https://cdn/v.mp4"])
+
+    def test_link_analyze_maps_browser_required(self) -> None:
+        from infra.browser.runner import BrowseError
+        router = Router()
+
+        def boom(_url: str):
+            raise BrowseError("browser_required", "Playwright 未就绪")
+
+        hall_api.build(router, self.store, downloads_root=self.root / "downloads",
+                       analyze_runner=boom)
+        resp = router.dispatch(Request(method="POST", path="/api/link/analyze",
+                                       query={}, headers={"content-type": "application/json"},
+                                       body=json.dumps({"url": "https://example.com"}).encode()))
+        self.assertEqual(resp.status, 501)
+        self.assertEqual(resp.payload["error"], "browser_required")
+
+    def test_link_analyze_requires_url(self) -> None:
+        self.assertEqual(self.call("POST", "/api/link/analyze").status, 400)
+
     def test_browser_routes_report_missing_engine(self) -> None:
         resp = self.call("POST", "/api/watch/open")
         self.assertEqual(resp.status, 501)

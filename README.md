@@ -10,7 +10,7 @@
 
 ## 1. 当前进度（诚实版）
 
-路由覆盖率 **58.1%**（154/265），下表的"覆盖"指新内核已注册同路径或同前缀：
+路由覆盖率 **59.6%**（158/265），下表的"覆盖"指新内核已注册同路径或同前缀：
 
 | 域 | 覆盖 | 说明 |
 |---|---|---|
@@ -19,11 +19,11 @@
 | D3 字幕 | 11/21（52%） | 导入、媒体、本地去字幕轨、像素修补、检测、免费报价、云端提交 |
 | D4 配音 | 4/7（57%） | 音色目录、免费报价、整片配音任务（本地 SAPI 合成） |
 | S1 任务 | 2/7 | 快照、明细 |
-| S2 授权 | 3/7 | status / activate / refresh（自建卡密） |
+| S2 会话/授权 | 7/7 | session status/login、client/config、creation/submission、license 三件套 |
 | S3 运行时 | 3/7 | health、runtime、model-profiles |
 | S5 外壳 | 1/7 | shutdown |
 | D5 电商 | 18/18 | 展示柜/项目/批次/工作台/门店 CRUD 已实现，营销生成 501 |
-| D6 采集 | 17/17 | 下载记录与流媒体已实现；11 条浏览器采集路由返回 501 rowser_required（Playwright 已探测到） |
+| D6 采集 | 17/17 | 下载记录/流/剧集/榜单已实现；link/analyze 走 Node Playwright 真采集；其余浏览器路由 501 |
 
 未迁移的路由统一返回 `501 {"error":"not_migrated"}`，不会静默 404 或假装成功。
 随时可跑 `python tools/audit_coverage.py` 复核。

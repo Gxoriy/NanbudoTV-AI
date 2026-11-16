@@ -133,6 +133,23 @@ body: <!doctype html><html lang="zh-CN"> ...
 **结论**：新 key 属于 `new.api.edu.gr`，目前不可用（429）；图像继续用 `18813 + sk-kie-…`；
 LLM 继续用 `mk-…`。等新 key 恢复后把 `data/llm-profiles.json` 的 `apiKey` 换掉即可，无需改代码。
 
+## 4.5 lk666（`api.lk666.ai`）：191 个模型，对话可用
+
+控制台地址 `https://huanhe.lk666.ai/api/console/keys` 是 **SPA 页面**，`/v1/models` 会被前端兜底成 HTML；
+真正的 API 前缀是 **`https://api.lk666.ai/v1`**。
+
+| 能力 | 实测 |
+|---|---|
+| `GET /v1/models` | 200，**191 个**：图像 26 / 视频 56 / 对话 25 |
+| 对话 `deepseek-v4.1-flash` / `deepseek-v4-pro` / `glm-5.3` / `deepseek-v4-flash` | ✅ 200 |
+| 对话 `kimi-k3` / `kimi-k3.1-pro` / `qwen3.8-max` | ❌ 断连（`RemoteDisconnected`） |
+| 图像 `/v1/images/generations` | ❌ 该路径下模型不被接受 |
+| 图像正确入口 | **`POST /v1/media/generate`**（400 提示明确给出）——异步，未接入 |
+| 视频 | 56 个（`seedance-2.x`、`kling-v4`、`hailuo`、`muse-video`、`wand-vega`） |
+
+已把 LLM 切到 `api.lk666.ai/v1` + **`deepseek-v4-pro`**（`data/llm-profiles.json`），
+`infra/llm` 真实调用返回"接通"。图像仍用 `18813 + google/nano-banana`（KIE 协议，已验证出图）。
+
 ## 5. 建议
 
 1. 日常对话/写作用 `gpt-5-6-sol`；长文与代码审阅用 `claude-opus-5-5`

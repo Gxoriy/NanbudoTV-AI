@@ -14,6 +14,7 @@ import re
 from .router import Request, Response, Router
 from domain.workspace.store import DocStore
 from infra.browser import probe as browser_probe
+from infra.browser.runner import BrowseError, analyze as _default_analyze
 
 KIND_DOWNLOAD = "download"
 RANGE_RE = re.compile(r"bytes=(\d*)-(\d*)")
@@ -44,7 +45,8 @@ def _range_response(path: pathlib.Path, range_header: str) -> Response:
     return Response(status, None, headers, raw=raw, content_type=ctype)
 
 
-def build(router: Router, store: DocStore, *, downloads_root: pathlib.Path) -> None:
+def build(router: Router, store: DocStore, *, downloads_root: pathlib.Path,
+          analyze_runner=None) -> None:
     def downloads(_req: Request) -> Response:
         records = []
         for record in store.list(KIND_DOWNLOAD, limit=500):
@@ -95,13 +97,27 @@ def build(router: Router, store: DocStore, *, downloads_root: pathlib.Path) -> N
         return Response.error(501, "browser_required",
                               f"该功能需要浏览器采集（Playwright）：{detail}")
 
+    def link_analyze(req: Request) -> Response:
+        url = str(req.json().get("url") or req.q1("url") or "").strip()
+        if not url:
+            return Response.error(400, "invalid_input", "缺少 url。")
+        runner = analyze_runner or _default_analyze
+        try:
+            result = runner(url)
+        except BrowseError as exc:
+            status = {"browser_required": 501, "invalid_input": 400, "busy": 409}.get(
+                exc.code, 502)
+            return Response.error(status, exc.code, exc.message)
+        return Response(200, result.public())
+
     router.register("D6", "/api/hall/downloads", downloads)
     router.register("D6", "/api/hall/downloads/cover", cover)
     router.register("D6", "/api/hall/downloads/stream", stream)
     router.register("D6", "/api/hall/episodes", episodes)
     router.register("D6", "/api/hall/rank", rank)
+    router.register("D6", "/api/link/analyze", link_analyze, methods=("GET", "POST"))
     for path in ("/api/hall/series/download", "/api/hall/series/transcribe",
-                 "/api/link/analyze", "/api/link/download", "/api/link/import",
+                 "/api/link/download", "/api/link/import",
                  "/api/link/cover", "/api/link/stream", "/api/watch/open",
                  "/api/watch/start", "/api/watch/status", "/api/watch/stop",
                  "/api/watch/discard"):

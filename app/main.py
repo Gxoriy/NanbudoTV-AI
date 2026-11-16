@@ -29,6 +29,7 @@ from app.api import license as license_api
 from app.api import commerce as commerce_api
 from app.api import hall as hall_api
 from app.api import rewrite as rewrite_api
+from app.api import session as session_api
 from app.api import storage as storage_api
 from app.api import subtitle as subtitle_api
 from app.api import system as system_api
@@ -321,6 +322,8 @@ def main(argv: list[str] | None = None) -> int:
                      profiles=profiles, health_registry=health)
     subtitle_api.build(router, subtitle_service)
     license_api.build(router, license_service)
+    session_api.build(router, license_service, workspace, version=__version__,
+                      install_root=ROOT)
     voice_api.build(router, voice_service)
     visual_api.build(router, visual_service)
     rewrite_api.build(router, workspace)
