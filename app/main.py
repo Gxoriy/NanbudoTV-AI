@@ -28,6 +28,7 @@ from app.api import Request, Response, Router, parse_query
 from app.api import license as license_api
 from app.api import commerce as commerce_api
 from app.api import hall as hall_api
+from app.api import media_extra
 from app.api import history as history_api
 from app.api import rewrite as rewrite_api
 from app.api import session as session_api
@@ -36,6 +37,7 @@ from app.api import subtitle as subtitle_api
 from app.api import system as system_api
 from app.api import visual as visual_api
 from app.api import visual_extra
+from app.api import visual_tail
 from app.api import voice as voice_api
 from domain.license import LicenseService, LicenseStore
 from domain.subtitle import SubtitleService, SubtitleStore
@@ -328,7 +330,11 @@ def main(argv: list[str] | None = None) -> int:
     session_api.build(router, license_service, workspace, version=__version__,
                       install_root=ROOT)
     voice_api.build(router, voice_service)
+    media_extra.build(router, workspace, data_dir=data_dir,
+                      voice_service=voice_service)
     visual_api.build(router, visual_service)
+    visual_tail.build(router, visual_service, visual_library, store=workspace,
+                      assist=TextAssist(data_dir / "llm-profiles.json"))
     history_api.build(router, workspace, outputs_root=data_dir / "outputs")
     rewrite_api.build(router, workspace,
                       assist=TextAssist(data_dir / "llm-profiles.json"))

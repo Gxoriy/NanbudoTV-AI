@@ -80,12 +80,15 @@ class RouteEntry:
     handler: Handler
     name: str = ""
     migrated: bool = True
+    exact: bool = False
 
     def matches(self, method: str, path: str) -> bool:
         if self.methods and method not in self.methods:
             return False
         if path == self.path:
             return True
+        if self.exact:
+            return False
         # 前缀匹配：旧实现同样是前缀分派（如 /api/subtitle/* 由同一分支处理）
         return self.path.endswith("/") and path.startswith(self.path)
 
@@ -96,11 +99,11 @@ class Router:
 
     def register(self, domain: str, path: str, handler: Handler,
                  methods: Iterable[str] = ("GET",), *, name: str = "",
-                 migrated: bool = True) -> None:
+                 migrated: bool = True, exact: bool = False) -> None:
         if not path.startswith("/"):
             raise ValueError(f"路由必须以 / 开头: {path}")
         self._routes.append(RouteEntry(
-            domain=domain, path=path,
+            domain=domain, path=path, exact=exact,
             methods=tuple(m.upper() for m in methods),
             handler=handler, name=name or handler.__name__, migrated=migrated))
 

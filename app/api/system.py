@@ -218,6 +218,12 @@ def build(router: Router, store: TaskStore, *, app_name: str, version: str,
     router.register("S5", "/api/update/install", update_unsupported,
                     methods=("GET", "POST"))
     router.register("S5", "/api/update/reveal", update_unsupported, methods=("POST",))
+
+    def api_root(_req: Request) -> Response:
+        """旧实现对 `/api/` 返回 404；这里保持一致，且必须 exact（不能吞子路由）。"""
+        return Response.error(404, "not_found", "没有这个接口。")
+
+    router.register("S5", "/api/", api_root, exact=True)
     # 注意：不要注册 "/api/" 这种前缀路由——它会把所有未迁移接口吞成 200，
     # 让"未迁移 = 501"的门禁失效（旧实现这个路径本身也是 404）。
     # S5 外壳

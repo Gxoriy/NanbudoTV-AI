@@ -158,6 +158,34 @@ class SubtitleService:
             raise SubtitleError(404, "not_found", "文件不存在。")
         return path
 
+    # ---------- 已有素材导入 / 续跑 ----------
+    def import_existing(self, relative: str, name: str = "") -> SubtitleRecord:
+        """把 data 下已有文件登记成记录（旧版"导入已有"语义）。"""
+        root = self.storage_root.resolve()
+        target = (root / relative).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError as exc:
+            raise SubtitleError(400, "invalid_input", "文件路径不合法。") from exc
+        if not target.is_file():
+            raise SubtitleError(404, "not_found", "文件不存在，请先上传。")
+        data = target.read_bytes()
+        info = mp4.probe(data)
+        metadata = {"duration": info["duration"], "width": info["width"],
+                    "height": info["height"], "hasSubtitle": info["hasSubtitle"],
+                    "bytes": len(data)}
+        return self.store.create(name or target.name, metadata=metadata,
+                                 size=len(data), source_file=relative)
+
+    def resume(self, record_id: str) -> SubtitleRecord:
+        record = self.store.get(record_id)
+        if record is None:
+            raise SubtitleError(404, "not_found", "记录不存在。")
+        if record.phase in (DONE, READY, QUOTED):
+            raise SubtitleError(409, "invalid_input", f"当前阶段 {record.phase} 无需续跑。")
+        mode = getattr(record, "local_mode", "") or "strip"
+        return self.local_start(record_id, mode, record.region)
+
     # ---------- 字幕候选检测 ----------
     def detect(self, record_id: str) -> SubtitleRecord:
         record = self.store.get(record_id)

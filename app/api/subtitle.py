@@ -117,5 +117,33 @@ def build(router: Router, service: SubtitleService) -> None:
     router.register("D3", "/api/subtitle/submit", submit, methods=("POST",))
     router.register("D3", "/api/subtitle/upload", upload, methods=("POST",))
     router.register("D3", "/api/subtitle/media", media)
+    def existing(_req: Request) -> Response:
+        rows = service.store.list() if hasattr(service.store, "list") else []
+        return Response(200, {"ok": True, "records": [row.public() for row in rows]})
+
+    def import_existing(req: Request) -> Response:
+        body = req.json()
+        relative = str(body.get("file") or "")
+        if not relative:
+            return Response.error(400, "invalid_input", "缺少 file。")
+        record = service.import_existing(relative, str(body.get("name") or ""))
+        return Response(200, {"record": record.public()})
+
+    def resume(req: Request) -> Response:
+        body = req.json()
+        record = service.resume(str(body.get("id") or ""))
+        return Response(200, {"record": record.public()})
+
+    def stop(req: Request) -> Response:
+        body = req.json()
+        record = service.local_stop(str(body.get("id") or ""))
+        return Response(200, {"record": record.public()})
+
     router.register("D3", "/api/subtitle/local-start", local_start, methods=("POST",))
     router.register("D3", "/api/subtitle/local-stop", local_stop, methods=("POST",))
+    router.register("D3", "/api/subtitle/existing", existing)
+    router.register("D3", "/api/subtitle/import-existing", import_existing,
+                    methods=("POST",))
+    router.register("D3", "/api/subtitle/resume", resume, methods=("POST",))
+    router.register("D3", "/api/subtitle/stop", stop, methods=("POST",))
+    router.register("D3", "/api/subtitle/", records_list, exact=True)

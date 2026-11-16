@@ -456,6 +456,54 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
     router.register("D1", "/api/rewrite/settings-suggest", settings_suggest,
                     methods=("POST",))
 
+    # ---------- 收尾：别名、恢复、合并 ----------
+    def rewrite_reconcile(req: Request) -> Response:
+        """把多版改写结果合并成一份（LLM）；无 assist 时返回 503。"""
+        body = req.json()
+        pieces = body.get("texts") or body.get("chapters") or []
+        if not pieces:
+            text = str(body.get("text") or "").strip()
+            pieces = [text] if text else []
+        if not pieces:
+            return Response.error(400, "invalid_input", "缺少待合并内容。")
+
+        def run() -> Response:
+            merged = _llm_call(
+                "合并以下片段为连贯正文，保持剧情顺序：" +
+                "\n---\n".join(str(p)[:1500] for p in pieces[:4]))
+            return Response(200, {"ok": True, "text": merged.strip()})
+
+        return _guard(run)
+
+    def rewrite_resume(req: Request) -> Response:
+        """续跑：找出 interrupted/error 的任务，按原 payload 重新入队。"""
+        body = req.json() if req.body else {}
+        project_id = str(body.get("projectId") or req.q1("projectId") or "")
+        resumable = [task for task in store.list("resume", limit=200)
+                     if not project_id or project_id in json.dumps(task["payload"])]
+        return Response(200, {"ok": True, "resumable": len(resumable),
+                              "items": [_brief(row) for row in resumable],
+                              "message": "" if resumable else "没有可续跑的记录。"})
+
+    def proposals_recover(_req: Request) -> Response:
+        items = [_brief(row) for row in store.list("proposals", limit=100)]
+        return Response(200, {"ok": True, "items": items, "recovered": len(items)})
+
+    def auxiliary_recover(_req: Request) -> Response:
+        items = [_brief(row) for row in store.list("auxiliary", limit=100)]
+        return Response(200, {"ok": True, "items": items, "recovered": len(items)})
+
+    router.register("D1", "/api/rewrite/reconcile", rewrite_reconcile,
+                    methods=("POST",))
+    router.register("D1", "/api/rewrite/resume", rewrite_resume,
+                    methods=("GET", "POST"))
+    router.register("D1", "/api/source/proposals/recover", proposals_recover,
+                    methods=("GET", "POST"))
+    router.register("D1", "/api/writing/auxiliary/recover", auxiliary_recover,
+                    methods=("GET", "POST"))
+    router.register("D1", "/api/breakdown/", breakdown_list, exact=True)
+    router.register("D1", "/api/prompt-reverse/", reverse_list, exact=True)
+
     for path in ("/api/breakdown/motion", "/api/breakdown/motion-cancel",
                  "/api/breakdown/motion-install", "/api/breakdown/motion-runtime",
                  "/api/breakdown/reference-workflow", "/api/novel-screenplay/start"):
