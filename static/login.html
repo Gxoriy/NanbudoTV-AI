@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>登录 NanbudoTV·AI</title>
+  <link rel="icon" href="/static/nanbudo-black-gold-icon.png" type="image/png">
+  <link rel="stylesheet" href="/static/login.css">
+  <link rel="stylesheet" href="/static/brand164.css">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="brand-side">
+      <div class="brand-content">
+        <header class="brand">
+          <img src="/static/nanbudo-black-gold-icon.png" alt="" width="34" height="34">
+          <div><b>NanbudoTV·AI <span id="brandVersion">v--</span></b><small>AI 影像创作工作台</small></div>
+        </header>
+        <div id="heroMedia" class="hero-media hidden"></div>
+        <div id="heroCopy" class="hero-copy">
+          <span class="eyebrow">NANBUDO STUDIO</span>
+          <h1>你的 AI 片场，开机了</h1>
+          <p>从短剧剧本到电商影像，在同一个创作台写、拍、做。</p>
+          <ul class="login-features">
+            <li><b>短剧创作</b><span>剧本 · 分镜</span></li>
+            <li><b>电商内容</b><span>主图重绘 · 商品视频</span></li>
+            <li><b>创作画布</b><span>节点编排 · 协作 AI</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-side">
+      <div class="login-card">
+        <div class="card-heading">
+          <span class="card-kicker">片场通行证</span>
+          <h2>进入创作台</h2>
+          <p>通过卡密授权此设备。登录时自动检查更新。</p>
+        </div>
+
+        <div id="loginMode" class="mode-tabs">
+          <button type="button" class="active" data-mode="bound">已绑定设备</button>
+          <button type="button" data-mode="new">输入新卡密</button>
+        </div>
+        <label class="key-label" for="cardKey">授权卡密</label>
+        <div class="key-input"><input id="cardKey" autocomplete="off" spellcheck="false" aria-describedby="licenseHint"></div>
+        <div class="key-help"><span id="licenseHint">正在读取本机授权…</span><button id="toggleMode" type="button">更换卡密</button></div>
+        <button id="loginButton" class="primary" type="button">登录并检测更新 →</button>
+        <div id="loginMessage" class="message hidden" role="status"></div>
+
+        <section id="updatePanel" class="update-panel">
+          <div class="update-state"><span id="updateIcon" class="state-icon pending">↻</span><div><b id="updateTitle">等待登录检测</b><small id="updateDetail">登录时自动检查最新版本，无需进入软件后二次检测</small></div></div>
+          <div id="updateProgress" class="progress hidden"><div><span id="updateProgressText">正在准备…</span><b id="updateProgressPercent">0%</b></div><i><span id="updateProgressBar"></span></i></div>
+          <div id="updateActions" class="update-actions hidden"><button id="updateButton" class="primary compact" type="button">下载更新</button><button id="enterApp" class="secondary compact" type="button">暂不更新，进入软件</button></div>
+        </section>
+
+        <details class="announcement-panel">
+          <summary class="section-title"><b>软件公告</b><span>登录前可查看</span></summary>
+          <div id="announcementList" class="announcement-list"><article><b>正在同步公告</b><p>请稍候…</p></article></div>
+        </details>
+        <p class="data-note">项目保存在本机，更换卡密后仍会保留。续费原卡后，重新登录即可恢复授权。</p>
+      </div>
+    </section>
+  </main>
+  <script src="/static/login.js"></script>
+</body>
+</html>

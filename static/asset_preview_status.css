@@ -1,0 +1,16 @@
+/* Asset task feedback belongs to its image box, including old-image regeneration. */
+.atelier-workflow .visual-card .visual-card-preview{position:relative;isolation:isolate}
+.atelier-workflow .visual-card .asset-preview-status{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;min-width:0;min-height:0;box-sizing:border-box;background:rgba(28,29,32,.91);color:#edf0f4!important;text-align:center;font-size:14px;font-weight:400;overflow:hidden}
+.atelier-workflow .visual-card .asset-preview-status[hidden],.atelier-workflow .visual-card .asset-preview-spinner[hidden]{display:none!important}
+.atelier-workflow .visual-card .asset-preview-spinner{display:block;flex:none;box-sizing:border-box;width:36px;height:36px;margin:0;border:3px solid #70634e;border-top-color:#ffca68;border-radius:50%;animation:asset-preview-spin .9s linear infinite}
+.atelier-workflow .visual-card .asset-preview-title{display:block;flex:none;max-width:100%;font-size:16px!important;line-height:1.35;font-weight:700;overflow-wrap:anywhere;color:#ffe0a5!important}
+.atelier-workflow .visual-card .asset-preview-status .visual-task-status{display:block;width:100%;min-width:0;min-height:0;max-height:100%;margin:0;padding:0;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap;color:#d4d8df!important;font-size:13px!important;font-weight:400;line-height:1.55;text-align:center;scrollbar-width:thin}
+.atelier-workflow .visual-card .asset-preview-status .visual-task-status::before{content:none!important;display:none!important;animation:none!important}
+.atelier-workflow .visual-card .asset-preview-status[data-state="error"] .asset-preview-title{color:#ffb4b4!important}
+.atelier-workflow .visual-card .asset-preview-status[data-state="error"] .visual-task-status{color:#ffd0d0!important;text-align:left}
+.atelier-workflow .visual-card .asset-preview-status[data-state="paused"] .asset-preview-title{color:#ffdc9c!important}
+.atelier-workflow .visual-card .asset-preview-status[data-state="paused"] .visual-task-status{color:#ead6b1!important}
+.atelier-workflow .visual-card .asset-preview-status[data-state="error"],.atelier-workflow .visual-card .asset-preview-status[data-state="paused"]{background:rgba(28,29,32,.94)}
+.atelier-workflow .visual-card .visual-card-preview[aria-busy="true"] .asset-preview-placeholder{visibility:hidden}
+@keyframes asset-preview-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.atelier-workflow .visual-card .asset-preview-spinner{animation:none;border-color:#ffca68}}

@@ -1,0 +1,7 @@
+{
+  "path": "/api/prompt-reverse/projects",
+  "status": 200,
+  "body": {
+    "projects": []
+  }
+}

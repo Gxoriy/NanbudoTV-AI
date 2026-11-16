@@ -1,0 +1,61 @@
+{
+  "path": "/api/local-storage/settings",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "features": [
+      {
+        "id": "rewrite",
+        "label": "剧本改写",
+        "path": ""
+      },
+      {
+        "id": "original",
+        "label": "一键原创",
+        "path": ""
+      },
+      {
+        "id": "workflow",
+        "label": "短剧工作流",
+        "path": ""
+      },
+      {
+        "id": "breakdown",
+        "label": "爆款拆解",
+        "path": ""
+      },
+      {
+        "id": "canvas",
+        "label": "视频画布",
+        "path": ""
+      },
+      {
+        "id": "prompt_reverse",
+        "label": "提示词反推",
+        "path": ""
+      },
+      {
+        "id": "characters",
+        "label": "数字人角色库",
+        "path": ""
+      },
+      {
+        "id": "ecommerce",
+        "label": "AI电商宣传片",
+        "path": ""
+      },
+      {
+        "id": "store",
+        "label": "AI探店宣传片",
+        "path": ""
+      },
+      {
+        "id": "advertising",
+        "label": "AI广告宣传片",
+        "path": ""
+      }
+    ],
+    "errors": [],
+    "pendingCount": 0
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "pid": 18240,
+  "port": 8765,
+  "probes": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "body": "{\"ok\": true, \"version\": \"2.1.280\", \"appName\": \"NanbudoTV·AI\", \"channel\": \"commercial\"}"
+    },
+    {
+      "path": "/api/client/config",
+      "status": 200,
+      "body": "{\"ok\": true, \"currentVersion\": \"2.1.280\", \"updateAvailable\": false, \"latestVersion\": \"2.1.251\", \"downloadUrl\": \"http://8.159.128.39:8788/api/client/download\", \"sha256\": \"78D1CED5E6710DECD1B18AA0F137F0F711B872B578C3AEB0AFBCC3D66B02EE87\", \"updateNotes\": \"**NanbudoTV·AI 累计更新公告**\\n**更新范围：v2.1.231 → v2.1.251**\\n\\n这次新增的功能，给大家单独整理如下：\\n\\n**1．�"
+    },
+    {
+      "path": "/api/tasks",
+      "status": 200,
+      "body": "{\"ok\": true, \"tasks\": [], \"activeCount\": 0}"
+    },
+    {
+      "path": "/api/license/status",
+      "status": 200,
+      "body": "{\"licensed\": true, \"deviceCode\": \"DW-C4E39-4F2E2-7F3F7-E990A-21289\", \"cardMask\": \"DW-V9PG***-96VK\", \"hasStoredLicense\": true, \"status\": \"active\", \"expiresAt\": 1794796154, \"daysRemaining\": 1, \"permanent\": false, \"offlineUntil\": 1794796154, \"online\": true, \"message\": \"授权剩余约 25 分钟\", \"points\": 0.0, \"usage\": {\"points\": 0.0, \"usedPoints\": 0.0, \"remainingPoints\": 0.0, \"creditedPoints\": 0.0,"
+    },
+    {
+      "path": "/api/model-profiles",
+      "status": 200,
+      "body": "{\"profiles\": {\"qwen\": {\"provider\": \"qwen\", \"saved\": false, \"apiKeyMasked\": \"\", \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\", \"model\": \"qwen3.6-flash\", \"protocol\": \"chat_completions\"}, \"doubao\": {\"provider\": \"doubao\", \"saved\": false, \"apiKeyMasked\": \"\", \"baseUrl\": \"https://ark.cn-beijing.volces.com/api/v3\", \"model\": \"doubao-seed-2-0-lite-260215\", \"protocol\": \"responses\"}, \"custom\""
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+/* A scene's cards share one workspace; inactive cards are not mounted. */
+#macroInlineWorkspace .mi-card-tabs {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  max-width:100%;
+  margin:0 0 14px;
+  padding:2px 1px 8px;
+  overflow-x:auto;
+  overscroll-behavior-x:contain;
+  scroll-padding:8px;
+  scrollbar-width:thin;
+  scrollbar-color:#776746 #202426;
+}
+#macroInlineWorkspace .mi-card-tabs[hidden] { display:none!important; }
+#macroInlineWorkspace .mi-card-tab {
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:42px;
+  padding:9px 13px;
+  border:1px solid #454c51;
+  border-radius:7px;
+  background:#1b1f21;
+  color:#e1e7e9;
+  white-space:nowrap;
+  font-size:13px;
+}
+#macroInlineWorkspace .mi-card-tab:hover { border-color:#9c874f; background:#302d25; }
+#macroInlineWorkspace .mi-card-tab[aria-selected="true"] { border-color:#dfb958; background:#403624; color:#f0cd7b; }
+#macroInlineWorkspace .mi-card-dirty { color:#efcb72; font-size:16px; line-height:1; }
+#macroInlineWorkspace .video-card[role="tabpanel"] { scroll-margin-top:100px; }
+@media(max-width:650px) {
+  #macroInlineWorkspace .mi-card-tabs { gap:7px; margin-bottom:10px; }
+  #macroInlineWorkspace .mi-card-tab { min-height:42px; padding:9px 11px; }
+}

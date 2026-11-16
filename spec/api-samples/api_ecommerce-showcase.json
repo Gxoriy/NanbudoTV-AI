@@ -1,0 +1,17 @@
+{
+  "path": "/api/ecommerce-showcase",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "cards": {
+      "image": [],
+      "video": [
+        {
+          "id": "96362cf86385092d80c68449eab5f40d",
+          "type": "video",
+          "url": "/api/ecommerce-showcase-media?id=96362cf86385092d80c68449eab5f40d"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "path": "/api/health",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "version": "2.1.280",
+    "appName": "NanbudoTV·AI",
+    "channel": "commercial"
+  }
+}

@@ -1,0 +1,525 @@
+{
+  "exe": "F:\\WorkAPP\\短剧改写工作台\\NanbudoTV·AI.exe",
+  "port": 8765,
+  "gui": {
+    "ok": true,
+    "windows": [
+      "NanbudoTV·AI v2.1.280"
+    ]
+  },
+  "domains": {
+    "S3-核心": [
+      {
+        "path": "/api/health",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "appName",
+            "channel",
+            "ok",
+            "version"
+          ],
+          "hash": "3f0c7c82ab1baf10"
+        }
+      },
+      {
+        "path": "/api/model-profiles",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "profiles"
+          ],
+          "hash": "08cbef3460a67222"
+        }
+      },
+      {
+        "path": "/api/runtime/status",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "activeTasks",
+            "exitRequired",
+            "licensed",
+            "message",
+            "phase"
+          ],
+          "hash": "a0664b007fe583ac"
+        }
+      }
+    ],
+    "S1-任务": [
+      {
+        "path": "/api/tasks",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "activeCount",
+            "ok",
+            "tasks"
+          ],
+          "hash": "35f0c065b0a27653"
+        }
+      },
+      {
+        "path": "/api/history",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "ok",
+            "records",
+            "retentionDays",
+            "storagePath"
+          ],
+          "hash": "685833444868fb4f"
+        }
+      },
+      {
+        "path": "/api/history/policy",
+        "status": 404,
+        "shape": {
+          "len_class": "<1k",
+          "json": false,
+          "keys": [
+            "<non-json>"
+          ],
+          "hash": "c96cf8ce66abd860"
+        }
+      }
+    ],
+    "S2-授权": [
+      {
+        "path": "/api/license/status",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "cardMask",
+            "daysRemaining",
+            "deviceCode",
+            "expiresAt",
+            "featureStatus",
+            "features",
+            "hasStoredLicense",
+            "licensed",
+            "message",
+            "offlineUntil",
+            "online",
+            "permanent",
+            "points",
+            "status",
+            "usage"
+          ],
+          "hash": "55c227086766089f"
+        }
+      },
+      {
+        "path": "/api/client/config",
+        "status": 200,
+        "shape": {
+          "len_class": "<100k",
+          "json": true,
+          "keys": [
+            "announcement",
+            "announcementCount",
+            "announcementMediaName",
+            "announcementMediaType",
+            "announcementMediaUrl",
+            "announcements",
+            "breakdownModels",
+            "configError",
+            "currentVersion",
+            "downloadUrl",
+            "ecommerceImageHelpStreaming280",
+            "latestVersion",
+            "mandatory",
+            "ok",
+            "pointsPerCny",
+            "sha256",
+            "subtitleRegionSchema",
+            "textButtonBindings",
+            "textModelPricing",
+            "textTaskCapabilities",
+            "updateAvailable",
+            "updateNotes",
+            "videoSkuPricingSchema172",
+            "visualCatalogPublished",
+            "visualConfigRevision",
+            "visualImagePricing",
+            "visualModels",
+            "visualStyles",
+            "visualVideoPricing",
+            "visualVideoSkuPricing172"
+          ],
+          "hash": "fd2ebdf7e693bedb"
+        }
+      },
+      {
+        "path": "/api/session/status",
+        "status": 200,
+        "shape": {
+          "len_class": "<100k",
+          "json": true,
+          "keys": [
+            "authenticated",
+            "clientConfig",
+            "license",
+            "ok"
+          ],
+          "hash": "237482e7a31f48a4"
+        }
+      }
+    ],
+    "S4-存储": [
+      {
+        "path": "/api/storage/status",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "busy",
+            "downloadedSeriesCount",
+            "historyCount",
+            "installPath",
+            "ok",
+            "storagePath",
+            "uploadBytes",
+            "uploadFileCount"
+          ],
+          "hash": "3f5172f7e4e145f0"
+        }
+      },
+      {
+        "path": "/api/local-storage/settings",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "errors",
+            "features",
+            "ok",
+            "pendingCount"
+          ],
+          "hash": "8584f363ee6b1228"
+        }
+      },
+      {
+        "path": "/api/local-cache",
+        "status": 200,
+        "shape": {
+          "len_class": "<100k",
+          "json": true,
+          "keys": [
+            "busy",
+            "cacheBytes",
+            "cacheFiles",
+            "categories",
+            "downloads",
+            "failedFiles",
+            "generated",
+            "ok",
+            "scanId",
+            "scope",
+            "skippedFiles",
+            "sources"
+          ],
+          "hash": "9b61548bb38cdbfa"
+        }
+      }
+    ],
+    "S5-外壳": [
+      {
+        "path": "/api/tutorials",
+        "status": 200,
+        "shape": {
+          "len_class": "<100k",
+          "json": true,
+          "keys": [
+            "configError",
+            "ok",
+            "tutorials"
+          ],
+          "hash": "3d9a473eab26c99e"
+        }
+      },
+      {
+        "path": "/api/",
+        "status": 404,
+        "shape": {
+          "len_class": "<1k",
+          "json": false,
+          "keys": [
+            "<non-json>"
+          ],
+          "hash": "c96cf8ce66abd860"
+        }
+      }
+    ],
+    "D1-改写": [
+      {
+        "path": "/api/rewrite-projects",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "ok",
+            "projects"
+          ],
+          "hash": "4279072dec5de222"
+        }
+      },
+      {
+        "path": "/api/breakdown/projects",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "projects"
+          ],
+          "hash": "7d3af0cbe6c2131c"
+        }
+      },
+      {
+        "path": "/api/prompt-reverse/projects",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "projects"
+          ],
+          "hash": "7d3af0cbe6c2131c"
+        }
+      }
+    ],
+    "D2-视觉": [
+      {
+        "path": "/api/visual/projects",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "ok",
+            "projects"
+          ],
+          "hash": "4279072dec5de222"
+        }
+      },
+      {
+        "path": "/api/visual/styles",
+        "status": 200,
+        "shape": {
+          "len_class": ">=100k",
+          "json": true,
+          "keys": [
+            "ok",
+            "styles"
+          ],
+          "hash": "0b092fc40e3d8ae3"
+        }
+      },
+      {
+        "path": "/api/canvas/list",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "canvases"
+          ],
+          "hash": "132c6d0ddf107c41"
+        }
+      }
+    ],
+    "D3-字幕": [
+      {
+        "path": "/api/subtitle/capabilities",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "configured",
+            "formats",
+            "message",
+            "modelName",
+            "ok",
+            "pricingMode",
+            "qualities",
+            "regionSchema",
+            "sourceSizeLimit"
+          ],
+          "hash": "f142ac2321cb9be3"
+        }
+      },
+      {
+        "path": "/api/subtitle/projects",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "projects"
+          ],
+          "hash": "7d3af0cbe6c2131c"
+        }
+      },
+      {
+        "path": "/api/subtitle/list",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "records"
+          ],
+          "hash": "4112b9a18df6832f"
+        }
+      }
+    ],
+    "D4-配音": [
+      {
+        "path": "/api/voices/catalog",
+        "status": 200,
+        "shape": {
+          "len_class": "<100k",
+          "json": true,
+          "keys": [
+            "cloneMessage",
+            "clonePoints",
+            "cloneReady",
+            "message",
+            "ok",
+            "pending",
+            "pointsPerCharacter",
+            "ready",
+            "readyCount",
+            "sourceUrl",
+            "systemCount",
+            "voices"
+          ],
+          "hash": "55f951720f123d9c"
+        }
+      },
+      {
+        "path": "/api/video-voice/status",
+        "status": 400,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "error"
+          ],
+          "hash": "0d7d6f71000c7ae3"
+        }
+      },
+      {
+        "path": "/api/video-voice/source",
+        "status": 404,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "error"
+          ],
+          "hash": "a05a7fd43867bc7d"
+        }
+      }
+    ],
+    "D5-电商": [
+      {
+        "path": "/api/store/projects",
+        "status": 400,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "error"
+          ],
+          "hash": "f9c0d4801dfb25b3"
+        }
+      },
+      {
+        "path": "/api/ecommerce-showcase",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "cards",
+            "ok"
+          ],
+          "hash": "bd7812cf511c352a"
+        }
+      },
+      {
+        "path": "/api/ecommerce/workflow/",
+        "status": 403,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "error"
+          ],
+          "hash": "671451362d306012"
+        }
+      }
+    ],
+    "D6-采集": [
+      {
+        "path": "/api/hall/rank",
+        "status": 404,
+        "shape": {
+          "len_class": "<1k",
+          "json": false,
+          "keys": [
+            "<non-json>"
+          ],
+          "hash": "c96cf8ce66abd860"
+        }
+      },
+      {
+        "path": "/api/hall/downloads",
+        "status": 200,
+        "shape": {
+          "len_class": "<1k",
+          "json": true,
+          "keys": [
+            "ok",
+            "records",
+            "storagePath"
+          ],
+          "hash": "5144155956314044"
+        }
+      },
+      {
+        "path": "/api/hall/episodes",
+        "status": 404,
+        "shape": {
+          "len_class": "<1k",
+          "json": false,
+          "keys": [
+            "<non-json>"
+          ],
+          "hash": "c96cf8ce66abd860"
+        }
+      }
+    ]
+  },
+  "failures": []
+}

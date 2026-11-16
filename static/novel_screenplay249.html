@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>小说转剧本</title>
+  <link rel="stylesheet" href="/static/subtitle_removal242.css">
+  <link rel="stylesheet" href="/static/novel_screenplay249.css">
+  <link rel="stylesheet" href="/static/themes228.css">
+  <script src="/static/themes228.js"></script>
+</head>
+<body>
+<main class="novel-main">
+  <header>
+    <span class="novel-crumb">创作空间 / 剧本类</span>
+    <h1>小说转剧本</h1>
+    <p>导入小说原文，分批阅读，确认全书大纲后再分批生成剧本。</p>
+  </header>
+  <section class="panel novel-projects" aria-labelledby="projectsHeading">
+    <h2 id="projectsHeading">小说项目</h2>
+    <div class="novel-project-controls">
+      <label class="novel-field"><span>打开项目</span><select id="projectList"><option value="">选择已保存项目…</option></select></label>
+      <form id="createProject" class="novel-project-controls">
+        <label class="novel-field"><span>新项目名称</span><input id="projectName" required maxlength="100" placeholder="例如：雨夜来信"></label>
+        <button class="primary" type="submit">创建项目</button>
+      </form>
+    </div>
+    <p class="muted"><a href="/static/novel_legacy249.html">查看旧版单次改编任务</a></p>
+    <p id="status" class="muted" role="status"></p>
+  </section>
+  <div id="projectWorkspace" hidden>
+    <div class="novel-grid">
+      <section class="panel">
+        <h2>小说原文</h2>
+        <label class="novel-file"><span>追加 TXT</span><input id="sourceFile" type="file" accept=".txt,text/plain"></label>
+        <label class="novel-field"><span>小说原文</span><textarea id="sourceText" rows="11" placeholder="在这里粘贴小说原文，也可将多个 TXT 依次追加。"></textarea></label>
+        <p id="sourceCount" class="muted">已导入 0 / 600,000 字 · 每个项目最多 60 万字</p>
+        <details id="chaptersPanel" hidden><summary id="chapterCount"></summary><ol id="chapters"></ol></details>
+      </section>
+      <section class="panel">
+        <h2>改编设置</h2>
+        <label class="novel-field"><span>成稿形式</span><select id="format"><option>真人短剧</option><option>AI 漫剧</option><option>有声剧</option><option>影视剧</option></select></label>
+        <label class="novel-field"><span>改编风格</span><select id="style"><option>贴近原著</option><option>快节奏</option><option>强冲突</option><option>细腻叙事</option><option>悬疑感</option></select></label>
+        <label class="novel-field"><span>原作相似度</span><select id="similarity"><option>忠实原著</option><option selected>适度改编</option><option>自由改编</option></select></label>
+        <label class="novel-field"><span>必须保留的角色、情节或台词（最多1500字）</span><textarea id="mustKeep" rows="3" maxlength="1500" placeholder="例如：保留角色姓名、雨夜相遇和最后的告白。"></textarea></label>
+      </section>
+    </div>
+    <div class="actions novel-save"><button id="saveProject">保存原文与设置</button><span id="saveHint" class="muted"></span></div>
+    <section class="panel novel-process">
+      <h2>处理进度</h2>
+      <ol id="stages" class="novel-stages">
+        <li data-stage="read">分批阅读</li><li data-stage="outline">生成大纲</li>
+        <li data-stage="review">确认大纲</li><li data-stage="screenplay">生成剧本</li>
+      </ol>
+      <p id="progressText" class="muted" role="status"></p>
+      <p id="quote" class="muted"></p>
+      <div class="actions">
+        <button class="primary" id="runNext">开始分批阅读</button>
+        <button id="checkProgress">刷新进度</button><button id="pauseStep" hidden>暂停在本次调用完成后</button>
+        <button id="retryStep" hidden>重试当前步骤</button>
+      </div>
+    </section>
+    <section id="outlinePanel" class="panel novel-process" hidden>
+      <h2>全书大纲</h2>
+      <p class="muted">核对每集标题与梗概，可拆分或合并相邻集。修改随确认一起保存。</p><div id="outline"></div>
+      <div class="actions"><button class="primary" id="approveOutline">确认大纲</button></div>
+    </section>
+    <section id="resultPanel" class="panel novel-process" hidden>
+      <h2 id="resultTitle">剧本成稿</h2><p id="resultHint" class="muted"></p>
+      <label class="novel-field"><span>成稿预览</span><textarea id="screenplay" rows="13" readonly></textarea></label>
+      <div class="actions"><button id="copyScreenplay">复制剧本</button><button id="downloadScreenplay">下载 TXT</button></div>
+    </section>
+  </div>
+</main>
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+  <form method="dialog">
+    <h2 id="confirmTitle">确认执行</h2>
+    <p id="confirmText"></p>
+    <div class="actions"><button value="cancel" autofocus>取消</button><button class="primary" value="yes">确认</button></div>
+  </form>
+</dialog>
+<script src="/static/novel_screenplay249.js"></script>
+</body>
+</html>

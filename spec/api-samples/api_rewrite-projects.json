@@ -1,0 +1,8 @@
+{
+  "path": "/api/rewrite-projects",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "projects": []
+  }
+}

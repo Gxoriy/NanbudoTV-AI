@@ -1,0 +1,7 @@
+const $=id=>document.getElementById(id);let current={};
+async function api(url,body){const response=await fetch(url,{method:body?"POST":"GET",headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||"操作失败");return data}
+function message(text,bad=false){const box=$("message");box.textContent=text;box.className=`message${bad?" bad":""}`}
+async function load(){current=await api("/api/license/status");$("deviceCode").textContent=current.deviceCode;if(current.licensed){message(current.message+"，正在进入软件…");setTimeout(()=>location.href="/",700)}else if(current.message){message(current.message,true)}}
+$("copyDevice").addEventListener("click",async()=>{await navigator.clipboard.writeText($("deviceCode").textContent);message("设备码已复制，可以发给软件销售方。")});
+$("activate").addEventListener("click",async()=>{const button=$("activate");try{button.disabled=true;button.textContent="正在连接授权服务器…";const data=await api("/api/license/activate",{key:$("cardKey").value});message(data.message||"激活成功，正在进入软件…");setTimeout(()=>location.href="/",800)}catch(error){message(error.message,true)}finally{button.disabled=false;button.textContent="立即激活并进入软件"}});
+$("refresh").addEventListener("click",async()=>{try{const data=await api("/api/license/refresh",{});message(data.message||"验证成功，正在进入软件…");setTimeout(()=>location.href="/",700)}catch(error){message(error.message,true)}});load().catch(error=>message(error.message,true));

@@ -1,0 +1,185 @@
+/* One horizontal scene strip follows the workflow steps in every stage. */
+#workflowSceneDirectory{margin:0 0 18px;padding:14px;border:1px solid #444a50;border-radius:9px;background:#1b1e20;color:#edf0f1;min-width:0;max-width:100%;box-sizing:border-box}
+#workflowSceneDirectory[hidden]{display:none!important}
+body[data-workflow-stage="2"] #workflowSceneDirectory{display:none!important}
+#visualWorkflowSteps button{min-height:74px}
+#visualWorkflowSteps button span{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.workflow-scene-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.workflow-scene-head>div:first-child{display:grid;gap:2px;min-width:0}
+.workflow-scene-head strong{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.workflow-scene-head small,.workflow-scene-range{font-size:12px;color:#aebbc3}
+.workflow-scene-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.workflow-scene-tools button{font-size:23px;line-height:1;min-width:34px;min-height:34px;padding:3px 9px}
+.workflow-scene-tools button:disabled{opacity:.4}
+.workflow-scene-range{margin-right:4px;font-variant-numeric:tabular-nums}
+.workflow-scene-band{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;max-width:100%;min-width:0;padding:0 0 7px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#657079 #252a2d;touch-action:pan-x pan-y}
+.workflow-scene-band::-webkit-scrollbar{height:6px}
+.workflow-scene-band::-webkit-scrollbar-thumb{background:#657079;border-radius:5px}
+.workflow-scene-band::-webkit-scrollbar-track{background:#252a2d;border-radius:5px}
+.workflow-scene-item{display:flex;flex:0 0 min(240px,calc((100% - 32px)/5));align-items:center;gap:8px;text-align:left;background:#272b2f!important;border:1px solid #40484f!important;border-radius:7px!important;padding:8px!important;min-width:0;min-height:58px;scroll-snap-align:start;box-sizing:border-box}
+.workflow-scene-item>span{font-size:12px;color:#b8c2ca;font-variant-numeric:tabular-nums}
+.workflow-scene-item>div{display:grid;gap:4px;min-width:0}
+.workflow-scene-item strong{display:block;font-size:13px;font-weight:600;color:#e7ecef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.workflow-scene-meta{display:flex;align-items:center;gap:7px;min-width:0;line-height:1.3}
+.workflow-scene-item small{flex:1 1 auto;min-width:0;font-size:11px;color:#b4c0c8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.workflow-scene-item em{flex:none;font-size:11px;font-style:normal;color:#a9cfb9;white-space:nowrap}
+.workflow-scene-item[aria-pressed=true]{border-color:#d5b16a!important;background:#3c3528!important}
+.workflow-scene-item[aria-pressed=true] strong,.workflow-scene-item[aria-pressed=true]>span{color:#e9c474}
+.workflow-scene-empty{margin:0;padding:9px 0;color:#bdc6cb;font-size:13px}
+body[data-top-scene-directory="1"] #macroInlineWorkspace .mi-scene-navigation [data-inline-action="previous"],body[data-top-scene-directory="1"] #macroInlineWorkspace .mi-scene-navigation [data-inline-action="next"],body[data-top-scene-directory="1"] #macroInlineWorkspace .mi-scene-navigation .mi-scene-label{display:none}
+body[data-top-scene-directory="1"] #macroInlineWorkspace .mi-toolbar{padding:12px 14px}
+body[data-top-scene-directory="1"] #macroInlineWorkspace .mi-count{display:none}
+body.visual-center-view #workflowSceneDirectory{display:none!important}
+/* The chosen right-hand dock contains the original controls and style picker. */
+#visualSourceSection .visual-source-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#visualSourceSection .visual-source-heading>div:first-child{min-width:0;max-width:100%}
+#visualSourceSection .visual-source-heading>div:first-child>span,#visualSourceSection .visual-source-heading>div:first-child>b{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+#visualSourceSection .visual-source-heading .visual-source-switch{margin-left:auto;min-width:0}
+#workflowSourceLayout195{display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-areas:"editor dock";gap:18px;align-items:start;min-width:0;margin-top:14px}
+#workflowSourceActionDock195{grid-area:dock;display:grid;gap:13px;min-width:0;box-sizing:border-box;padding:16px;background:#24282b;border:1px solid #4b4e50;border-radius:9px}
+#workflowSourceDockTitle195{margin:0;padding:0 0 11px;border-bottom:1px solid #42484d;color:#ead1a0;font-size:14px;line-height:1.4}
+#workflowSourceActionDock195 .visual-source-presets{grid-template-columns:minmax(0,1fr);gap:6px;margin:0;width:100%;min-width:0}
+#workflowSourceActionDock195 .visual-source-presets>label{font-size:12px;line-height:1.5;min-width:0}
+#workflowSourceActionDock195 .visual-style-picker-button{width:100%;min-width:0;box-sizing:border-box;min-height:52px;padding:7px 8px}
+#workflowSourceActionDock195 .visual-style-picker-button>span:not(.visual-style-preview){font-size:13px;white-space:normal;overflow-wrap:anywhere}
+#workflowSourceActionDock195 .visual-style-picker-button small{font-size:11px}
+#workflowSourceActionDock195 .visual-style-picker-button>em{flex:none}
+#workflowSourceActionDock195 .workflow-style-details195{font-size:12px;color:#b9c3ca;min-width:0}
+#workflowSourceActionDock195 .workflow-style-details195 summary{cursor:pointer;line-height:1.7}
+#workflowSourceActionDock195 #sourceVisualStyleDescription{display:block;margin:6px 0 0;padding:9px;max-height:180px;overflow:auto;box-sizing:border-box;font-size:12px!important;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+#workflowSourceActionDock195 .workflow-source-action195{display:grid;gap:5px;min-width:0}
+#workflowSourceActionDock195 .workflow-source-action195>button{width:100%;max-width:100%;min-height:42px;box-sizing:border-box;padding:10px!important;font-size:13px!important;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+#workflowSourceActionDock195 small{color:#b4c0c8;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+#workflowSourceActionDock195 .workflow-source-next195{padding-top:12px;border-top:1px solid #42484d}
+#workflowSourceActionDock195 .workflow-source-next195>button{background:#b8924d!important;border-color:#d5b16a!important;color:#171a1b!important}
+#workflowSourceActionDock195 #visualSourceHint{margin:0;padding:9px 0 0;border:0;border-top:1px solid #42484d;border-radius:0;background:transparent;min-height:0;max-height:140px;overflow:auto;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+#workflowSourceActionDock195 [hidden]{display:none!important}
+.atelier-workflow #visualSourceSection[data-workflow-panel="1"]{min-height:0}
+#workflowSourceEditor195{grid-area:editor;display:grid;gap:9px;min-width:0}
+.workflow-source-editor-heading195{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-width:0;color:#dce3e8;font-size:13px}
+.workflow-source-editor-heading195 small{color:#aebbc3;font-size:11px}
+#workflowSourceEditor195 #visualSource{display:block;margin:0;width:100%;min-width:0;min-height:340px;height:clamp(340px,42vh,560px);max-width:100%;box-sizing:border-box;resize:vertical;flex:none;font-size:12px!important;line-height:1.8!important}
+#workflowSourceFrame203{position:relative;min-width:0}
+#workflowSourcePlanning203[hidden]{display:none!important}
+#workflowSourcePlanning203{position:absolute;z-index:2;inset:10px 24px auto 10px;display:flex;gap:10px;align-items:center;box-sizing:border-box;padding:12px 14px;background:#30302bf2;border:1px solid #ad8941;border-radius:7px;color:#f3d997;pointer-events:none;overflow:hidden}
+#workflowSourcePlanning203>i{width:19px;height:19px;flex:0 0 19px;border:2px solid #776b4b;border-top-color:#ffd275;border-radius:50%;animation:sourcePlanningSpin203 .8s linear infinite}
+#workflowSourcePlanning203>div{display:grid;gap:3px;min-width:0;flex:1}
+#workflowSourcePlanning203 strong{font-size:13px}
+#workflowSourcePlanningMessage203{font-size:12px;line-height:1.5;overflow-wrap:anywhere;color:#d7cbae}
+#workflowSourcePlanningTime203{font-size:11px;white-space:nowrap;align-self:flex-start}
+#workflowSourcePlanning203>b{position:absolute;height:2px;width:30%;left:0;bottom:0;background:linear-gradient(90deg,transparent,#ffd275,transparent);animation:sourcePlanningScan203 1.8s ease-in-out infinite}
+#workflowSourceFrame203.is-planning #visualSource{padding-top:96px;border-color:#ad8941}
+@keyframes sourcePlanningSpin203{to{transform:rotate(360deg)}}
+@keyframes sourcePlanningScan203{from{transform:translateX(-100%)}to{transform:translateX(450%)}}
+@media(max-width:600px){#workflowSourcePlanning203{inset:8px 22px auto 8px;padding:10px;flex-wrap:wrap}#workflowSourcePlanningTime203{margin-left:29px}#workflowSourceFrame203.is-planning #visualSource{padding-top:132px}}
+@media(prefers-reduced-motion:reduce){#workflowSourcePlanning203>i,#workflowSourcePlanning203>b{animation:none}}
+#workflowPreparedReview{margin:12px 0 16px;padding:14px;border:1px solid #48504d;border-radius:8px;background:#202624}
+#workflowPreparedReview[hidden]{display:none!important}
+/* The full original and action dock are the Step 1 working surface. Keep
+   compatibility fields/data in the DOM without repeating them below it. */
+#visualSourceSection #workflowPreparedReview,#visualSourceSection #visualScriptAlignment{display:none!important}
+#workflowPreparedReview .prepared-script-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+#workflowPreparedReview .prepared-script-title strong{font-size:14px}
+#workflowPreparedReview small{font-size:12px;color:#adbdba}
+#workflowPreparedReview textarea{width:100%;min-height:190px;max-height:460px;padding:12px;font-size:14px;line-height:1.8;white-space:pre-wrap;background:#191f1d;color:#e2ece6;border:1px solid #3e4e46;border-radius:6px;resize:vertical}
+#workflowPreparedReview details{margin-top:10px;color:#bac9c3;font-size:12px}
+#workflowPreparedReview pre{font:inherit;white-space:pre-wrap;max-height:180px;overflow:auto}
+#macroInlineWorkspace .macro-card-editor{height:560px;min-height:360px;padding:12px}
+#macroInlineWorkspace .macro-card-editor .reference-mention-editor{font-size:14px;line-height:1.9;padding:11px 12px}
+#macroInlineWorkspace .macro-card-editor .mention-toolbar small{font-size:12px}
+#macroInlineWorkspace .macro-card-editor .mention-toolbar button{font-size:12px;min-height:31px}
+#macroInlineWorkspace .mention-reset{border-color:#626c73}
+#macroInlineWorkspace .macro-card-editor .mention-save-status{font-size:12px}
+/* A compact picker with its controls outside the catalogue's scroll area.
+   The former sticky toolbar could paint over the first returned style row. */
+#visualStylePickerDialog .visual-dialog-shell{width:min(920px,100%);max-width:100%;max-height:min(780px,calc(var(--dialog-visible-height,100dvh) - 24px));border-radius:12px}
+#visualStylePickerDialog .visual-dialog-shell>header{gap:12px;padding:14px 18px}
+#visualStylePickerDialog .visual-dialog-shell>header b{font-size:18px;line-height:1.4}
+#visualStylePickerDialog .visual-dialog-shell>header span{font-size:12px;line-height:1.5;margin-top:4px;white-space:normal}
+#visualStylePickerDialog .visual-dialog-shell>header button{min-width:40px;min-height:40px;padding:6px 10px;flex:none}
+#visualStylePickerDialog .visual-dialog-body{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;overflow:hidden;padding:12px 18px}
+#visualStylePickerDialog .visual-style-toolbar{position:static;flex:0 0 auto;gap:6px;margin:0;padding:0 0 8px;min-width:0;border-bottom:1px solid #454a50}
+#visualStylePickerDialog .visual-style-toolbar>div{gap:5px;min-width:0;max-width:100%}
+#visualStylePickerDialog .visual-style-toolbar button{min-height:36px;padding:6px 9px;font-size:12px!important;line-height:1.5}
+#visualStylePickerDialog .visual-style-toolbar label{min-width:150px;margin:0}
+#visualStylePickerDialog .visual-style-toolbar input{min-height:36px;padding:7px 9px;font-size:13px!important}
+#visualStylePickerDialog .visual-style-toolbar .cut-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+#visualStylePickerDialog .visual-style-toolbar>small{font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+#visualStylePickerDialog #visualStyleChoices{flex:1 1 auto;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scroll-padding-top:4px;padding-right:4px}
+#visualStylePickerDialog .visual-style-grid{gap:8px}
+#visualStylePickerDialog .visual-style-section h4{margin:0 0 9px;font-size:13px;line-height:1.5}
+#visualStylePickerDialog .visual-style-section h4 span{font-size:11px}
+#visualStylePickerDialog .visual-style-section.custom{margin-top:16px}
+#visualStylePickerDialog .visual-style-choice{min-width:0;padding-bottom:7px;border-radius:8px}
+#visualStylePickerDialog .visual-style-choice>b{margin:7px 8px 3px;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+#visualStylePickerDialog .visual-style-choice>small{display:block;margin:0 8px;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+#visualStylePickerDialog .visual-style-name-preview{padding:10px;gap:5px}
+#visualStylePickerDialog .visual-style-name-preview strong{font-size:14px;line-height:1.4}
+#visualStylePickerDialog .create-custom-style-inline{min-height:170px;font-size:13px}
+#visualStylePickerDialog .visual-dialog-shell>footer{padding:10px 18px}
+@media(max-width:620px){#visualStylePickerDialog{padding:8px}#visualStylePickerDialog .visual-dialog-shell{max-height:calc(var(--dialog-visible-height,100dvh) - 16px)}#visualStylePickerDialog .visual-dialog-shell>header{padding:12px;gap:8px}#visualStylePickerDialog .visual-dialog-shell>header b{font-size:16px}#visualStylePickerDialog .visual-dialog-body{padding:10px 12px;gap:9px}#visualStylePickerDialog .visual-style-toolbar label{flex-basis:100%;min-width:0}#visualStylePickerDialog .visual-style-choice>b{font-size:12px;margin:6px 7px 3px}#visualStylePickerDialog .visual-style-choice>small{font-size:11px;margin:0 7px}#visualStylePickerDialog .visual-style-name-preview strong{font-size:12px}#visualStylePickerDialog .create-custom-style-inline{min-height:140px}#visualStylePickerDialog .visual-dialog-shell>footer{padding:9px 12px}}
+@media(pointer:coarse){#visualStylePickerDialog .visual-style-toolbar button,#visualStylePickerDialog .visual-dialog-shell>header button,#visualStylePickerDialog .visual-style-toolbar input{min-height:44px}}
+@media(max-width:1050px){.workflow-scene-head{align-items:flex-start}.workflow-scene-item{flex-basis:calc((100% - 16px)/3)}#macroInlineWorkspace .macro-card-editor{height:520px}}
+@media(max-width:900px){#workflowSourceLayout195{grid-template-columns:minmax(0,1fr);grid-template-areas:"dock" "editor";gap:14px}#workflowSourceActionDock195{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}#workflowSourceDockTitle195,#workflowSourceActionDock195 .visual-source-presets,#workflowSourceActionDock195 #visualSourceHint{grid-column:1/-1}#workflowSourceActionDock195 .workflow-source-next195{border-top:0;padding-top:0}#workflowSourceEditor195 #visualSource{height:340px;min-height:280px}}
+@media(max-width:620px){#workflowSceneDirectory{padding:10px}.workflow-scene-tools{margin-left:auto}.workflow-scene-item{flex-basis:78%;padding:8px!important;min-height:56px;gap:6px}.workflow-scene-item strong{font-size:13px}#macroInlineWorkspace .macro-card-editor{height:500px;min-height:320px}#macroInlineWorkspace .storyboard-panel-head{flex-wrap:wrap}.workflow-scene-head>div:first-child{width:100%}#workflowSourceActionDock195{padding:12px;grid-template-columns:minmax(0,1fr)}#workflowSourceActionDock195 .workflow-source-next195{padding-top:10px;border-top:1px solid #42484d}#workflowSourceEditor195 #visualSource{min-height:260px;height:320px}#visualSourceSection .visual-source-heading .visual-source-switch{margin-left:0;width:100%;flex-wrap:wrap}#visualSourceSection .visual-source-heading #sourceHistory{min-width:0;max-width:100%}}
+@media(max-width:760px){#visualWorkflowSteps{align-items:stretch;gap:3px;padding:0!important}#visualWorkflowSteps button{flex-direction:column;justify-content:flex-start;gap:5px;padding:8px 4px!important;font-size:12px!important;min-width:0}#visualWorkflowSteps button span{text-align:center;max-width:100%}#visualWorkflowSteps button span small{font-size:10px!important;letter-spacing:0}}
+@media(pointer:coarse){.workflow-scene-tools button{min-width:44px;min-height:44px}}
+
+/* v198: compact controls and chosen left/right arrangement settings. */
+#workflowSourceActionDock195 .workflow-source-action195>button,
+#workflowSourceActionDock195 #confirmSourceReference{font-size:14px!important;font-weight:600!important;min-height:44px!important;padding:10px 12px!important;text-align:left!important}
+#visualSourceSaveStatus{font-size:12px!important;color:#afc9b9}
+#workflowSourceActionDock195 #visualSourceHint:empty{display:none}
+#visualCutModeDialog{padding:12px;box-sizing:border-box}
+#visualCutModeDialog .cut-planning-shell{width:min(700px,100%);max-width:100%;max-height:calc(var(--dialog-visible-height,100dvh) - 24px);border-radius:12px}
+#visualCutModeDialog .cut-planning-shell>header{padding:14px 18px;gap:12px}
+#visualCutModeDialog .cut-planning-shell>header b{font-size:18px;line-height:1.4}
+#visualCutModeDialog .cut-planning-shell>header span{font-size:12px;line-height:1.5;margin-top:5px}
+#visualCutModeDialog .cut-planning-shell>header button{min-width:34px;min-height:34px;padding:4px 8px}
+#visualCutModeDialog .cut-planning-body{display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);gap:0;padding:0;overflow:auto;min-height:0}
+#visualCutModeDialog .cut-planning-left198{padding:18px;border-right:1px solid #454b50;background:#232729;min-width:0}
+#visualCutModeDialog .cut-planning-right198{padding:18px;display:flex;flex-direction:column;justify-content:flex-start;gap:16px;min-width:0}
+#visualCutModeDialog .cut-planning-section{padding:0;margin:0;border:0;background:transparent;border-radius:0;min-width:0}
+#visualCutModeDialog .cut-mode-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+#visualCutModeDialog legend,#visualCutModeDialog h3{margin:0 0 10px;padding:0;font-size:13px;line-height:1.4}
+#visualCutModeDialog .cut-choice{display:flex;align-items:flex-start;gap:8px;min-width:0;min-height:0;padding:10px 11px;border-radius:8px}
+#visualCutModeDialog .cut-choice input{flex:none;margin:4px 0 0}
+#visualCutModeDialog .cut-choice span{min-width:0}
+#visualCutModeDialog .cut-choice b{font-size:13px;line-height:1.5}
+#visualCutModeDialog .cut-choice small,#visualCutModeDialog .cut-planning-section>small{font-size:12px;line-height:1.5;display:block;margin-top:5px}
+#visualCutModeDialog .cut-choice em{font-size:10px;padding:2px 4px}
+#visualCutModeDialog .field{margin:0;gap:6px}
+#visualCutModeDialog .field>span{font-size:12px}
+#visualCutModeDialog select,#visualCutModeDialog input[type=number]{min-width:0;max-width:100%;min-height:38px;padding:7px 9px;font-size:13px;box-sizing:border-box}
+#visualCutModeDialog .cut-duration-grid{display:flex;flex-wrap:wrap;gap:5px;margin:0;padding:0;border:0}
+#visualCutModeDialog .cut-duration-grid .cut-choice{flex:1 1 70px;padding:7px;gap:5px}
+#visualCutModeDialog .cut-duration-grid .cut-choice small{display:none}
+#visualCutModeDialog .cut-custom-time{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+#visualCutModeDialog .cut-custom-time label{font-size:12px;min-width:0}
+#visualCutModeDialog .cut-duration-warning{font-size:11px;line-height:1.6;margin:8px 0 0}
+#visualCutModeDialog .cut-plan-summary{grid-column:1/-1;margin:0;padding:8px 18px;font-size:12px}
+#visualCutModeDialog .cut-planning-shell>footer{padding:12px 18px;gap:8px;display:flex;flex-wrap:wrap;justify-content:flex-end}
+#visualCutModeDialog .cut-planning-shell>footer button{font-size:13px;min-height:38px;padding:8px 12px}
+#visualSceneChoiceDialog{box-sizing:border-box;width:min(560px,calc(100vw - 24px));max-width:calc(100vw - 24px);padding:20px}
+#visualSceneChoiceDialog .studio-dialog-actions{display:flex;flex-wrap:wrap;gap:8px}
+#visualSceneChoiceDialog button{font-size:13px!important;white-space:normal;overflow-wrap:anywhere;min-height:38px}
+#visualSceneChoiceDialog .studio-dialog-message{font-size:14px;line-height:1.7}
+#visualSceneChoiceDialog h2{font-size:18px}
+.asset-variant-control198{display:grid;gap:5px;min-width:0;margin:8px 0;font-size:12px;color:#b7c3cb}
+.asset-variant-control198 select{max-width:100%;min-width:0;min-height:34px;font-size:12px;padding:6px}
+@media(max-width:620px){#visualCutModeDialog .cut-planning-body{grid-template-columns:1fr}#visualCutModeDialog .cut-planning-left198{border-right:0;border-bottom:1px solid #454b50;padding:12px}#visualCutModeDialog .cut-planning-right198{padding:12px}#visualCutModeDialog .cut-mode-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#visualCutModeDialog .cut-choice{padding:8px;gap:5px}#visualCutModeDialog .cut-choice em{display:none}#visualCutModeDialog .cut-planning-shell>header{padding:12px}#visualCutModeDialog .cut-planning-shell>footer{padding:10px 12px}#visualCutModeDialog .cut-planning-shell>footer button{flex:1 1 auto}#visualSceneChoiceDialog{padding:16px}#visualSceneChoiceDialog .studio-dialog-actions button{flex:1 1 100%}}
+
+/* Composition stays left; current/all scope and card limits stay right. */
+#visualCutModeDialog .storyboard-scope199{display:grid;gap:7px;margin:0}
+#visualCutModeDialog .cut-planning-left198 #cutTargetDurationSection{margin-top:16px}
+#visualCutModeDialog .storyboard-scope199 small{overflow-wrap:anywhere}
+
+body[data-current-storyboard-available="0"] #macroInlineWorkspace{display:none!important}
+
+/* History collapse wins over the asset-list layout in embedded and standalone views. */
+#visualAssetHistory[hidden],#visualAssetHistory.hidden{display:none!important}
+
+/* A returned scene has one editable frame even before video grouping. */
+.scene-return-editor>.shot-list{grid-column:1/-1}
+.scene-return-editor .storyboard-editor-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.scene-return-editor .storyboard-return-editor{padding:14px;background:#202528;color:#e8edf0;border:1px solid #59636b;border-radius:7px;font:inherit;line-height:1.7}

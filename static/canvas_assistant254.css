@@ -1,0 +1,18 @@
+.canvas-assistant254{position:fixed;z-index:80;right:22px;top:76px;width:min(440px,calc(100vw - 24px));max-height:calc(100dvh - 100px);overflow:auto;border:1px solid var(--studio-line,var(--line,#62685d));border-radius:13px;background:var(--studio-panel,var(--panel,#282c2e));color:var(--studio-text,inherit);box-shadow:0 12px 36px #0003;font-size:13px}
+.canvas-assistant254[hidden],.canvas-assistant254 [hidden]{display:none!important}
+.canvas-assistant254>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--studio-line,var(--line,#62685d));position:sticky;top:0;background:inherit;z-index:1;height:auto;min-height:0;flex-wrap:nowrap}
+.canvas-assistant254 header small{display:block;margin-top:4px;font-size:11px;opacity:.7}
+.canvas-assistant254 .assistant-body254{padding:14px 16px}
+.canvas-assistant254 label{display:block;margin:0 0 14px}
+.canvas-assistant254 select,.canvas-assistant254 textarea{display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:9px;border:1px solid var(--studio-line,var(--line,#62685d));border-radius:7px;font:inherit;color:inherit;background:var(--studio-bg,var(--bg,#202324));user-select:text}
+.canvas-assistant254 textarea{resize:vertical;min-height:70px;line-height:1.65}
+.canvas-assistant254 [data-view="text"]{min-height:150px;white-space:pre-wrap}
+.canvas-assistant254 button{font:inherit;border-radius:7px;cursor:pointer;padding:7px 9px}
+.canvas-assistant254 button:disabled{cursor:default;opacity:.45}
+.canvas-assistant254 .assistant-actions254{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.canvas-assistant254 [data-view="message"]{font-size:12px;line-height:1.7;white-space:pre-wrap}
+.canvas-assistant254 [data-error="true"]{color:var(--error,#cc805f)}
+.canvas-assistant254 details{border-top:1px solid var(--studio-line,var(--line,#62685d));margin-top:16px;padding-top:12px}
+.canvas-assistant254 summary{cursor:pointer}
+.canvas-assistant254 [data-view="history"] button{display:block;width:100%;text-align:left;margin-top:8px}
+@media(max-width:600px){.canvas-assistant254{top:64px;right:12px;max-height:calc(100dvh - 76px)}}

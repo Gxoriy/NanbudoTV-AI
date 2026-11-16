@@ -1,0 +1,18 @@
+/* Step visibility outranks progress styling; never expose cards under assets. */
+body[data-workflow-stage="1"] .visual-episode-section,
+body[data-workflow-stage="2"] .visual-episode-section,
+body[data-workflow-stage="1"] [data-workflow-panel="3"],
+body[data-workflow-stage="2"] [data-workflow-panel="3"],
+body [data-workflow-panel].workflow-stage-hidden,
+body .visual-episode-section.workflow-stage-hidden { display:none !important; }
+body[data-macro-workspace="1"] .visual-video-toolbar,
+body[data-macro-workspace="1"] .visual-episode-section { display:none !important; }
+body #macroInlineWorkspace[hidden] { display:none !important; }
+details.visual-reference-picker { grid-column:1/-1; display:block; }
+.visual-reference-summary { display:flex; align-items:center; gap:12px; flex-wrap:wrap; cursor:pointer; padding:12px 0; color:#a8d5cb; list-style:none; }
+.visual-reference-summary::-webkit-details-marker { display:none; }
+.visual-reference-count { color:var(--muted,#acb5bd); font-size:12px; }
+.visual-reference-summary .reference-expand-label,.visual-reference-summary .reference-collapse-label { margin-left:auto; color:var(--accent,#ffce71); }
+details.visual-reference-picker:not([open]) .reference-collapse-label,
+details.visual-reference-picker[open] .reference-expand-label,
+details.visual-reference-picker:not([open])>:not(summary) { display:none !important; }

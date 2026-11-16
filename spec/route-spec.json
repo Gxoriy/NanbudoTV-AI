@@ -1,0 +1,6085 @@
+{
+  "generated_by": "tools/finalize_p0.py",
+  "source": "spec/extracted/app.pyc",
+  "total_api_routes": 265,
+  "total_subroutes": 10,
+  "by_domain": {
+    "D1": 55,
+    "D2": 113,
+    "D3": 21,
+    "D4": 7,
+    "D5": 18,
+    "D6": 17,
+    "S1": 7,
+    "S2": 7,
+    "S3": 7,
+    "S4": 6,
+    "S5": 7
+  },
+  "domain_names": {
+    "D2": "视觉",
+    "S2": "授权与计费",
+    "S4": "存储与缓存",
+    "D4": "配音",
+    "D5": "电商/门店",
+    "S3": "模型与运行时",
+    "D1": "改写",
+    "S1": "任务与状态",
+    "S5": "更新与外壳",
+    "D6": "素材大厅/采集",
+    "D3": "字幕/ASR"
+  },
+  "routes": [
+    {
+      "path": "/api/breakdown/",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 28,
+      "callers": [
+        "breakdown.js",
+        "video_voice.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/audio-observe",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "音频观察面板未接入"
+    },
+    {
+      "path": "/api/breakdown/media",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "breakdown.js",
+        "video_voice.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/motion",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/motion-cancel",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/motion-install",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/motion-runtime",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/outputs",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/project",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "breakdown.js",
+        "video_voice.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/projects",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "projects"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/quote",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/records",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/reference-crop",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/reference-workflow",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/restore-audio",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/breakdown/save",
+      "kind": "api",
+      "prefix": "breakdown",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "breakdown.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/novel-projects250/",
+      "kind": "api",
+      "prefix": "novel-projects250",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "novel_screenplay249.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/novel-screenplay/quote",
+      "kind": "api",
+      "prefix": "novel-screenplay",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "novel_legacy249.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/novel-screenplay/start",
+      "kind": "api",
+      "prefix": "novel-screenplay",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "novel_legacy249.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/original/field-optimize",
+      "kind": "api",
+      "prefix": "original",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/original/recommend",
+      "kind": "api",
+      "prefix": "original",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 12,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/analyze",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/audio",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/media",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/project",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/projects",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "projects"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/quote",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/reconcile",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/restore-audio",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/save",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/to-canvas",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/prompt-reverse/upload",
+      "kind": "api",
+      "prefix": "prompt-reverse",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "prompt_reverse.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/quality/optimize",
+      "kind": "api",
+      "prefix": "quality",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/quality/repair-episode",
+      "kind": "api",
+      "prefix": "quality",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/quality/score",
+      "kind": "api",
+      "prefix": "quality",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite-projects",
+      "kind": "api",
+      "prefix": "rewrite-projects",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 7,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "ok",
+        "projects"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite-projects/delete",
+      "kind": "api",
+      "prefix": "rewrite-projects",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite-projects/item",
+      "kind": "api",
+      "prefix": "rewrite-projects",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite-projects/rename",
+      "kind": "api",
+      "prefix": "rewrite-projects",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite-projects/save",
+      "kind": "api",
+      "prefix": "rewrite-projects",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite/reconcile",
+      "kind": "api",
+      "prefix": "rewrite",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite/resume",
+      "kind": "api",
+      "prefix": "rewrite",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/rewrite/settings-suggest",
+      "kind": "api",
+      "prefix": "rewrite",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "设置建议接口未接入"
+    },
+    {
+      "path": "/api/script-alignment/quote",
+      "kind": "api",
+      "prefix": "script-alignment",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "script_alignment.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/script-alignment/submit",
+      "kind": "api",
+      "prefix": "script-alignment",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "script_alignment.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/script/revision",
+      "kind": "api",
+      "prefix": "script",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/source/analyze",
+      "kind": "api",
+      "prefix": "source",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/source/profile",
+      "kind": "api",
+      "prefix": "source",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/source/proposal-refine",
+      "kind": "api",
+      "prefix": "source",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/source/proposals",
+      "kind": "api",
+      "prefix": "source",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/source/proposals/recover",
+      "kind": "api",
+      "prefix": "source",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/source/refine",
+      "kind": "api",
+      "prefix": "source",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/story-workflow/",
+      "kind": "api",
+      "prefix": "story-workflow",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 12,
+      "callers": [
+        "story_workflow.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/writing/auxiliary/recover",
+      "kind": "api",
+      "prefix": "writing",
+      "domain": "D1",
+      "domain_name": "改写",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js",
+        "novel_legacy249.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/asset-library/",
+      "kind": "api",
+      "prefix": "asset-library",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "asset_library228.js",
+        "asset_match230.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 37,
+      "callers": [
+        "canvas_assistant254.js",
+        "canvas_project_assets.js",
+        "canvas_project_gallery.js",
+        "store_visit.js",
+        "video_canvas.js",
+        "video_voice.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/assets/",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "canvas_project_assets.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/assistant/catalog",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "canvas_assistant254.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/assistant/history",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "canvas_assistant254.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/assistant/observe",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "canvas_assistant254.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/assistant/quote",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "canvas_assistant254.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/assistant/start",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "canvas_assistant254.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/cover",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "canvas_project_gallery.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/create",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/disconnect",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/document",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/list",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "canvases"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/location",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/media",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "store_visit.js",
+        "video_canvas.js",
+        "video_voice.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/quote",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/result",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/reveal",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/run-status",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/save",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/saved",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/styles",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "store_visit.js",
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/canvas/upload",
+      "kind": "api",
+      "prefix": "canvas",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 28,
+      "callers": [
+        "character_hall.js",
+        "character_picker.js",
+        "characters.js",
+        "store_visit.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 28,
+      "callers": [
+        "character_hall.js",
+        "character_picker.js",
+        "characters.js",
+        "store_visit.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/combine",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/hall",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "character_hall.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/hall-import",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "character_hall.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/hall-media",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "character_hall.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/image-models",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/library",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 9,
+      "callers": [
+        "character_hall.js",
+        "character_picker.js",
+        "characters.js",
+        "store_visit.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/manage",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/media",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "character_picker.js",
+        "characters.js",
+        "store_visit.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/quote",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/recording-diagnostics",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/recording-session",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/recording-session/cancel",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/characters/upload",
+      "kind": "api",
+      "prefix": "characters",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "characters.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/archive",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "app.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/add",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/bind-character",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/generate",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 10,
+      "callers": [
+        "app.js",
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/history/select",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/observe",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/prompt",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/reset",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/restore",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/split",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/asset/upload",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/assets/analyze",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/assets/deduplicate",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "素材去重未接入 UI"
+    },
+    {
+      "path": "/api/visual/cover/generate",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 10,
+      "callers": [
+        "app.js",
+        "model_presentation.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/cut-storyboard",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "episode_source_editor.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/cut/decision",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/cut/prompt-save",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/cut/source-save",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "episode_source_editor.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/cut/storyboard-one",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "episode_source_editor.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/download",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "app.js",
+        "macro_arrangement.js",
+        "macro_inline.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode-cut",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/frame",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 11,
+      "callers": [
+        "app.js",
+        "model_presentation.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/prompt",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/references",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/settings",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/settings/apply-all",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/state",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/video",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 13,
+      "callers": [
+        "app.js",
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/video/observe",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 12,
+      "callers": [
+        "app.js",
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/episode/video/reset",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 11,
+      "callers": [
+        "app.js",
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/live-quote",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "app.js",
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/card/draft",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/card/reference",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/card/reference/delete",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/card/source",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/history",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_inline.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/media/cancel-quotes",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/media/catalog",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/media/detach",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/media/observe",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/media/quote",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/media/scene-quote",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/media/submit",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/pipeline-return",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/quote",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/recheck-return",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/recover",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/regroup/apply",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/regroup/preview",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/return-draft",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/state",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "macro_arrangement.js",
+        "macro_inline.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/macro/submit",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "macro_arrangement.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/media",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "app.js",
+        "macro_arrangement.js",
+        "story_workflow.js",
+        "video_voice.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/models",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/normalize",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/plan",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/points",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "credit_gate.js",
+        "video_canvas.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/profile",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js",
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/profile/save",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js",
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/project",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 19,
+      "callers": [
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/project-thumbnail",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "macro_card_editor.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/project/create",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 11,
+      "callers": [
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/project/delete",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 11,
+      "callers": [
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/project/scenes",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 14,
+      "callers": [
+        "story_workflow.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/projects",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "ok",
+        "projects"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/scene-videos/archive",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "scene_video_download240.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/script-storyboard",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/settings",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/style/create",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/style/delete",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/styles",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "ok",
+        "styles"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/unlock",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "旧解锁流程遗留"
+    },
+    {
+      "path": "/api/visual/usage",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/video-history/clear",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/visual/video-preview",
+      "kind": "api",
+      "prefix": "visual",
+      "domain": "D2",
+      "domain_name": "视觉",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "macro_arrangement.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/asr/download",
+      "kind": "api",
+      "prefix": "asr",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/asr/status",
+      "kind": "api",
+      "prefix": "asr",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/image-watermark/detect",
+      "kind": "api",
+      "prefix": "image-watermark",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "image_watermark247.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/image-watermark/repair",
+      "kind": "api",
+      "prefix": "image-watermark",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "image_watermark247.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/capabilities",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "configured",
+        "formats",
+        "message",
+        "modelName",
+        "ok",
+        "pricingMode",
+        "qualities",
+        "regionSchema",
+        "sourceSizeLimit"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/detect",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/existing",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/import-existing",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/list",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "records"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/local-start",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/local-stop",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/media",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/projects",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "projects"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/quote",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/record",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/resume",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/stop",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/submit",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/subtitle/upload",
+      "kind": "api",
+      "prefix": "subtitle",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "subtitle_removal242.js",
+        "subtitle_removal245.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/transcribe",
+      "kind": "api",
+      "prefix": "transcribe",
+      "domain": "D3",
+      "domain_name": "字幕/ASR",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/video-voice/",
+      "kind": "api",
+      "prefix": "video-voice",
+      "domain": "D4",
+      "domain_name": "配音",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 5,
+      "callers": [
+        "video_voice.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/video-voice/source",
+      "kind": "api",
+      "prefix": "video-voice",
+      "domain": "D4",
+      "domain_name": "配音",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_voice.js"
+      ],
+      "probe_status": 404,
+      "probe_keys": [
+        "error"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/video-voice/status",
+      "kind": "api",
+      "prefix": "video-voice",
+      "domain": "D4",
+      "domain_name": "配音",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "video_voice.js"
+      ],
+      "probe_status": 400,
+      "probe_keys": [
+        "error"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/voices/",
+      "kind": "api",
+      "prefix": "voices",
+      "domain": "D4",
+      "domain_name": "配音",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "video_voice.js",
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/voices/catalog",
+      "kind": "api",
+      "prefix": "voices",
+      "domain": "D4",
+      "domain_name": "配音",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "video_voice.js",
+        "voice_studio.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "cloneMessage",
+        "clonePoints",
+        "cloneReady",
+        "message",
+        "ok",
+        "pending",
+        "pointsPerCharacter",
+        "ready",
+        "readyCount",
+        "sourceUrl",
+        "systemCount",
+        "voices"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/voices/media",
+      "kind": "api",
+      "prefix": "voices",
+      "domain": "D4",
+      "domain_name": "配音",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/voices/quote",
+      "kind": "api",
+      "prefix": "voices",
+      "domain": "D4",
+      "domain_name": "配音",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "voice_studio.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/ecommerce-showcase",
+      "kind": "api",
+      "prefix": "ecommerce-showcase",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "ecommerce_showcase.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "cards",
+        "ok"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/ecommerce-showcase-media",
+      "kind": "api",
+      "prefix": "ecommerce-showcase-media",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "ecommerce_showcase.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/ecommerce/",
+      "kind": "api",
+      "prefix": "ecommerce",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 11,
+      "callers": [
+        "ecommerce259.js",
+        "ecommerce_image_workbench.js",
+        "local_storage_settings.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/ecommerce/batch/",
+      "kind": "api",
+      "prefix": "ecommerce",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "ecommerce259.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/ecommerce/batch/archive",
+      "kind": "api",
+      "prefix": "ecommerce",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "ecommerce259.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/ecommerce/workbench/",
+      "kind": "api",
+      "prefix": "ecommerce",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "ecommerce259.js",
+        "ecommerce_image_workbench.js",
+        "local_storage_settings.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/ecommerce/workbench/media",
+      "kind": "api",
+      "prefix": "ecommerce",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "ecommerce259.js",
+        "ecommerce_image_workbench.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/marketing/analyze",
+      "kind": "api",
+      "prefix": "marketing",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/marketing/generate",
+      "kind": "api",
+      "prefix": "marketing",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 17,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/create",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/prepare",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/project",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/projects",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": 400,
+      "probe_keys": [
+        "error"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/quote",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/result",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/save",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/store/upload",
+      "kind": "api",
+      "prefix": "store",
+      "domain": "D5",
+      "domain_name": "电商/门店",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/hall/downloads",
+      "kind": "api",
+      "prefix": "hall",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "ok",
+        "records",
+        "storagePath"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/hall/downloads/cover",
+      "kind": "api",
+      "prefix": "hall",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/hall/downloads/stream",
+      "kind": "api",
+      "prefix": "hall",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/hall/episodes",
+      "kind": "api",
+      "prefix": "hall",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 404,
+      "probe_keys": [
+        "<non-json>"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/hall/rank",
+      "kind": "api",
+      "prefix": "hall",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 404,
+      "probe_keys": [
+        "<non-json>"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/hall/series/download",
+      "kind": "api",
+      "prefix": "hall",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/hall/series/transcribe",
+      "kind": "api",
+      "prefix": "hall",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/link/analyze",
+      "kind": "api",
+      "prefix": "link",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/link/cover",
+      "kind": "api",
+      "prefix": "link",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "分享链接页由后端直接生成 HTML，不在 static 内"
+    },
+    {
+      "path": "/api/link/download",
+      "kind": "api",
+      "prefix": "link",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/link/import",
+      "kind": "api",
+      "prefix": "link",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/link/stream",
+      "kind": "api",
+      "prefix": "link",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "同上，带 token 的流式地址"
+    },
+    {
+      "path": "/api/watch/discard",
+      "kind": "api",
+      "prefix": "watch",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "采集窗口由桌面壳触发或功能已废弃"
+    },
+    {
+      "path": "/api/watch/open",
+      "kind": "api",
+      "prefix": "watch",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/watch/start",
+      "kind": "api",
+      "prefix": "watch",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/watch/status",
+      "kind": "api",
+      "prefix": "watch",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/watch/stop",
+      "kind": "api",
+      "prefix": "watch",
+      "domain": "D6",
+      "domain_name": "素材大厅/采集",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/history",
+      "kind": "api",
+      "prefix": "history",
+      "domain": "S1",
+      "domain_name": "任务与状态",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 8,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "ok",
+        "records",
+        "retentionDays",
+        "storagePath"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/history/delete",
+      "kind": "api",
+      "prefix": "history",
+      "domain": "S1",
+      "domain_name": "任务与状态",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/history/item",
+      "kind": "api",
+      "prefix": "history",
+      "domain": "S1",
+      "domain_name": "任务与状态",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/history/policy",
+      "kind": "api",
+      "prefix": "history",
+      "domain": "S1",
+      "domain_name": "任务与状态",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 404,
+      "probe_keys": [
+        "<non-json>"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/history/rename",
+      "kind": "api",
+      "prefix": "history",
+      "domain": "S1",
+      "domain_name": "任务与状态",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/tasks",
+      "kind": "api",
+      "prefix": "tasks",
+      "domain": "S1",
+      "domain_name": "任务与状态",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 24,
+      "callers": [
+        "app.js",
+        "breakdown.js",
+        "characters.js",
+        "ecommerce259.js",
+        "login.js",
+        "macro_arrangement.js",
+        "macro_inline.js",
+        "novel_legacy249.js",
+        "novel_screenplay249.js",
+        "prompt_reverse.js",
+        "script_alignment.js",
+        "store_visit.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "activeCount",
+        "ok",
+        "tasks"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/tasks/",
+      "kind": "api",
+      "prefix": "tasks",
+      "domain": "S1",
+      "domain_name": "任务与状态",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 24,
+      "callers": [
+        "app.js",
+        "breakdown.js",
+        "characters.js",
+        "ecommerce259.js",
+        "login.js",
+        "macro_arrangement.js",
+        "macro_inline.js",
+        "novel_legacy249.js",
+        "novel_screenplay249.js",
+        "prompt_reverse.js",
+        "script_alignment.js",
+        "store_visit.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/client/config",
+      "kind": "api",
+      "prefix": "client",
+      "domain": "S2",
+      "domain_name": "授权与计费",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 6,
+      "callers": [
+        "app.js",
+        "breakdown.js",
+        "script_alignment.js",
+        "store_visit.js",
+        "video_canvas.js",
+        "visual_page.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "announcement",
+        "announcementCount",
+        "announcementMediaName",
+        "announcementMediaType",
+        "announcementMediaUrl",
+        "announcements",
+        "breakdownModels",
+        "configError",
+        "currentVersion",
+        "downloadUrl",
+        "ecommerceImageHelpStreaming280",
+        "latestVersion",
+        "mandatory",
+        "ok",
+        "pointsPerCny",
+        "sha256",
+        "subtitleRegionSchema",
+        "textButtonBindings",
+        "textModelPricing",
+        "textTaskCapabilities",
+        "updateAvailable",
+        "updateNotes",
+        "videoSkuPricingSchema172",
+        "visualCatalogPublished",
+        "visualConfigRevision",
+        "visualImagePricing",
+        "visualModels",
+        "visualStyles",
+        "visualVideoPricing",
+        "visualVideoSkuPricing172"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/creation/submission",
+      "kind": "api",
+      "prefix": "creation",
+      "domain": "S2",
+      "domain_name": "授权与计费",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/license/activate",
+      "kind": "api",
+      "prefix": "license",
+      "domain": "S2",
+      "domain_name": "授权与计费",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "activate.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/license/refresh",
+      "kind": "api",
+      "prefix": "license",
+      "domain": "S2",
+      "domain_name": "授权与计费",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "activate.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/license/status",
+      "kind": "api",
+      "prefix": "license",
+      "domain": "S2",
+      "domain_name": "授权与计费",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "activate.js",
+        "app.js",
+        "visual_page.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "cardMask",
+        "daysRemaining",
+        "deviceCode",
+        "expiresAt",
+        "featureStatus",
+        "features",
+        "hasStoredLicense",
+        "licensed",
+        "message",
+        "offlineUntil",
+        "online",
+        "permanent",
+        "points",
+        "status",
+        "usage"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/session/login",
+      "kind": "api",
+      "prefix": "session",
+      "domain": "S2",
+      "domain_name": "授权与计费",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "login.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/session/status",
+      "kind": "api",
+      "prefix": "session",
+      "domain": "S2",
+      "domain_name": "授权与计费",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "login.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "authenticated",
+        "clientConfig",
+        "license",
+        "ok"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/download",
+      "kind": "api",
+      "prefix": "download",
+      "domain": "S3",
+      "domain_name": "模型与运行时",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 4,
+      "callers": [
+        "app.js",
+        "visual_page.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/health",
+      "kind": "api",
+      "prefix": "health",
+      "domain": "S3",
+      "domain_name": "模型与运行时",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js",
+        "visual_page.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "appName",
+        "channel",
+        "ok",
+        "version"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/model-profiles",
+      "kind": "api",
+      "prefix": "model-profiles",
+      "domain": "S3",
+      "domain_name": "模型与运行时",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 3,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "profiles"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/model-profiles/save",
+      "kind": "api",
+      "prefix": "model-profiles",
+      "domain": "S3",
+      "domain_name": "模型与运行时",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/model-profiles/test",
+      "kind": "api",
+      "prefix": "model-profiles",
+      "domain": "S3",
+      "domain_name": "模型与运行时",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/runtime/status",
+      "kind": "api",
+      "prefix": "runtime",
+      "domain": "S3",
+      "domain_name": "模型与运行时",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "activeTasks",
+        "exitRequired",
+        "licensed",
+        "message",
+        "phase"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/test-model",
+      "kind": "api",
+      "prefix": "test-model",
+      "domain": "S3",
+      "domain_name": "模型与运行时",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "模型连通性测试入口未接入当前 UI"
+    },
+    {
+      "path": "/api/local-cache",
+      "kind": "api",
+      "prefix": "local-cache",
+      "domain": "S4",
+      "domain_name": "存储与缓存",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "local_storage_settings.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "busy",
+        "cacheBytes",
+        "cacheFiles",
+        "categories",
+        "downloads",
+        "failedFiles",
+        "generated",
+        "ok",
+        "scanId",
+        "scope",
+        "skippedFiles",
+        "sources"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/local-storage/retry",
+      "kind": "api",
+      "prefix": "local-storage",
+      "domain": "S4",
+      "domain_name": "存储与缓存",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "ecommerce259.js",
+        "local_storage_settings.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/local-storage/settings",
+      "kind": "api",
+      "prefix": "local-storage",
+      "domain": "S4",
+      "domain_name": "存储与缓存",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "ecommerce259.js",
+        "local_storage_settings.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "errors",
+        "features",
+        "ok",
+        "pendingCount"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/storage/clear",
+      "kind": "api",
+      "prefix": "storage",
+      "domain": "S4",
+      "domain_name": "存储与缓存",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/storage/status",
+      "kind": "api",
+      "prefix": "storage",
+      "domain": "S4",
+      "domain_name": "存储与缓存",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 1,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "busy",
+        "downloadedSeriesCount",
+        "historyCount",
+        "installPath",
+        "ok",
+        "storagePath",
+        "uploadBytes",
+        "uploadFileCount"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/upload",
+      "kind": "api",
+      "prefix": "upload",
+      "domain": "S4",
+      "domain_name": "存储与缓存",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/",
+      "kind": "api",
+      "prefix": "(root)",
+      "domain": "S5",
+      "domain_name": "更新与外壳",
+      "methods": [
+        "POST"
+      ],
+      "schema": null,
+      "owners": [
+        "DesktopApi.save_download"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 515,
+      "callers": [
+        "activate.js",
+        "app.js",
+        "asset_library228.js",
+        "asset_match230.js",
+        "breakdown.js",
+        "canvas_assistant254.js",
+        "canvas_project_assets.js",
+        "canvas_project_gallery.js",
+        "character_hall.js",
+        "character_picker.js",
+        "characters.js",
+        "credit_gate.js"
+      ],
+      "probe_status": 404,
+      "probe_keys": [
+        "<non-json>"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/shutdown",
+      "kind": "api",
+      "prefix": "shutdown",
+      "domain": "S5",
+      "domain_name": "更新与外壳",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/tutorial-video",
+      "kind": "api",
+      "prefix": "tutorial-video",
+      "domain": "S5",
+      "domain_name": "更新与外壳",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "tutorials.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/tutorials",
+      "kind": "api",
+      "prefix": "tutorials",
+      "domain": "S5",
+      "domain_name": "更新与外壳",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_GET"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "tutorials.js"
+      ],
+      "probe_status": 200,
+      "probe_keys": [
+        "configError",
+        "ok",
+        "tutorials"
+      ],
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/update/download",
+      "kind": "api",
+      "prefix": "update",
+      "domain": "S5",
+      "domain_name": "更新与外壳",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js",
+        "login.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    },
+    {
+      "path": "/api/update/install",
+      "kind": "api",
+      "prefix": "update",
+      "domain": "S5",
+      "domain_name": "更新与外壳",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 0,
+      "callers": [],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": true,
+      "orphan_reason": "更新安装由 js_api/桌面壳触发"
+    },
+    {
+      "path": "/api/update/reveal",
+      "kind": "api",
+      "prefix": "update",
+      "domain": "S5",
+      "domain_name": "更新与外壳",
+      "methods": null,
+      "schema": null,
+      "owners": [
+        "Handler.do_POST"
+      ],
+      "status": "active",
+      "migrated": false,
+      "frontend_calls": 2,
+      "callers": [
+        "app.js",
+        "login.js"
+      ],
+      "probe_status": null,
+      "probe_keys": null,
+      "orphan_backend": false
+    }
+  ],
+  "subroutes": [
+    {
+      "path": "/quote",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/submit",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/status",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/prepare",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/upload",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/export",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/project",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/projects",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/delete",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    },
+    {
+      "path": "/assets/delete",
+      "kind": "subroute",
+      "domain": "multi",
+      "domain_name": "前缀派生",
+      "note": "作为前缀路由的后缀出现，分派逻辑在 Handler 内",
+      "status": "active"
+    }
+  ]
+}

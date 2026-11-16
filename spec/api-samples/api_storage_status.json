@@ -1,0 +1,14 @@
+{
+  "path": "/api/storage/status",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "uploadBytes": 0,
+    "uploadFileCount": 0,
+    "historyCount": 0,
+    "downloadedSeriesCount": 0,
+    "storagePath": "F:\\WorkAPP\\短剧改写工作台\\data\\uploads",
+    "installPath": "F:\\WorkAPP\\短剧改写工作台",
+    "busy": false
+  }
+}

@@ -1,0 +1,18 @@
+# 本地密钥/卡密，永不入库
+.local/
+
+# 逆向产物（体积大且可重新生成）
+spec/extracted/
+
+# 运行产物
+data/
+*.log
+__pycache__/
+
+# 本地运行时（体积大，按 requirements.txt 重建）
+.venv/
+
+
+# 服务端密钥/账号哈希（仅存在于部署机）
+server-config/
+

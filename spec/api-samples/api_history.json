@@ -1,0 +1,10 @@
+{
+  "path": "/api/history",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "records": [],
+    "storagePath": "F:\\WorkAPP\\短剧改写工作台\\data\\outputs",
+    "retentionDays": -1
+  }
+}

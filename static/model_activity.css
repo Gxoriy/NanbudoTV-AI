@@ -1,0 +1,13 @@
+/* Asset cards own one image-box animation. Generic feedback must not replace
+   its absolute overlay, hide its message, or erase the generation button. */
+html body :is([data-model-activity="pending"],#macroInlineWorkspace [data-model-activity="pending"],#visualStageStatus[data-model-activity="pending"]):not(.asset-preview-status):not(.asset-preview-message):not(.asset-generate) { position:relative; min-height:32px; min-width:32px; font-size:0!important; color:transparent!important; text-shadow:none!important; }
+[data-model-activity="pending"]:not(.asset-preview-status):not(.asset-preview-message):not(.asset-generate) > * { visibility:hidden!important; }
+[data-model-activity="pending"]:not(.asset-preview-status):not(.asset-preview-message):not(.asset-generate)::before { content:""; display:inline-block; box-sizing:border-box; width:24px; height:24px; margin:4px; border:3px solid rgba(218,179,89,.22); border-top-color:#eac56c; border-right-color:#eac56c; border-radius:50%; animation:ma-spin .85s linear infinite; vertical-align:middle; visibility:visible!important; }
+[data-model-activity="success"]:not(.asset-preview-status):not(.asset-preview-message):not(.asset-generate)::before,[data-model-activity="error"]:not(.asset-preview-status):not(.asset-preview-message):not(.asset-generate)::before { display:inline-flex; align-items:center; justify-content:center; width:23px; height:23px; margin-right:8px; border-radius:50%; font:700 15px/1 sans-serif; vertical-align:middle; animation:ma-result .28s ease-out both; }
+[data-model-activity="success"]:not(.asset-preview-status):not(.asset-preview-message):not(.asset-generate)::before { content:"✓"; color:#b3e1c9; background:rgba(75,146,111,.2); }
+[data-model-activity="error"]:not(.asset-preview-status):not(.asset-preview-message):not(.asset-generate)::before { content:"!"; color:#f3b5b7; background:rgba(191,80,88,.2); }
+.model-activity-container[data-model-activity="pending"] { display:block!important; padding:10px!important; }
+.model-activity-container[data-model-activity="pending"] .progress-track,.model-activity-container[data-model-activity="pending"] .progress-bar { display:none!important; }
+@keyframes ma-spin { to { transform:rotate(360deg); } }
+@keyframes ma-result { from { transform:scale(.7); opacity:0; } to { transform:scale(1); opacity:1; } }
+@media (prefers-reduced-motion:reduce) { [data-model-activity]::before { animation:none!important; } [data-model-activity="pending"]::before { border-style:dotted; } }

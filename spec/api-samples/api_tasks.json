@@ -1,0 +1,9 @@
+{
+  "path": "/api/tasks",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "tasks": [],
+    "activeCount": 0
+  }
+}

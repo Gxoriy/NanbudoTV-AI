@@ -1,0 +1,63 @@
+{
+  "path": "/api/license/status",
+  "status": 200,
+  "body": {
+    "licensed": true,
+    "deviceCode": "DW-C4E39-4F2E2-7F3F7-E990A-21289",
+    "cardMask": "DW-V9PG***-96VK",
+    "hasStoredLicense": true,
+    "status": "active",
+    "expiresAt": 1794796154,
+    "daysRemaining": 1,
+    "permanent": false,
+    "offlineUntil": 1794796154,
+    "online": true,
+    "message": "授权剩余约 13 分钟",
+    "points": 0.0,
+    "usage": {
+      "points": 0.0,
+      "usedPoints": 0.0,
+      "remainingPoints": 0.0,
+      "creditedPoints": 0.0,
+      "records": [],
+      "orders": []
+    },
+    "features": [
+      "rewrite",
+      "original",
+      "workflow"
+    ],
+    "featureStatus": {
+      "rewrite": {
+        "state": "active",
+        "source": "admin",
+        "expiresAt": null
+      },
+      "original": {
+        "state": "active",
+        "source": "admin",
+        "expiresAt": null
+      },
+      "workflow": {
+        "state": "active",
+        "source": "admin",
+        "expiresAt": null
+      },
+      "ecommerce": {
+        "state": "locked",
+        "source": null,
+        "expiresAt": null
+      },
+      "store": {
+        "state": "locked",
+        "source": null,
+        "expiresAt": null
+      },
+      "advertising": {
+        "state": "locked",
+        "source": null,
+        "expiresAt": null
+      }
+    }
+  }
+}

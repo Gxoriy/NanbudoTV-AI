@@ -1,0 +1,94 @@
+:root {
+  color-scheme: dark;
+  font: 16px/1.65 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  color: #f2f1ee;
+  background: #181a1e;
+  --muted: #c4c8d2;
+  --edge: #424751;
+  --gold: #ffd080;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 30px 0 50px; }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: clamp(12px, 3vw, 28px); padding: clamp(20px, 5vw, 48px); border: 1px solid var(--edge); border-radius: 18px; background: radial-gradient(ellipse at top left, #4b3926, #20232a 62%); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.brand img { width: 29px; height: 29px; object-fit: contain; }
+h1 { margin: 10px 0 4px; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.25; }
+p { color: var(--muted); margin: .8em 0; }
+.layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 20px; margin-top: 20px; }
+nav, section { border: 1px solid var(--edge); background: #23262c; border-radius: 14px; }
+nav { align-self: start; position: sticky; top: 14px; display: grid; padding: 12px; gap: 4px; }
+nav strong, nav a { padding: 6px 9px; }
+a { color: var(--gold); }
+nav a, .choices a { text-decoration: none; }
+nav a:hover, .choices a:hover { background: #383128; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+section { padding: clamp(15px, 3vw, 26px); margin-bottom: 14px; scroll-margin: 12px; }
+h2 { margin: 0 0 14px; font-size: 1.3rem; }
+h2 span { display: inline-block; margin-right: 10px; color: var(--gold); font-size: .8em; }
+figure { margin: 14px 0; padding: 13px; border-radius: 10px; border: 1px solid var(--edge); background: #181b21; }
+figcaption { color: var(--muted); font-size: .85rem; margin-top: 9px; }
+.guide-mascot270 { inline-size: clamp(84px, 13vw, 128px); margin: 0; padding: 0; border: 0; background: none; text-align: center; }
+.guide-mascot270 img { display: block; inline-size: 100%; block-size: auto; border: 1px solid var(--edge); border-radius: 14px; }
+.guide-mascot270 figcaption { margin-top: 4px; }
+.choices, .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.choices > *, .steps > div { display: grid; align-content: start; gap: 5px; padding: 12px; border-radius: 9px; border: 1px solid var(--edge); background: #262a32; }
+.choices small, .steps small { color: var(--muted); }
+.steps i { display: grid; place-items: center; width: 28px; height: 28px; background: var(--gold); color: #211a11; border-radius: 50%; font-weight: 700; font-style: normal; }
+.mock-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mock-bar span { padding: 5px 8px; border: 1px solid var(--edge); border-radius: 6px; font-size: .82rem; }
+.mock-bar .highlight { background: var(--gold); color: #211a11; }
+ol { padding-left: 1.65em; }
+li { padding-left: .25em; margin-bottom: 8px; }
+li::marker { color: var(--gold); font-weight: 700; }
+.preview-demo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sample-frame {
+  position: relative; aspect-ratio: 16 / 9; margin-top: 5px; border-radius: 8px;
+  background: linear-gradient(169deg, #31536a 0 39%, #183742 40% 65%, #232e34 66% 100%);
+}
+.sample-frame::before {
+  content: ""; position: absolute; inset: 22% 7% 33%; background: #233843;
+  clip-path: polygon(0 100%, 22% 12%, 42% 83%, 64% 0, 100% 100%);
+}
+.subtitle-box { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 1px 4px; font-size: clamp(.63rem, 2vw, .87rem); border: 1px solid var(--gold); color: white; text-shadow: 0 1px 3px #000; }
+details + details { border-top: 1px solid var(--edge); }
+summary { padding: 9px 0; cursor: pointer; }
+footer { text-align: right; }
+@media (max-width: 760px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  nav { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  nav strong { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .choices, .steps { grid-template-columns: minmax(0, 1fr); }
+}
+.guide-toolbar { position: sticky; z-index: 2; top: 0; display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; padding: .6rem max(16px, 4vw); border-bottom: 1px solid var(--edge); background: #20232a; }
+.guide-toolbar label { margin-left: auto; color: var(--muted); }
+.guide-control, .guide-toolbar select { font: inherit; padding: .35em .65em; border: 1px solid var(--edge); border-radius: 8px; background: #282c35; color: var(--gold); text-decoration: none; }
+main { width: min(1400px, calc(100% - 32px)); }
+.layout { grid-template-columns: minmax(200px, 17%) minmax(0, 1fr); }
+nav { top: 4rem; }
+section, #top { scroll-margin-top: 4.5rem; }
+.mock-pane { padding: 12px; border: 1px solid var(--edge); border-radius: 8px; }
+@media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } .guide-toolbar label { margin-left: 0; } }
+@media (max-width: 520px) { .preview-demo { grid-template-columns: minmax(0, 1fr); } section, #top { scroll-margin-top: 7rem; } }
+@media (max-width: 520px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .guide-mascot270 { display: flex; align-items: center; gap: 10px; inline-size: auto; }
+  .guide-mascot270 img { inline-size: 62px; }
+  .guide-mascot270 figcaption { margin-top: 0; }
+}
+.guide-version { margin: 8px 0 0; color: var(--gold); font-size: .85rem; }
+.guide-note { margin: 1rem 0 0; padding: .75rem 1rem; border-inline-start: 3px solid var(--gold); background: #2c2823; border-radius: 5px; }
+.guide-note p { margin: .2rem 0 0; }
+.guide-shot a { display: block; position: relative; text-decoration: none; }
+.guide-shot img { display: block; inline-size: 100%; block-size: auto; border-radius: 6px; }
+.guide-shot a span { position: absolute; inset: auto .5rem .5rem auto; padding: .25rem .6rem; border-radius: 5px; background: #15171c; color: var(--gold); font-size: .82rem; }
+#guideImagePreview { width: min(96vw, 1440px); max-height: 94vh; padding: .65rem; border: 1px solid var(--edge); border-radius: 12px; background: #181b21; color: inherit; }
+#guideImagePreview::backdrop { background: #08090dd9; }
+#guideImagePreview form { text-align: right; margin-bottom: .5rem; }
+#guideImagePreview img { display: block; width: 100%; max-height: 76vh; object-fit: contain; }
+#guideImagePreview p { margin: .5rem .25rem 0; }
+@media (min-width: 761px) {
+  nav { max-height: calc(100vh - 5rem); overflow: auto; }
+}

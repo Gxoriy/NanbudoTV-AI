@@ -1,0 +1,34 @@
+.visual-video-model-bar { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; padding:14px 0 18px; }
+.visual-video-model-bar label { display:flex; flex-direction:column; gap:6px; min-width:110px; }
+.visual-video-model-bar label:first-child { flex:1; min-width:190px; max-width:340px; }
+.visual-video-model-bar label span { font-size:12px; color:var(--muted,#9bb1c4); }
+.visual-video-model-bar select { width:100%; min-height:38px; }
+.visual-video-quote { color:#ffb644; padding:10px 0; font-size:13px; }
+.episode-video-quote { display:block; grid-column:1 / -1; color:#ffb644; padding:7px 0; overflow-wrap:anywhere; }
+.video-duration-notice { display:block; max-width:320px; color:#ffb644; overflow-wrap:anywhere; white-space:normal; font-size:12px; line-height:1.5; }
+.video-duration-adopt { margin-top:6px; font-size:12px; white-space:normal; }
+.video-duration-notice[hidden], .video-duration-adopt[hidden] { display:none !important; }
+
+/* A: prices at the model picker, not an invented project-wide total. */
+#visualProjectWizard .wizard-model-field { min-width:0; }
+#visualProjectWizard .wizard-model-field select { width:100%; min-width:0; text-overflow:ellipsis; }
+#visualProjectWizard .visual-wizard-grid > label { align-content:start; grid-auto-rows:max-content; }
+#visualProjectWizard .visual-wizard-grid > label > select { height:44px; min-height:44px; max-height:44px; align-self:start; }
+#visualProjectWizard .wizard-model-cost { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:baseline; gap:4px 8px; padding:8px 10px; margin-top:1px; border:1px solid #bd9140; border-radius:9px; background:#3c3221; color:#ffe19a; min-width:0; }
+#visualProjectWizard .wizard-model-cost > span { color:#ffe4aa; font-size:12px; }
+#visualProjectWizard .wizard-model-cost > div { display:flex; gap:7px; align-items:baseline; flex-wrap:wrap; }
+#visualProjectWizard .wizard-model-cost strong { font-size:18px; line-height:1.2; font-variant-numeric:tabular-nums; color:#ffd16c; }
+#visualProjectWizard .wizard-model-cost small { color:#f4dbaa; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+#visualProjectWizard .wizard-model-cost > small { grid-column:1 / -1; }
+#visualProjectWizard .wizard-model-cost.unpriced { border-color:#77736a; background:#303032; }
+#visualProjectWizard .wizard-model-cost.unpriced strong { font-size:16px; color:#e5e0d6; }
+#visualProjectWizard .wizard-cost-disclaimer { padding:12px 14px; border:1px solid #65615b; border-radius:9px; line-height:1.6; }
+#visualProjectWizard .wizard-cost-disclaimer b { font-size:14px; color:#ffe4aa; }
+#visualProjectWizard .wizard-cost-disclaimer p { margin:6px 0 0; font-size:12px; color:#d4d5d8; }
+#visualProjectWizard .wizard-price-warning { color:#ffd16c; font-size:12px; line-height:1.6; white-space:normal; overflow-wrap:anywhere; }
+#visualProjectWizard .wizard-price-warning[hidden] { display:none !important; }
+@media (max-width:680px) {
+  #visualProjectWizard .visual-dialog-shell { min-width:0; }
+  #visualProjectWizard .visual-dialog-shell footer { flex-wrap:wrap; }
+  #visualProjectWizard .visual-dialog-shell footer button { white-space:normal; }
+}

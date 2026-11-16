@@ -1,0 +1,32 @@
+{
+  "path": "/api/model-profiles",
+  "status": 200,
+  "body": {
+    "profiles": {
+      "qwen": {
+        "provider": "qwen",
+        "saved": false,
+        "apiKeyMasked": "",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "model": "qwen3.6-flash",
+        "protocol": "chat_completions"
+      },
+      "doubao": {
+        "provider": "doubao",
+        "saved": false,
+        "apiKeyMasked": "",
+        "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+        "model": "doubao-seed-2-0-lite-260215",
+        "protocol": "responses"
+      },
+      "custom": {
+        "provider": "custom",
+        "saved": false,
+        "apiKeyMasked": "",
+        "baseUrl": "",
+        "model": "",
+        "protocol": "chat_completions"
+      }
+    }
+  }
+}

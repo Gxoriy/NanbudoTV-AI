@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>提示词反推 · NanbudoTV·AI</title><link rel="stylesheet" href="/static/prompt_reverse.css"><link rel="stylesheet" href="/static/model_activity.css"><link rel="stylesheet" href="/static/aspect_ratio.css"><script src="/static/model_activity.js"></script><script src="/static/aspect_ratio.js"></script><link rel="stylesheet" href="/static/themes228.css"><script src="/static/themes228.js"></script></head>
+<body><main>
+  <header><span>VIDEO TO PROMPT</span><h1>提示词反推</h1><p>看懂画面怎么做，再得到一份可编辑、可复用的完整生成提示词。</p></header>
+  <p class="notice">反推是音画证据支持的复现方案，不是原作者的原始提示词。模型、种子、参考资产和隐藏参数未知。声音先在本机识别并校对；字幕不等于原台词。生成模型不支持声音时仍需后期配音。</p>
+  <section class="toolbar"><label class="rights"><input id="rights" type="checkbox">我有权使用本视频并已获得必要的人物授权</label><button id="upload">上传视频</button><input id="file" type="file" accept="video/*" hidden><label>上传记录<select id="projects"><option value="">选择视频</option></select></label></section>
+  <p id="status" role="status">上传、采样、查看、复制和保存不扣积分。只有确认反推才调用模型。</p><progress id="progress" max="100" value="0" hidden></progress>
+  <div class="workspace">
+    <section class="panel"><h2 id="name">1 · 参考视频</h2><video id="preview" controls controlslist="nodownload" preload="metadata"></video>
+      <div class="settings"><label>选段起点（秒）<input id="start" type="number" min="0" value="0" step="0.1"></label><label>分析范围<select id="limit"><option value="15">最多15秒</option><option value="30">最多30秒</option></select></label><label>采样密度<select id="sampling"><option value="detailed">精细 · 每0.5秒</option><option value="fast">快速 · 每1秒</option></select></label></div>
+      <p class="muted">快速采样可能遗漏瞬间动作；精细采样也不是逐帧分析。长视频可修改起点分段分析，每次需单独确认费用。</p>
+      <label>声音处理<select id="audioMode"><option value="recreate">识别口播／对白，生成新的声音</option><option value="original">识别台词，生成后本地保留原片音轨</option><option value="visual">仅分析画面（不检查声音）</option></select></label>
+      <button id="prepareAudio" disabled>识别并校对声音（免费）</button><p id="audioInfo" class="muted">需本机语音组件；未安装时可手动录入。配乐中的台词可能漏读，请听原片校对。</p>
+      <div id="audioRows"></div><button id="addAudio">＋ 手动添加台词</button>
+      <label><input id="audioReviewed" type="checkbox">已播放原片并校对声音；未确认候选不当作真实台词</label>
+      <label>声音／对白补充说明（原音轨不上传模型）<textarea id="audio" maxlength="4000" rows="3" placeholder="填写声线、语气、停顿、配乐、音效及听不清区间。语音候选需逐句确认。"></textarea></label>
+      <details><summary>生成后本地合并原音轨（免费）</summary><p class="muted">仅在你有使用权时使用：上传生成结果，替换为当前选段的原片完整混合音轨，保留对白、配乐、音效。不自动修正剪辑或口型；时长差超过1秒不合并，不加速原声。</p><button id="restoreAudio" disabled>上传生成结果并合并原音轨</button><input id="restoreFile" type="file" accept="video/*" hidden><div id="restored"></div></details>
+      <p id="price" class="notice">正在读取后台视觉分析模型与价格…</p><button id="analyze" class="primary" aria-describedby="analyzeHint" disabled>分析生成逻辑与完整提示词</button><p id="analyzeHint" class="muted" role="status" aria-live="polite">先上传或选择视频、确认使用权；后台报价读取成功后即可分析。</p><button id="reconcile" hidden>免费核对原调用</button>
+      <details><summary>本次原始返回／错误详情</summary><pre id="raw">暂无返回</pre></details>
+    </section>
+    <section class="panel"><div class="heading"><h2>2 · 复现提示词</h2><select id="versions" aria-label="反推版本"><option value="">暂无结果</option></select></div>
+      <p id="resultInfo" class="muted">结果将在这里显示；无可用正文不会显示“完成”。</p>
+      <textarea id="prompt" rows="20" placeholder="反推完成后可直接编辑、保存或复制。"></textarea><p id="draftState" class="muted"></p>
+      <div class="actions"><button id="save" disabled>保存修改（免费）</button><button id="copy" disabled>复制完整提示词</button><button id="export" disabled>下载提示词与分析</button><button id="toCanvas" disabled>送到视频画布（免费）</button></div>
+      <details id="logicPanel"><summary>生成逻辑、镜头证据与不确定性</summary><div id="logic"></div><div id="shots"></div><p id="unknown" class="muted"></p></details>
+    </section>
+  </div>
+</main><script src="/static/prompt_reverse.js"></script></body></html>

@@ -1,0 +1,190 @@
+/* Asset controls and actions share one toolbar. No detached action panel. */
+.atelier-workflow #visualAssetToolbar {
+  display:flex!important;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.atelier-workflow #visualAssetToolbar.workflow-stage-hidden {
+  display:none!important;
+}
+.atelier-workflow #visualAssetToolbar .visual-image-resolution-pair {
+  display:flex;
+  flex:0 0 auto;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.atelier-workflow #visualAssetToolbar .visual-image-resolution-pair label {
+  flex:0 0 auto!important;
+  min-width:0!important;
+}
+.atelier-workflow #visualAssetToolbar #saveProjectSettings {
+  flex:none;
+  margin:0!important;
+  min-height:36px;
+  padding:8px 12px;
+  border-color:#9b7a42!important;
+  background:#4e422c!important;
+  color:#ffe3a3!important;
+  white-space:nowrap;
+}
+.atelier-workflow #visualAssetToolbar #deduplicateAssets {
+  flex:none;
+  margin:0;
+  min-height:36px;
+  padding:8px 12px;
+  border-color:#67717e!important;
+  background:#353a43!important;
+  color:#edf3fc!important;
+  white-space:nowrap;
+}
+.atelier-workflow #visualAssetToolbar .visual-toolbar-primary-actions {
+  display:flex;
+  flex:0 0 auto;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  margin-left:auto;
+}
+.atelier-workflow #visualAssetToolbar #useSource {
+  flex:0 0 auto;
+  margin-left:0!important;
+  min-height:40px;
+  padding:10px 16px;
+  white-space:nowrap;
+}
+@media(max-width:1000px) {
+  .atelier-workflow #visualAssetToolbar>label,
+  .atelier-workflow #visualAssetToolbar .visual-image-model-bar>label {
+    flex:1 1 145px!important;
+    min-width:0!important;
+  }
+  .atelier-workflow #visualAssetToolbar select {
+    width:100%;
+    min-width:0;
+    max-width:100%;
+  }
+  .atelier-workflow #visualAssetToolbar .aspect-ratio-picker {
+    max-width:100%;
+  }
+}
+@media(max-width:480px) {
+  .atelier-workflow #visualAssetToolbar .visual-toolbar-primary-actions {
+    margin-left:auto;
+  }
+  .atelier-workflow #visualAssetToolbar .visual-image-resolution-pair {
+    flex:1 1 100%;
+    flex-wrap:wrap;
+  }
+  .atelier-workflow #visualAssetToolbar .visual-image-resolution-pair label {
+    flex:1 1 145px!important;
+  }
+  .atelier-workflow #visualAssetToolbar .visual-image-resolution-pair button,
+  .atelier-workflow #visualAssetToolbar .visual-toolbar-primary-actions button {
+    flex:0 1 auto;
+    min-width:0;
+  }
+}
+
+/* Keep project setup balanced: paired generation settings share a row and
+   price cards align beneath their controls instead of stretching one column. */
+#visualProjectWizard .visual-project-wizard-shell {
+  width:min(1040px,96vw);
+  max-height:calc(100vh - 24px);
+}
+#visualProjectWizard .visual-dialog-body {
+  gap:12px;
+  padding:16px 20px 18px;
+}
+#visualProjectWizard .wizard-section {
+  display:grid;
+  gap:10px;
+  min-width:0;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:rgba(128,128,128,.055);
+}
+#visualProjectWizard .wizard-section h3 {
+  margin:0;
+  color:var(--text);
+  font-size:13px;
+  font-weight:800;
+}
+#visualProjectWizard .wizard-project-info .visual-wizard-grid,
+#visualProjectWizard .wizard-visual-info .visual-wizard-grid {
+  gap:12px;
+}
+#visualProjectWizard .wizard-style-control {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  align-items:stretch;
+  gap:8px;
+  min-width:0;
+}
+#visualProjectWizard #newCustomStyleFromWizard { display:none; }
+#visualProjectWizard .wizard-style-control button {
+  min-width:max-content;
+  padding:8px 11px;
+  white-space:nowrap;
+}
+#visualProjectWizard .wizard-generation-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  gap:12px;
+}
+#visualProjectWizard .wizard-generation-card {
+  grid-template-rows:auto 1fr auto auto;
+  gap:10px;
+}
+#visualProjectWizard .wizard-field-grid {
+  display:grid;
+  gap:10px 12px;
+  min-width:0;
+}
+#visualProjectWizard .wizard-field-grid.two {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+#visualProjectWizard .wizard-generation-card .wizard-model-cost {
+  align-self:end;
+  margin-top:0;
+}
+#visualProjectWizard .wizard-generation-card .wizard-price-warning {
+  margin:0;
+}
+#visualProjectWizard .wizard-eye-mask {
+  justify-content:flex-start;
+  gap:12px 20px;
+  min-height:40px;
+  padding:0 4px;
+}
+#visualProjectWizard .wizard-eye-mask select {
+  min-width:190px;
+  max-width:280px;
+}
+@media(max-width:900px) {
+  #visualProjectWizard .wizard-generation-grid {
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:680px) {
+  #visualProjectWizard .visual-dialog-body {
+    padding:12px;
+  }
+  #visualProjectWizard .wizard-project-info .visual-wizard-grid,
+  #visualProjectWizard .wizard-visual-info .visual-wizard-grid,
+  #visualProjectWizard .wizard-field-grid.two {
+    grid-template-columns:1fr;
+  }
+  #visualProjectWizard .wizard-style-control {
+    grid-template-columns:minmax(0,1fr);
+  }
+  #visualProjectWizard .wizard-style-control button,
+  #visualProjectWizard .wizard-eye-mask select {
+    width:100%;
+    max-width:none;
+  }
+}

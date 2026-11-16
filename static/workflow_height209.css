@@ -1,0 +1,7 @@
+/* A collapsed main menu has no hidden layout footprint. Its floating handle
+   keeps visible overflow for the selected capsule's shadow and focus ring. */
+@media (min-width:761px) {
+  body.atelier-shell.atelier-sidebar-collapsed .atelier-sidebar > :not(.atelier-sidebar-handle) {
+    display:none!important;
+  }
+}

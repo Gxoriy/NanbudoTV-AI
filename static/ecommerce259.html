@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NanbudoTV · 电商创作</title><link rel="stylesheet" href="/static/ecommerce259.css"><link rel="stylesheet" href="/static/model_activity.css"><link rel="stylesheet" href="/static/ecommerce_showcase.css"><link rel="stylesheet" href="/static/themes228.css"><script src="/static/themes228.js"></script><script src="/static/model_activity.js"></script><script src="/static/model_presentation.js"></script><link rel="stylesheet" href="/static/ecommerce_image_workbench.css"><link rel="stylesheet" href="/static/ecommerce_image_recolor.css"></head>
+<body class="ecommerce-factory260"><input id="retryOriginalUpload260" type="file" accept="image/jpeg,image/png,image/webp" hidden><main class="ecom-shell">
+<header class="factory-header"><div class="brand-lockup"><span class="brand-mark">N</span><strong>NanbudoTV·AI</strong><span class="brand-divider"></span><span>电商创作</span></div><div class="commerce-header-actions"><button id="commerceBack" type="button" hidden>← 返回选择</button><div id="commerceTabs" class="mode-tabs" role="tablist" aria-label="电商创作类型"><button id="videoTab" role="tab" aria-selected="true" data-mode="video">视频创作</button><button id="imageTab" role="tab" aria-selected="false" data-mode="image">图片创作</button></div></div></header>
+<section id="commerceLanding" class="commerce-home" aria-label="电商创作入口" hidden>
+      <div class="commerce-intro">
+        <p class="commerce-kicker"><span></span> COMMERCE STUDIO</p>
+        <h1>这次做什么？</h1>
+        <p class="commerce-intro-copy">选择图片或视频，进入对应的创作工作台。</p>
+      </div>
+      <div class="commerce-choices" aria-label="选择创作类型">
+        <article class="commerce-choice" data-showcase-card="image">
+
+          <div class="commerce-art commerce-photo">
+            <div class="commerce-fallback" aria-hidden="true"><span class="commerce-art-name">PRODUCT IMAGE</span>
+            <span class="commerce-photo-copy">山间冷杉<small>木质香调 · 商品主图示例</small></span>
+            <span class="commerce-photo-arch"></span><span class="commerce-photo-block"></span>
+            <span class="commerce-bottle"><span class="commerce-bottle-cap"></span><span class="commerce-bottle-label">FORM<b>07</b></span></span>
+            <span class="commerce-art-index">01 / IMAGE</span>
+            </div>
+            <div class="commerce-slide" hidden></div>
+            <div class="commerce-rotation" role="group" aria-label="轮播素材" hidden>
+              <button type="button" data-showcase-prev aria-label="上一项">‹</button>
+              <span data-showcase-count></span>
+              <button type="button" data-showcase-next aria-label="下一项">›</button>
+              <button type="button" data-showcase-toggle aria-label="暂停轮播">Ⅱ</button>
+            </div>
+          </div>
+          <button type="button" class="commerce-card-content" data-commerce-entry="image" aria-label="进入图片创作">
+            <span class="commerce-card-title"><strong>图片创作</strong></span>
+            <span class="commerce-card-copy">重绘商品主图，换背景、排卖点，按地区调整图片文案。</span>
+            <span class="commerce-card-bottom"><span class="commerce-tags"><span>主图重绘</span><span>批量处理</span><span>多语言文字</span></span><span class="commerce-arrow" aria-hidden="true">→</span></span>
+          </button>
+        </article>
+        <article class="commerce-choice" data-showcase-card="video">
+
+          <div class="commerce-art commerce-film">
+            <div class="commerce-fallback" aria-hidden="true"><span class="commerce-art-name">PRODUCT FILM</span>
+            <span class="commerce-film-stage">
+              <span class="commerce-film-streak"></span>
+              <span class="commerce-bottle"><span class="commerce-bottle-cap"></span><span class="commerce-bottle-label">FORM<b>07</b></span></span>
+              <span class="commerce-play">▶</span>
+              <span class="commerce-film-reel"><span></span><span></span><span></span><span></span><span></span></span>
+            </span>
+            <span class="commerce-art-index">02 / VIDEO</span>
+            </div>
+            <div class="commerce-slide" hidden></div>
+            <div class="commerce-rotation" role="group" aria-label="轮播素材" hidden>
+              <button type="button" data-showcase-prev aria-label="上一项">‹</button>
+              <span data-showcase-count></span>
+              <button type="button" data-showcase-next aria-label="下一项">›</button>
+              <button type="button" data-showcase-toggle aria-label="暂停轮播">Ⅱ</button>
+            </div>
+          </div>
+          <button type="button" class="commerce-card-content" data-commerce-entry="video" aria-label="进入视频创作">
+            <span class="commerce-card-title"><strong>视频创作</strong></span>
+            <span class="commerce-card-copy">上传产品素材，先看多版创意，再选一版生成电商视频。</span>
+            <span class="commerce-card-bottom"><span class="commerce-tags"><span>多版创意</span><span>可选主播</span><span>地区与语言</span></span><span class="commerce-arrow" aria-hidden="true">→</span></span>
+          </button>
+        </article>
+      </div>
+      <p id="commerceEntryStatus" role="status" aria-live="polite" hidden></p>
+    </section>
+<div id="ecommerceImageWorkbench" hidden>
+  <aside class="ecw-sidebar">
+    <span class="eyebrow">IMAGE STUDIO</span>
+    <h1 id="ecwHeading" tabindex="-1">图片创作</h1>
+    <nav aria-label="图片创作工具" class="ecw-navigation">
+      <span>上架素材</span>
+      <button type="button" data-ecw-tool="redraw"><b>主图重绘</b><small>重做背景和卖点排版</small></button>
+      <button type="button" data-ecw-tool="set"><b>商品套图</b><small>主图、卖点、场景与规格</small></button>
+      <button type="button" data-ecw-tool="detail"><b>A+详情页</b><small>组合详情页展示模块</small></button>
+      <span>图片处理</span>
+      <button type="button" data-ecw-tool="retouch"><b>产品精修</b><small>修瑕疵、校正光色与透视</small></button>
+      <button type="button" data-ecw-tool="recolor"><b>产品换色</b><small>分区域预览与导出</small></button>
+      <button type="button" data-ecw-tool="remake"><b>爆款复刻</b><small>用自己的商品套用参考版式</small></button>
+    </nav>
+  </aside>
+  <div class="ecw-content">
+    <div id="ecwRedraw"></div>
+    <section id="ecwCustom" aria-label="当前图片工具" hidden></section>
+  </div>
+  <dialog id="ecwDialog" class="ecw-dialog"></dialog>
+</div>
+<div id="commerceWorkspace" hidden>
+<section class="project-bar" aria-label="电商项目"><label>当前项目<select id="projects"><option value="">开始一个新项目</option></select></label><input id="projectName" maxlength="80" aria-label="项目名称" placeholder="给这次产品创作取个名字"><button id="newProject">＋ 新建</button><button id="saveProject">保存项目</button><button id="refreshProjects" class="subtle">刷新</button><button id="deleteProject261" type="button" class="subtle danger261" disabled>删除项目</button><button id="deletedProjects261" type="button" class="subtle">已删除项目</button></section>
+<div class="page-title"><div><span class="eyebrow">PRODUCT CREATIVE STUDIO</span><h1 id="workspaceTitle260" tabindex="-1">让产品，讲出自己的故事。</h1><p id="workspaceSubtitle260">产品图、主播图、环境图分别管理；先看创意，再决定生成哪一版。</p></div><span id="projectCount260" class="quiet-pill">视频创作</span></div><p id="status" role="status" aria-live="polite">先上传产品图，主播图和环境图可以选填。</p>
+<div class="workspace">
+<section class="input-column">
+<div id="assetZone260" class="asset-zone260">
+<section id="productPanel260" class="panel product-panel"><div class="section-heading"><div><h2 id="productsTitle260">产品图</h2><p id="productHint">必选 · 1–8 张同一产品的不同角度、包装与细节。</p></div><span id="productCount260" class="count-label">0 / 8</span></div><label class="upload-zone"><input id="products" type="file" accept="image/jpeg,image/png,image/webp" multiple><b>＋ 选择产品图</b><span>JPG / PNG / WebP · 单张 ≤ 12 MB</span></label><div id="uploadStatus260" role="status" class="muted" hidden></div><div id="uploadFailures260" class="upload-failures" hidden></div><div id="imageSelectionBar260" class="image-selection-bar" hidden><label class="check"><input id="selectAllImages260" type="checkbox">全选</label><span id="selectedImagesCount260">已选 0 张</span><button id="showImageDetails260" type="button" class="subtle">图片详情</button><button id="downloadBatch260" type="button">下载已完成结果</button><button id="deleteSelectedImages265" type="button" class="danger261">删除选中素材</button></div><div id="productThumbs" class="thumbs"></div><label class="field product-description">想说的话、真实卖点 <small>选填</small><textarea id="description" maxlength="4000" rows="3" placeholder="填写已核实的产品资料；不填写时仍可使用真实产品图片。"></textarea></label></section>
+<section id="personPanel260" class="panel role-panel"><div class="section-heading"><div><h2>主播图</h2><p>选填 · 与产品图分开保存</p></div></div><label class="upload-zone small-upload-zone"><input id="person" type="file" accept="image/jpeg,image/png,image/webp"><b>＋ 上传主播图</b><span>全身预览，不裁剪人物</span></label><div id="personThumbs" class="thumbs full-body-thumbs"></div><button id="chooseCharacter260" type="button" class="wide">从数字人库选择</button><div id="characterBinding260" class="character-binding" hidden></div><p class="muted binding-note">绑定音色 · 配音时使用；声音费用在配音前另行确认。</p></section>
+<section id="scenePanel260" class="panel role-panel"><div class="section-heading"><div><h2>背景图 / 环境</h2><p>选填 · 最多 4 张独立环境参考</p></div></div><label class="upload-zone small-upload-zone"><input id="scenes" type="file" accept="image/jpeg,image/png,image/webp" multiple><b>＋ 上传背景图</b><span>环境与产品参考分别管理</span></label><div id="sceneThumbs" class="thumbs"></div></section>
+</div>
+<section id="videoOptions" class="panel"><div class="section-heading"><div><h2>给创意一点方向</h2><p>只上传产品图，也可以生成完整创意。</p></div></div><div class="split"><label class="check"><input id="presenter" type="checkbox">角色出镜介绍产品</label><label class="field compact-field">创意版本<select id="versionCount"><option value="3">3 个版本</option><option value="5">5 个版本</option></select></label></div><div id="presenterOptions"><label class="field">角色气质 <small>选填</small><input id="presenterDirection" maxlength="1500" placeholder="例如：亲切自然的店主，日常穿搭"></label><label class="field">希望说的口播 <small>选填</small><textarea id="speech" rows="3" maxlength="2000" placeholder="填入后作为口播要求；可选择翻译或逐字保留。"></textarea></label></div><div class="analysis-action"><button id="analyze" class="primary">分析产品图，生成创意</button><span id="analysisModel" class="muted"></span><button id="observeAnalysis" hidden>查询原分析任务</button></div></section>
+<section id="ideasPanel" class="panel"><div class="section-heading"><div><h2>选一个创意，继续打磨</h2><p>每版独立编辑，只生成当前选中的版本。</p></div></div><div id="analysisSummary" hidden></div><div id="ideas" class="ideas"><div class="empty"><h3>好创意，从看懂产品开始</h3><p>上传产品图后生成 3 或 5 个不同创意方向。</p></div></div></section>
+<section id="imagePlanPanel264" class="panel image-plan-panel264" hidden>
+<div class="section-heading"><div><h2>历史设计方案</h2><p>可查看已保存方案和核对原任务。新的主图直接重绘出图。</p></div></div>
+<button id="refreshImagePlans264" type="button" class="subtle">查询已有方案任务</button>
+<p id="imagePlanStatus264" role="status" aria-live="polite"></p>
+<div id="imagePlanList264" class="image-plan-list264"></div>
+</section>
+<section id="resultsPanel260" class="panel"><div class="section-heading"><div><h2>创作结果</h2><p>每个版本独立保留，可预览与下载。删除素材不会连带删除成品。</p></div><button id="downloadAllResults260" type="button" class="subtle">下载本项目结果</button></div><div id="outputDirectory268"><div class="split"><button id="configureOutputDirectory268" type="button" class="subtle">设置保存目录</button><button id="openOutputDirectory268" type="button" class="subtle" disabled>打开目录</button></div><p id="outputDirectoryPath268" class="muted" style="overflow-wrap:anywhere">正在读取保存目录…</p><p id="outputDirectoryErrors268" role="status" class="muted" style="overflow-wrap:anywhere"></p><button id="retryOutputDirectory268" type="button" hidden>重试保存已有成果</button></div><div id="resultSelection265" class="result-selection265" hidden><label class="check"><input id="selectAllResults265" type="checkbox">全选结果</label><span id="selectedResultsCount265">已选 0 个结果</span><button id="deleteSelectedResults265" type="button" class="danger261">删除选中结果</button></div><div id="results" class="results"><p class="muted">完成后的图片与视频显示在这里。</p></div></section>
+</section>
+<aside class="result-column">
+<details id="imageOptions" class="panel image-design263 image-fold268" hidden>
+<summary class="image-fold-toggle268"><div><h2>统一主图要求</h2><p>设置后可应用到选中图片或全部图片。</p></div></summary>
+<p class="muted">主图重绘 · 直接出图</p>
+<p id="imageDesignIntro263" class="design-intro263">读取原图商品和清晰文字，保留商品形状、颜色和商标，重新构图与设计背景，并按目标地区排标题、艺术字和卖点。模糊文字、价格与功效不凭空补写。</p>
+<div id="imageProfileFields263" class="image-profile263">
+<label class="field">销售地区<select id="imageMarket263"><option value="CN">中国大陆</option><option value="HK">中国香港</option><option value="TW">中国台湾</option><option value="JP">日本</option><option value="MY">马来西亚</option><option value="TH">泰国</option><option value="US">美国</option><option value="SG">新加坡</option><option value="GB">英国</option><option value="AU">澳大利亚</option><option value="RU">俄罗斯</option><option value="custom">自定义地区</option></select></label>
+<label id="customImageMarketField263" class="field" hidden>自定义销售地区<input id="customImageMarket263" maxlength="120" placeholder="例如：加拿大"></label>
+</div>
+<label id="languageField" class="field">图片文字语言<select id="targetLanguage"><option value="zh-Hans">简体中文</option><option value="zh-Hant">繁体中文</option><option value="en">英语</option><option value="ru">俄语</option><option value="ja">日语</option><option value="ko">韩语</option><option value="fr">法语</option><option value="de">德语</option><option value="es">西班牙语</option><option value="ms">马来语</option><option value="th">泰语</option><option value="id">印尼语</option><option value="vi">越南语</option><option value="ar">阿拉伯语</option><option value="pt">葡萄牙语</option></select><small>地区会带出常用语言，你也可以单独修改。</small></label>
+<div id="imageRedesignFields263" class="image-profile263">
+<label class="field">主标题 <small>选填，不填也能让 AI 自动拟写</small><input id="headline263" maxlength="160" placeholder="例如：轻装出行，一杯随身"></label>
+<label class="field">已确认的卖点 <small>选填</small><textarea id="sellingPoints263" maxlength="2000" rows="3" placeholder="写真实的材质、容量、用途等；不填时只使用图片里能确认的信息。"></textarea></label>
+<label class="field">版面风格<select id="layoutStyle263"><option value="auto">AI 按产品适配</option><option value="bold">醒目促销</option><option value="clean">清爽简洁</option><option value="premium">品质高级</option><option value="lifestyle">生活场景</option><option value="detail">细节说明</option></select></label>
+<label class="check detail-insets263" title="开启后在主图中加入商品细节放大小窗"><input id="detailInsets263" type="checkbox">细节展示</label>
+</div>
+<label class="field">背景方向 <small>选填</small><textarea id="background" maxlength="3000" rows="3" placeholder="可留空让 AI 适配，也可写暖白摄影棚、户外露营等。"></textarea></label>
+<label class="field">指定整版文案 <small>选填</small><textarea id="replacementText" maxlength="2000" rows="3" placeholder="需要一字不差的文案时填这里；请先核对文字。"></textarea></label>
+<p id="imageDesignSummary263" class="design-summary263" aria-live="polite"></p>
+<div id="imageOutputSettings276" class="settings"></div>
+<div id="batchApplyControls260" class="split" hidden><button id="applySelected260" type="button">应用到选中图片</button><button id="applyAll260" type="button" class="subtle">应用到全部</button></div>
+<p class="tip">每张图单独生成，产品细节、商标与小字请对照原图验收；已有结果会保留。</p>
+</details>
+<section id="imageInspector260" class="panel image-inspector" hidden><div class="section-heading"><div><h2>当前图片详情</h2><p id="activeImageName260"></p></div><button id="closeImageDetails260" type="button" class="subtle" aria-label="收起图片详情">收起</button></div><div class="comparison-tabs" role="group" aria-label="图片前后对比"><button type="button" data-image-view="compare" aria-pressed="true">前后对比</button><button type="button" data-image-view="original" aria-pressed="false">原图</button><button type="button" data-image-view="result" aria-pressed="false">结果</button></div><div id="imageCompare260" class="image-compare" role="button" tabindex="0" aria-label="放大查看原图与生成结果" aria-haspopup="dialog"></div><p id="activeImageStatus260" class="muted" role="status"></p><section id="imagePlanEditor264" class="image-plan-editor264" hidden><div class="section-heading"><div><h3>本图设计方案</h3><p id="imagePlanEditorState264"></p></div></div>
+<details id="imagePlanEvidence264" class="image-plan-facts264"><summary>AI 识别的产品依据</summary><p id="imagePlanSummary264"></p><p id="imagePlanObservations264"></p><div id="imagePlanSourceText265" class="source-text265"></div></details>
+<details id="imagePlanUnknown264" class="image-plan-facts264" hidden><summary>这些产品信息还不能确认</summary><p id="imagePlanUncertainties264"></p><small class="muted">没有确认的信息不应写成产品承诺，请按真实资料补充。</small></details>
+<label class="field">主标题<input id="imagePlanHeadline264" maxlength="160"></label>
+<label class="field">卖点文案 <small>每行一条，最多 4 条</small><textarea id="imagePlanSellingPoints264" rows="4" maxlength="963"></textarea></label>
+<label class="field">背景设计<textarea id="imagePlanBackground264" rows="3" maxlength="2000"></textarea></label>
+<label class="field">版式安排<textarea id="imagePlanLayout264" rows="3" maxlength="2000"></textarea></label>
+<button id="saveImagePlan264" type="button" class="wide">保存方案修改</button><button id="discardImagePlan264" type="button" class="wide subtle">撤销未保存修改</button><small class="muted">先检查标题、卖点与产品是否相符；保存修改不额外调用模型。</small>
+</section><details id="itemOverrideDetails260"><summary>仅修改这一张图片</summary>
+<div id="itemProfileFields263"><label class="field">本图销售地区<select id="itemMarket263"><option value="CN">中国大陆</option><option value="HK">中国香港</option><option value="TW">中国台湾</option><option value="JP">日本</option><option value="MY">马来西亚</option><option value="TH">泰国</option><option value="US">美国</option><option value="SG">新加坡</option><option value="GB">英国</option><option value="AU">澳大利亚</option><option value="RU">俄罗斯</option><option value="custom">自定义地区</option></select></label><label id="itemCustomMarketField263" class="field" hidden>本图自定义地区<input id="itemCustomMarket263" maxlength="120"></label></div>
+<label class="field">本图文字语言<select id="itemLanguage260"><option value="zh-Hans">简体中文</option><option value="zh-Hant">繁体中文</option><option value="en">英语</option><option value="ru">俄语</option><option value="ja">日语</option><option value="ko">韩语</option><option value="fr">法语</option><option value="de">德语</option><option value="es">西班牙语</option><option value="ms">马来语</option><option value="th">泰语</option><option value="id">印尼语</option><option value="vi">越南语</option><option value="ar">阿拉伯语</option><option value="pt">葡萄牙语</option></select></label>
+<div id="itemRedesignFields263"><label class="field">本图标题 <small>选填</small><input id="itemHeadline263" maxlength="160"></label><label class="field">本图已确认卖点<textarea id="itemSellingPoints263" maxlength="2000" rows="3"></textarea></label><label class="field">本图版面风格<select id="itemLayoutStyle263"><option value="auto">AI 按产品适配</option><option value="bold">醒目促销</option><option value="clean">清爽简洁</option><option value="premium">品质高级</option><option value="lifestyle">生活场景</option><option value="detail">细节说明</option></select></label><label class="check detail-insets263"><input id="itemDetailInsets263" type="checkbox">细节展示（局部放大小窗）</label></div>
+<label class="field">独立背景方向 <small>选填</small><textarea id="itemBackground260" maxlength="3000" rows="3"></textarea></label>
+<label class="field">独立整版文案 <small>选填</small><textarea id="itemReplacement260" maxlength="2000" rows="2"></textarea></label>
+<p id="itemDesignSummary263" class="design-summary263"></p>
+<label class="field">本图模型<select id="itemModel260"></select></label><div class="split"><label class="field">清晰度<select id="itemResolution260"></select></label><label class="field">画幅<select id="itemRatio260"></select></label></div><button id="saveItemOverride260" type="button" class="wide">保存这一张的设置</button></details><button id="downloadItem260" type="button" class="wide subtle">下载当前结果</button></section>
+<section id="videoMarketPanel260" class="panel"><div class="section-heading"><div><h2>市场与语言</h2><p>创意、角色口播和画面文字按目标市场准备。</p></div></div><label class="field">销售地区 / 国家<select id="videoMarket260"><option value="">未设置 · 沿用旧项目</option><option value="CN">中国大陆</option><option value="HK">中国香港</option><option value="TW">中国台湾</option><option value="US">美国</option><option value="RU">俄罗斯</option><option value="JP">日本</option><option value="KR">韩国</option><option value="GB">英国</option><option value="FR">法国</option><option value="DE">德国</option><option value="custom">自定义地区</option></select></label><label class="field">输出语言<select id="videoLanguage260"><option value="">未设置 · 沿用旧项目</option><option value="zh-Hans">中文普通话 · 简体</option><option value="zh-Hant">中文普通话 · 繁体</option><option value="yue-Hant">粤语 · 繁体</option><option value="en">英语</option><option value="ru">俄语</option><option value="ja">日语</option><option value="ko">韩语</option><option value="fr">法语</option><option value="de">德语</option><option value="es">西班牙语</option><option value="pt">葡萄牙语</option><option value="ar">阿拉伯语</option><option value="custom">自定义语言</option></select></label><label id="customMarketField260" class="field" hidden>自定义销售地区<input id="customMarket260" maxlength="120" placeholder="填写销售地区或国家"></label><label id="customLanguageField260" class="field" hidden>自定义输出语言<input id="customLanguage260" maxlength="120" placeholder="填写希望输出的语言"></label><div class="split"><label class="field">口音要求<input id="voiceAccent260" maxlength="120" placeholder="例如：普通话、美式英语"></label><label class="field">画面文字习惯<input id="textScript260" maxlength="120" placeholder="例如：简体中文、繁体中文"></label></div><label class="field">已填写口播怎么处理<select id="speechPolicy260"><option value="translate">翻译到输出语言，保留原意</option><option value="verbatim">保留已填写原文，不翻译</option></select></label><p id="videoLocaleHint260" class="tip">地区带出默认语言后仍可修改。已有创意不会自动改写；重新分析前会核对费用。</p></section>
+<section class="panel generation-panel image-fold268"><div class="section-heading"><span class="step" id="generationStep">04</span><div><h2 id="generationTitle">把选中的创意拍出来</h2><p id="selectionHint">先生成并选中一个创意版本。</p></div><button id="toggleImageGeneration268" class="image-fold-toggle268" type="button" aria-expanded="false" aria-controls="imageGenerationBody268" hidden>展开</button></div><div id="imageGenerationBody268"><div class="settings"><label class="field">线路<select id="route"><option value="all">全部线路</option><option value="official">官方线路</option><option value="discount">特价线路</option></select></label><label class="field model-field">生成模型<select id="model"></select></label><label class="field">清晰度<select id="resolution"></select></label><label class="field">画幅<select id="ratio"><option value="9:16">竖屏 9:16</option><option value="16:9">横屏 16:9</option><option value="1:1">方图 1:1</option></select></label><label id="durationField" class="field">时长<select id="duration"></select></label><label id="concurrencyField260" class="field" hidden>同时处理<select id="batchConcurrency260"><option value="1">1 张</option><option value="2">2 张</option><option value="3" selected>3 张 · 默认</option><option value="4">4 张</option><option value="5">5 张 · 上限</option></select></label></div><div class="preferences-actions"><button id="savePreferences260" type="button">保存为常用设置</button><button id="applyPreferences260" type="button">使用常用设置</button></div><p id="preferencesHint260" class="muted">图片与视频的模型、线路和输出参数分别保存。</p><div id="batchSummary260" class="batch-summary" hidden role="status"></div><div class="generation-actions"><button id="generate" class="primary wide">核对费用并生成</button><button id="observeVideo" hidden>继续查询原生成任务</button><button id="openCanvas" class="subtle" hidden>在画布中继续编辑</button></div><div id="batchActions260" class="generation-actions" hidden><button id="pauseBatch260" type="button">暂停未提交图片</button><button id="observeBatch260" type="button">刷新原批次状态</button><button id="reconcileBatch260" type="button">查询未决原订单</button></div><p id="imageGenerationPlanHint264" class="design-summary263" hidden></p><p id="generationStatus" role="status" aria-live="polite"></p><progress id="generationProgress" max="100" value="0" hidden></progress></div></section>
+</aside></div></div></main>
+<dialog id="confirmDialog"><form method="dialog"><h2 id="confirmTitle">确认本次调用</h2><p id="confirmText"></p><div id="batchQuoteRows260" class="batch-quote-rows" hidden></div><div class="confirm-actions"><button value="cancel">再看看</button><button value="ok" class="primary">确认开始</button></div></form></dialog>
+<dialog id="imageComparisonDialog260"><div class="section-heading"><h2>原图 / 生成结果</h2><button id="closeImageComparison260" type="button">关闭对比</button></div><div id="largeImageCompare260" class="image-compare"></div></dialog>
+<dialog id="deletedProjectsDialog261" aria-labelledby="deletedProjectsTitle261"><form method="dialog"><h2 id="deletedProjectsTitle261">已删除项目</h2><p id="deletedProjectsHint261">删除后已有素材、结果和原订单仍保留。恢复不会重新生成或再次收费。</p><label class="field">选择要恢复的项目<select id="deletedProjectsList261" aria-label="已删除的电商项目"></select></label><div class="confirm-actions"><button value="cancel">关闭</button><button id="restoreProject261" type="button" class="primary" disabled>恢复项目</button></div></form></dialog>
+<dialog id="outputDirectoryDialog268" aria-labelledby="outputDirectoryTitle268"><h2 id="outputDirectoryTitle268">电商成果保存目录</h2><p>图片与视频共用此目录，生成完成后按项目保存；项目中的原文件仍保留。</p><label class="field">本地文件夹路径<input id="outputDirectoryInput268" type="text" autocomplete="off" spellcheck="false" placeholder="例如：D:\电商成果"></label><button id="chooseOutputDirectory268" type="button">选择文件夹</button><p id="outputDirectoryNativeNote268" class="muted">也可直接填写完整的本地路径。</p><p class="muted">留空可取消额外自动保存。更换目录不搬动已归档文件。</p><p id="outputDirectoryStatus268" role="status" aria-live="polite"></p><div class="confirm-actions"><button id="closeOutputDirectory268" type="button">关闭</button><button id="saveOutputDirectory268" type="button" class="primary">保存目录</button></div></dialog>
+<script src="/static/character_picker.js"></script><script src="/static/ecommerce_showcase.js"></script><script src="/static/ecommerce_image_listing_tools.js"></script><script src="/static/ecommerce_image_edit_tools.js"></script><script src="/static/ecommerce_image_recolor.js"></script><script src="/static/ecommerce_image_workbench.js"></script><script src="/static/ecommerce259.js"></script></body></html>

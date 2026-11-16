@@ -1,0 +1,148 @@
+{
+  "path": "/api/local-cache",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "scope": "project_thumbnails",
+    "generated": {
+      "images": {
+        "files": 0,
+        "bytes": 0
+      },
+      "videos": {
+        "files": 0,
+        "bytes": 0
+      },
+      "audio": {
+        "files": 0,
+        "bytes": 0
+      },
+      "other": {
+        "files": 0,
+        "bytes": 0
+      }
+    },
+    "downloads": {
+      "images": {
+        "files": 0,
+        "bytes": 0
+      },
+      "videos": {
+        "files": 0,
+        "bytes": 0
+      },
+      "audio": {
+        "files": 0,
+        "bytes": 0
+      },
+      "other": {
+        "files": 0,
+        "bytes": 0
+      }
+    },
+    "sources": {
+      "images": {
+        "files": 0,
+        "bytes": 0
+      },
+      "videos": {
+        "files": 0,
+        "bytes": 0
+      },
+      "audio": {
+        "files": 0,
+        "bytes": 0
+      },
+      "other": {
+        "files": 0,
+        "bytes": 0
+      }
+    },
+    "categories": [
+      {
+        "id": "project_thumbnails",
+        "label": "项目缩略图和视频封面",
+        "files": 0,
+        "bytes": 0,
+        "media": {
+          "images": {
+            "files": 0,
+            "bytes": 0
+          },
+          "videos": {
+            "files": 0,
+            "bytes": 0
+          },
+          "audio": {
+            "files": 0,
+            "bytes": 0
+          },
+          "other": {
+            "files": 0,
+            "bytes": 0
+          }
+        },
+        "retainedFiles": 0,
+        "retainedBytes": 0
+      },
+      {
+        "id": "link_previews",
+        "label": "链接播放预览缓存",
+        "files": 0,
+        "bytes": 0,
+        "media": {
+          "images": {
+            "files": 0,
+            "bytes": 0
+          },
+          "videos": {
+            "files": 0,
+            "bytes": 0
+          },
+          "audio": {
+            "files": 0,
+            "bytes": 0
+          },
+          "other": {
+            "files": 0,
+            "bytes": 0
+          }
+        },
+        "retainedFiles": 0,
+        "retainedBytes": 0
+      },
+      {
+        "id": "temporary_files",
+        "label": "中断任务留下的临时文件",
+        "files": 0,
+        "bytes": 0,
+        "media": {
+          "images": {
+            "files": 0,
+            "bytes": 0
+          },
+          "videos": {
+            "files": 0,
+            "bytes": 0
+          },
+          "audio": {
+            "files": 0,
+            "bytes": 0
+          },
+          "other": {
+            "files": 0,
+            "bytes": 0
+          }
+        },
+        "retainedFiles": 0,
+        "retainedBytes": 0
+      }
+    ],
+    "scanId": "b430525ee2a54da5bacb4d337eab857c",
+    "cacheFiles": 0,
+    "cacheBytes": 0,
+    "skippedFiles": 0,
+    "failedFiles": 0,
+    "busy": false
+  }
+}

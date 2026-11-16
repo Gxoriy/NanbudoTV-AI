@@ -1,0 +1,11 @@
+{
+  "path": "/api/runtime/status",
+  "status": 200,
+  "body": {
+    "licensed": true,
+    "phase": "active",
+    "exitRequired": false,
+    "message": "授权剩余约 13 分钟",
+    "activeTasks": 0
+  }
+}

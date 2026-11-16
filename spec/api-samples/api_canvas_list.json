@@ -1,0 +1,7 @@
+{
+  "path": "/api/canvas/list",
+  "status": 200,
+  "body": {
+    "canvases": []
+  }
+}

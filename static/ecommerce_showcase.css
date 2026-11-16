@@ -1,0 +1,87 @@
+.commerce-home { margin: 0 auto; padding: 43px clamp(16px, 4.9vw, 52px) 45px; max-width: 1250px; }
+.commerce-intro { margin-bottom: 26px; }
+.commerce-intro p { margin: 0; }
+.commerce-kicker { display: flex; gap: 8px; align-items: center; color: var(--ec-accent); letter-spacing: .14em; font-size: 11px; font-weight: 680; }
+.commerce-kicker > span { width: 16px; height: 1px; background: currentColor; }
+.commerce-intro h1 { margin: 6px 0 8px; font-size: clamp(29px, 4.2vw, 42px); line-height: 1.2; font-weight: 700; letter-spacing: -.04em; }
+.commerce-intro-copy { color: var(--ec-muted); }
+.commerce-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; }
+.commerce-choice { display: flex; min-width: 0; flex-direction: column; text-align: left; padding: 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--ec-line); background: var(--ec-panel); color: var(--ec-text); font: inherit; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+.commerce-choice:hover { border-color: var(--ec-accent); transform: translateY(-2px); }
+.commerce-choice:active { transform: translateY(0); }
+.commerce-art { display: block; width: 100%; height: clamp(155px, 21vw, 260px); position: relative; overflow: hidden; flex: 0 0 auto; isolation: isolate; cursor: pointer; }
+.commerce-art-name, .commerce-art-index { position: absolute; z-index: 3; font: 650 11px/1.2 "Segoe UI", sans-serif; letter-spacing: .11em; }
+.commerce-art-name { top: 15px; left: 16px; }
+.commerce-art-index { right: 15px; bottom: 13px; }
+.commerce-photo { color: #493424; background: linear-gradient(126deg, #f4e0bd 0%, #e9cda2 54%, #ac7950 100%); }
+.commerce-photo-copy { position: absolute; left: 9%; top: 39%; z-index: 2; font: 740 clamp(17px, 3.2vw, 34px)/1.13 "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; letter-spacing: -.05em; }
+.commerce-photo-copy small { display: block; margin-top: 9px; font: 620 11px/1.3 "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; letter-spacing: .01em; }
+.commerce-photo-arch { position: absolute; top: 7%; bottom: -15%; width: 39%; right: 7%; border-radius: 100% 100% 0 0; background: linear-gradient(150deg, #f3d7aa, #bd8958); box-shadow: -11px 10px 30px #8056373a; }
+.commerce-photo-block { position: absolute; height: 24%; bottom: -2%; width: 50%; right: -4%; background: linear-gradient(170deg, #c19567 19%, #e1b782 21%, #a67048 100%); transform: skewY(-6deg); }
+.commerce-bottle { display: block; position: absolute; z-index: 2; width: clamp(47px, 7.7vw, 79px); height: 58%; border-radius: 17% 17% 10% 10%; background: linear-gradient(90deg, #5b2d1a, #a8572b 12%, #bb713c 31%, #8c4625 62%, #422515 94%); box-shadow: inset 0 2px 2px #ffc19366, 8px 13px 15px #3d241665; }
+.commerce-photo .commerce-bottle { right: 20%; bottom: 19%; }
+.commerce-bottle-cap { position: absolute; bottom: calc(100% - 1px); left: 19%; width: 62%; height: 21%; border-radius: 4px 4px 2px 2px; background: repeating-linear-gradient(90deg,#25231f 0 2px,#413931 2px 3px); box-shadow: inset 0 2px 2px #ffffff32; }
+.commerce-bottle-label { position: absolute; display: grid; align-content: center; top: 35%; left: 8%; right: 8%; height: 46%; padding-left: 11%; color: #33281c; background: #f2dfbd; font: 650 11px/1 Georgia, serif; letter-spacing: .03em; }
+.commerce-bottle-label b { margin-top: 2px; font-size: 16px; }
+.commerce-film { color: #e4eaff; background: radial-gradient(ellipse at 65% 40%, #324562, #172032 60%, #121824); }
+.commerce-film-stage { position: absolute; inset: 16% 11% 15%; overflow: hidden; border-radius: 9px; border: 1px solid #65788e; background: radial-gradient(ellipse at 64% 65%, #596277, #222e45 54%, #172132 85%); }
+.commerce-film-streak { position: absolute; width: 75%; height: 140%; right: 11%; bottom: 16%; background: linear-gradient(130deg, transparent 42%, #b1c5e75f 46%, #b1c5e70c 61%, transparent 62%); transform: rotate(8deg); }
+.commerce-film .commerce-bottle { right: 36%; bottom: 18%; height: 66%; transform: rotate(-13deg); box-shadow: inset 1px 2px 3px #ffc19389, 14px 16px 22px #09101ccd; }
+.commerce-play { display: grid; place-items: center; position: absolute; z-index: 3; width: 36px; height: 36px; top: 35%; left: 16%; border-radius: 50%; border: 1px solid #95abc9; background: #23334c; color: #f3f7ff; }
+.commerce-play { font-size: 12px; padding-left: 2px; }
+.commerce-film-reel { display: flex; gap: 3px; position: absolute; inset: auto 8px 7px; z-index: 3; }
+.commerce-film-reel span { flex: 1; height: 3px; border-radius: 2px; background: #8696ad; }
+.commerce-film-reel span:first-child { background: #e5eefd; }
+.commerce-card-content {
+  display: flex; width: 100%; flex: 1; flex-direction: column; padding: 15px 17px 13px;
+  border: 0; border-radius: 0; box-shadow: none; min-height: 134px;
+  text-align: left; align-items: stretch; background: transparent;
+  color: var(--ec-text); font: inherit; white-space: normal;
+}
+.commerce-card-content:hover { border: 0; background: var(--ec-paper); }
+.commerce-card-content:disabled { opacity: .75; }
+.commerce-card-title { display: flex; align-items: center; gap: 8px; font-size: 22px; line-height: 1.2; }
+.commerce-card-copy { display: block; margin: 7px 0 14px; color: var(--ec-muted); }
+.commerce-card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: auto; }
+.commerce-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.commerce-tags > span { display: inline-block; border-radius: 5px; background: var(--ec-paper); padding: 3px 7px; font-size: 11px; color: var(--ec-text); white-space: nowrap; }
+.commerce-arrow { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 50%; border: 1px solid #66605a; color: var(--ec-accent); font-size: 17px; line-height: 1; transition: background .16s ease, color .16s ease; }
+.commerce-choice:hover .commerce-arrow, .commerce-card-content:focus-visible .commerce-arrow { background: var(--ec-paper); color: var(--ec-text); }
+.commerce-card-content:focus-visible, .commerce-rotation button:focus-visible, .commerce-slide button:focus-visible, #commerceBack:focus-visible { outline: 2px solid var(--ec-accent); outline-offset: -3px; }
+
+
+.commerce-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.commerce-fallback, .commerce-slide { position: absolute; inset: 0; }
+.commerce-fallback { z-index: 0; pointer-events: none; }
+.commerce-slide { z-index: 1; background: #12151b; }
+.commerce-slide[data-kind="video"] { background: #10141d55; }
+.commerce-slide > img, .commerce-slide > video { width: 100%; height: 100%; display: block; object-fit: contain; }
+.commerce-slide > video { cursor: auto; }
+.commerce-slide > button {
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
+  background: #181d26; color: #fff; border-color: #949da9; white-space: nowrap;
+}
+.commerce-rotation {
+  position: absolute; bottom: 9px; right: 9px; z-index: 4;
+  display: flex; align-items: center; gap: 3px; padding: 4px;
+  border-radius: 8px; background: #181d26; color: #fff;
+}
+.commerce-rotation button {
+  padding: 0; min-width: 30px; height: 28px; font: 650 15px/1 "Segoe UI", sans-serif;
+  background: #292f3a; color: #fff; border: 1px solid #69717e; border-radius: 5px;
+}
+.commerce-rotation button:hover { background: #3c4554; border-color: #a3afbc; }
+.commerce-choice[data-playing] .commerce-rotation { top: 9px; bottom: auto; }
+.commerce-rotation [data-showcase-count] { min-width: 34px; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; }
+#commerceEntryStatus { margin: 16px 0 0; color: var(--ec-text); }
+#commerceEntryStatus[data-error] { color: var(--ec-danger); }
+#commerceLanding[hidden], #commerceWorkspace[hidden], .commerce-header-actions [hidden], .commerce-home [hidden] { display: none !important; }
+@media (max-width: 690px) {
+  .commerce-home { padding: 25px 0; }
+  .commerce-choices { grid-template-columns: 1fr; }
+  .commerce-card-content { min-height: 114px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .commerce-choice, .commerce-arrow { transition: none; }
+  .commerce-choice:hover { transform: none; }
+}

@@ -1,0 +1,7 @@
+{
+  "modelName": "视频去字幕",
+  "baseUrl": "",
+  "token": "",
+  "sourceSizeLimit": 52428800,
+  "_comment": "复制为 data/subtitle-config.json 后填 baseUrl（自建服务地址，如 https://horiy.fun）与 token；留空则云端不可用，本地功能不受影响。本文件不含任何密钥，可入库。"
+}

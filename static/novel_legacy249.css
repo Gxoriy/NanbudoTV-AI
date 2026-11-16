@@ -1,0 +1,6 @@
+.novel-field{display:grid;gap:5px;margin:12px 0;min-width:0}
+.novel-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+textarea{box-sizing:border-box;width:100%;resize:vertical;padding:10px;background:var(--bg);color:inherit;border:1px solid var(--line);border-radius:8px;font:inherit}
+dialog{width:min(480px,calc(100% - 24px));background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:20px}
+dialog::backdrop{background:#0008}
+@media(max-width:480px){.novel-options{grid-template-columns:1fr}}

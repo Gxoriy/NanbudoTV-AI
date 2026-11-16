@@ -1,0 +1,22 @@
+{
+  "path": "/api/subtitle/capabilities",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "configured": false,
+    "modelName": "视频去字幕",
+    "qualities": [
+      "standard",
+      "fine"
+    ],
+    "sourceSizeLimit": 52428800,
+    "formats": [
+      "mp4",
+      "mov",
+      "m4v"
+    ],
+    "pricingMode": "fixed_per_second",
+    "message": "字幕模型“视频去字幕”未配置可用接口、密钥及标准/精细每秒售价，请管理员保存配置；未生成、未扣费。",
+    "regionSchema": "outward_integer_percent166"
+  }
+}

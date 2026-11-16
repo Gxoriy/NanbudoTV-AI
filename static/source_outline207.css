@@ -1,0 +1,16 @@
+/* One compact, indeterminate outline indicator inside the source editor. */
+#workflowSourcePlanning203{inset:10px 24px auto 10px;min-height:64px;gap:11px;padding:11px 13px;border:1px solid #79643d;border-radius:10px;background:linear-gradient(110deg,#302b21f7,#22272bf7 72%);box-shadow:0 4px 16px #0002;color:#ebd8af;pointer-events:none}
+#workflowSourcePlanning203>i{display:grid;place-items:center;flex:0 0 32px;width:32px;height:36px;margin:0;border:1px solid #b18a404d;border-radius:8px;background:#ffca6410;animation:sourceOutlineGlow207 2.4s ease-in-out infinite}
+#workflowSourcePlanning203>i svg{width:21px;height:25px;fill:none;stroke:#edc675;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+#workflowSourcePlanning203>div{display:grid;gap:4px;min-width:0;flex:1}
+#workflowSourcePlanning203 .source-outline-heading207{display:flex;align-items:center;gap:9px;min-width:0}
+#workflowSourcePlanning203 strong{font-size:13px;line-height:1.35;font-weight:600;letter-spacing:.04em;color:#ffe1a2}
+#workflowSourcePlanning203 em{font-size:11px;line-height:1.35;font-style:normal;color:#d7c29b;border-left:1px solid #8a744c;padding-left:9px}
+#workflowSourcePlanningMessage203{font-size:11px;line-height:1.5;color:#c0c4c7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#workflowSourcePlanning203 #workflowSourcePlanningTime203{margin:0;align-self:center;flex:0 0 auto;font-size:11px;line-height:1.5;font-variant-numeric:tabular-nums;color:#d8c296;white-space:nowrap}
+#workflowSourcePlanning203>b{height:2px;width:24%;opacity:.65;background:linear-gradient(90deg,transparent,#e5bc6e,transparent);animation:sourceOutlineScan207 2.4s ease-in-out infinite}
+#workflowSourceFrame203.is-planning #visualSource{padding-top:88px;border-color:#756343}
+@keyframes sourceOutlineGlow207{50%{background:#ffca6420;box-shadow:0 0 10px #edc67512}}
+@keyframes sourceOutlineScan207{from{transform:translateX(-110%)}to{transform:translateX(540%)}}
+@media(max-width:600px){#workflowSourcePlanning203{inset:8px 21px auto 8px;min-height:70px;gap:8px;padding:9px;flex-wrap:nowrap}#workflowSourcePlanning203>i{flex-basis:27px;width:27px;height:33px}#workflowSourcePlanning203 .source-outline-heading207{gap:6px;flex-wrap:wrap}#workflowSourcePlanning203 em{font-size:10px;padding-left:6px}#workflowSourcePlanning203 #workflowSourcePlanningTime203{font-size:10px}#workflowSourcePlanningMessage203{font-size:10px}#workflowSourceFrame203.is-planning #visualSource{padding-top:94px}}
+@media(prefers-reduced-motion:reduce){#workflowSourcePlanning203>i,#workflowSourcePlanning203>b{animation:none}}

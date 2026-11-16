@@ -1,0 +1,7 @@
+{
+  "path": "/api/subtitle/projects",
+  "status": 200,
+  "body": {
+    "projects": []
+  }
+}

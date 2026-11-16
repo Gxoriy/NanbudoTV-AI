@@ -1,0 +1,5 @@
+# 主内核只依赖标准库；以下为「可选重型运行时」，按需安装（P2-02b / P3）
+# 装法：python -m venv .venv && .venv\Scripts\python -m pip install -r requirements.txt
+numpy>=2.0          # 帧运算
+opencv-python>=4.10 # cv2.inpaint / 画质分析（若只做无 GUI 后端可换 opencv-python-headless）
+pywebview>=5.0     # 桌面壳（无窗口调试可用 --no-gui 跳过）

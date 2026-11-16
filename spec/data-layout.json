@@ -1,0 +1,265 @@
+{
+  "data_root": "F:\\WorkAPP\\短剧改写工作台\\data",
+  "entries": [
+    {
+      "path": "asset-library",
+      "type": "dir",
+      "depth": 1,
+      "size": null
+    },
+    {
+      "path": "asset-library/asset_library228.sqlite3",
+      "type": "file",
+      "depth": 2,
+      "size": 90112
+    },
+    {
+      "path": "models",
+      "type": "dir",
+      "depth": 1,
+      "size": null
+    },
+    {
+      "path": "outputs",
+      "type": "dir",
+      "depth": 1,
+      "size": null
+    },
+    {
+      "path": "outputs/我的下载",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "outputs/提示词反推",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "outputs/改写项目",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "outputs/数字人角色库",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "outputs/数字人角色库/配音结果",
+      "type": "dir",
+      "depth": 3,
+      "size": null
+    },
+    {
+      "path": "outputs/爆款拆解",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "outputs/电商图片工作台",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "outputs/电商图片工作台/任务",
+      "type": "dir",
+      "depth": 3,
+      "size": null
+    },
+    {
+      "path": "outputs/电商图片工作台/项目",
+      "type": "dir",
+      "depth": 3,
+      "size": null
+    },
+    {
+      "path": "outputs/视觉制作",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "outputs/视频画布",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    },
+    {
+      "path": "session_results",
+      "type": "dir",
+      "depth": 1,
+      "size": null
+    },
+    {
+      "path": "updates",
+      "type": "dir",
+      "depth": 1,
+      "size": null
+    },
+    {
+      "path": "uploads",
+      "type": "dir",
+      "depth": 1,
+      "size": null
+    },
+    {
+      "path": "uploads/link_preview",
+      "type": "dir",
+      "depth": 2,
+      "size": null
+    }
+  ],
+  "top_level": [
+    "asset-library",
+    "models",
+    "outputs",
+    "session_results",
+    "updates",
+    "uploads"
+  ],
+  "longest_path": {
+    "path": "asset-library/asset_library228.sqlite3",
+    "type": "file",
+    "depth": 2,
+    "size": 90112
+  },
+  "sqlite": [
+    {
+      "path": "F:\\WorkAPP\\短剧改写工作台\\data\\asset-library\\asset_library228.sqlite3",
+      "tables": [
+        {
+          "name": "aliases",
+          "columns": [
+            "asset_id",
+            "name"
+          ],
+          "rows": 0
+        },
+        {
+          "name": "assets",
+          "columns": [
+            "id",
+            "project_id",
+            "source_id",
+            "kind",
+            "name",
+            "normalized_name",
+            "description",
+            "prompt",
+            "aliases",
+            "current_version",
+            "updated_at",
+            "deleted"
+          ],
+          "rows": 0
+        },
+        {
+          "name": "project_match230",
+          "columns": [
+            "project_id",
+            "story_key",
+            "story_fingerprint"
+          ],
+          "rows": 0
+        },
+        {
+          "name": "projects",
+          "columns": [
+            "id",
+            "name",
+            "style",
+            "updated_at",
+            "deleted"
+          ],
+          "rows": 0
+        },
+        {
+          "name": "sources",
+          "columns": [
+            "asset_id",
+            "path",
+            "fingerprint",
+            "version_id"
+          ],
+          "rows": 0
+        },
+        {
+          "name": "version_match230",
+          "columns": [
+            "version_id",
+            "search_text",
+            "visual_json"
+          ],
+          "rows": 0
+        },
+        {
+          "name": "versions",
+          "columns": [
+            "id",
+            "asset_id",
+            "digest",
+            "number",
+            "path",
+            "thumbnail",
+            "created_at",
+            "width",
+            "height",
+            "metadata",
+            "deleted"
+          ],
+          "rows": 0
+        }
+      ],
+      "journal_mode": "wal"
+    }
+  ],
+  "internal_top_dirs": [
+    "PIL",
+    "assets",
+    "av",
+    "av-18.1.0.dist-info",
+    "av.libs",
+    "click-8.5.0.dist-info",
+    "clr_loader",
+    "core",
+    "ctranslate2",
+    "ctranslate2-4.8.3.dist-info",
+    "cv2",
+    "faster_whisper",
+    "faster_whisper-1.2.1.dist-info",
+    "greenlet",
+    "hf_xet",
+    "httpcore2-2.13.1.dist-info",
+    "httpx2-2.13.1.dist-info",
+    "huggingface_hub",
+    "huggingface_hub-2.2.0.dist-info",
+    "numpy",
+    "numpy-2.5.4.dist-info",
+    "numpy.libs",
+    "onnxruntime",
+    "opencv_python_headless-4.14.0.94.dist-info",
+    "playwright",
+    "playwright-1.64.0.dist-info",
+    "pyaudiowpatch",
+    "pyaudiowpatch-0.2.12.8.dist-info",
+    "pythonnet",
+    "pywebview-6.2.1.dist-info",
+    "qrcode",
+    "qrcode-8.2.dist-info",
+    "scripts",
+    "setuptools",
+    "static",
+    "tokenizers",
+    "tokenizers-0.23.3.dist-info",
+    "tqdm-4.70.1.dist-info",
+    "webview",
+    "yaml"
+  ]
+}

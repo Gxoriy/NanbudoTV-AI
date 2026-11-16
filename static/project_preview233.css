@@ -1,0 +1,17 @@
+/* Project-list previews are local cached images, independent of creation work. */
+#visualProjectList .visual-project-card { min-width:0; }
+#visualProjectList .visual-project-preview233 { position:relative; display:block; width:100%; aspect-ratio:8/5; margin:0 0 12px; overflow:hidden; border:1px solid var(--line,#55565a); border-radius:8px; background:var(--theme-input,var(--input-bg,#202327)); }
+#visualProjectList .visual-project-preview233 img { display:block; width:100%; height:100%; max-width:100%; object-fit:contain; }
+#visualProjectList .visual-project-preview233 img[hidden] { display:none; }
+#visualProjectList .visual-project-preview233 figcaption { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted,#adb4b5); font-size:13px; }
+#visualProjectList .visual-project-preview233 svg { width:44px; height:34px; fill:none; stroke:currentColor; stroke-width:1.5; opacity:.7; }
+#visualProjectList .visual-project-preview233[data-preview-state="ready"] figcaption { display:none; }
+#visualProjectList .visual-project-info233 { display:grid; gap:4px; min-width:0; }
+#visualProjectList .visual-project-info233>span { width:fit-content; max-width:100%; font-size:11px; overflow-wrap:anywhere; color:var(--muted,#adb4b5); }
+#visualProjectList .visual-project-info233>b { overflow-wrap:anywhere; }
+#visualProjectList .visual-project-actions { display:flex; flex-wrap:wrap; gap:6px; min-width:0; }
+#visualProjectList > .visual-project-empty270 { grid-column:1 / -1; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px 18px; padding:clamp(16px,3vw,28px); text-align:start; }
+#visualProjectList > .visual-project-empty270 img { display:block; inline-size:clamp(62px,10vw,88px); block-size:auto; border-radius:12px; }
+#visualProjectList > .visual-project-empty270 p { margin:4px 0 0; }
+@media (max-width:480px) { #visualProjectList > .visual-project-empty270 { text-align:center; } }
+@media (max-width:600px) { #visualProjectList.visual-project-grid { grid-template-columns:minmax(0,1fr)!important; } }

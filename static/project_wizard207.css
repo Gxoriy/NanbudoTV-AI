@@ -1,0 +1,56 @@
+/* Selected B layout: existing project fields left, published model prices right. */
+#visualProjectWizard{padding:16px;box-sizing:border-box}
+#visualProjectWizard .visual-project-wizard-shell{display:flex;flex-direction:column;width:min(820px,100%);max-width:100%;max-height:calc(var(--dialog-visible-height,100dvh) - 32px);min-height:0;border-radius:14px;overflow:hidden}
+#visualProjectWizard .visual-dialog-shell>header{flex:0 0 auto;padding:10px 18px;gap:14px;border-bottom:1px solid #41474d}
+#visualProjectWizard .visual-dialog-shell>header b{font-size:18px;line-height:1.35}
+#visualProjectWizard .visual-dialog-shell>header span{font-size:11px;line-height:1.4;margin-top:3px;white-space:normal}
+#visualProjectWizard .visual-dialog-shell>header button{flex:none;min-height:34px;min-width:34px;padding:4px 8px;font-size:19px}
+#visualProjectWizard .visual-dialog-body{flex:1 1 auto;min-height:0;min-width:0;padding:0;overflow:auto;overscroll-behavior:contain}
+#visualProjectWizard .wizard-columns207{display:grid;grid-template-columns:236px minmax(0,1fr);min-width:0;align-items:stretch}
+#visualProjectWizard .wizard-info207{display:flex;flex-direction:column;gap:10px;min-width:0;padding:14px;border-right:1px solid #42474c;background:#202427}
+#visualProjectWizard .wizard-config207{min-width:0;padding:14px;background:#24282c}
+#visualProjectWizard .wizard-section{display:block;gap:0;margin:0;padding:0;min-width:0;border:0;background:none;box-shadow:none}
+#visualProjectWizard .wizard-section h3{margin:0 0 5px;font-size:13px;line-height:1.4;color:#e8ebed;font-weight:600}
+#visualProjectWizard .visual-wizard-grid,#visualProjectWizard .visual-wizard-grid.three{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0}
+#visualProjectWizard label{min-width:0;gap:4px;font-size:12px}
+#visualProjectWizard .wizard-project-info .visual-wizard-grid,#visualProjectWizard .wizard-visual-info .visual-wizard-grid{gap:8px}
+#visualProjectWizard label>span{font-size:11px!important;line-height:1.4;color:#b9c2c9;min-width:0}
+#visualProjectWizard :is(input:not([type=checkbox]),select){box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:32px;min-height:32px;font-size:12px!important;line-height:1.4;padding:5px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#visualProjectWizard .visual-wizard-grid>label>select{height:32px;min-height:32px;max-height:32px}
+#visualProjectWizard :is(input:not([type=checkbox]),select):focus-visible{outline:2px solid #e1b45a;outline-offset:1px}
+#visualProjectWizard .wizard-style-control{display:flex;gap:6px;min-width:0}
+#visualProjectWizard .wizard-style-control>select,#visualProjectWizard .wizard-style-control>.style-select-wrap{flex:1 1 0;min-width:0;width:0;max-width:100%}
+#visualProjectWizard .wizard-style-control>button{flex:0 0 auto;min-height:36px;padding:6px 8px;font-size:11px;white-space:nowrap}
+#visualProjectWizard .style-select-trigger{min-height:36px;height:36px;padding:5px 8px;min-width:0;font-size:11px;overflow:hidden}
+#visualProjectWizard .style-select-trigger img{width:26px;height:26px;flex:0 0 26px}
+#visualProjectWizard .style-select-trigger span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#visualProjectWizard .wizard-style-control #wizardStylePicker{flex:1 1 0;min-width:0;max-width:100%;height:38px;min-height:38px;padding:3px 7px;gap:7px;overflow:hidden}
+#visualProjectWizard #wizardStylePicker>.visual-style-preview{width:40px;height:27px}
+#visualProjectWizard #wizardStylePicker>span:not(.visual-style-preview){font-size:11px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#visualProjectWizard #wizardStylePicker small{font-size:10px!important;margin-top:2px}
+#visualProjectWizard .wizard-eye-mask{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:0;padding:11px 0 0;border-top:1px solid #3c444a}
+#visualProjectWizard .wizard-eye-mask label{display:flex;align-items:center;gap:7px;font-size:11px}
+#visualProjectWizard .wizard-eye-mask input{width:14px;height:14px;margin:0}
+#visualProjectWizard .wizard-generation-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:start;min-width:0}
+#visualProjectWizard .wizard-generation-card{display:flex;flex-direction:column;gap:0;min-width:0;padding:10px;border:1px solid #484e53;border-radius:10px;background:#292e32}
+#visualProjectWizard .wizard-field-grid.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}
+#visualProjectWizard .wizard-field-grid>label:first-child{grid-column:auto}
+#visualProjectWizard .wizard-generation-card:first-child .wizard-field-grid>label{grid-column:auto}
+#visualProjectWizard .wizard-field-grid>label{min-width:0}
+#visualProjectWizard .aspect-ratio-picker .aspect-ratio-trigger{height:32px;min-height:32px;padding:5px 28px 5px 9px!important;font-size:12px!important;line-height:1.4!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#visualProjectWizard .wizard-model-cost{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 7px;align-items:center;margin:9px 0 0;padding:7px 9px;border:1px solid #80663c;border-radius:7px;background:#bf913d14;min-width:0}
+#visualProjectWizard .wizard-model-cost>span{font-size:11px;line-height:1.5;min-width:0;white-space:normal;color:#dbc18e}
+#visualProjectWizard .wizard-model-cost>div{display:flex;align-items:baseline;gap:4px;white-space:nowrap}
+#visualProjectWizard .wizard-model-cost strong{font-size:17px;font-weight:600;line-height:1.2;color:#f2cd83}
+#visualProjectWizard .wizard-model-cost small{font-size:10px!important;line-height:1.45!important;color:#cdb589;white-space:normal;overflow-wrap:anywhere}
+#visualProjectWizard .wizard-model-cost>small{grid-column:1/-1;min-width:0}
+#visualProjectWizard .wizard-generation-card .wizard-model-cost{align-self:stretch;margin-top:9px;min-width:0}
+#visualProjectWizard .wizard-model-cost.unpriced{border-color:#5c6164;background:#aeb5ba0a}
+#visualProjectWizard .wizard-cost-disclaimer{margin-top:12px;padding:10px 0 0;border:0;border-top:1px solid #434a50;border-radius:0;min-width:0}
+#visualProjectWizard .wizard-cost-disclaimer b{font-size:12px;line-height:1.5;color:#d7c295}
+#visualProjectWizard .wizard-cost-disclaimer p,#visualProjectWizard .wizard-price-warning{font-size:11px;line-height:1.65;margin:7px 0 0;white-space:normal;overflow-wrap:anywhere}
+#visualProjectWizard .visual-dialog-shell>footer{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex:0 0 auto;margin:0;padding:9px 18px;border-top:1px solid #434a50;background:#252a2e;position:relative;z-index:1}
+#visualProjectWizard .visual-dialog-shell>footer button{min-height:32px;padding:6px 14px;font-size:12px!important;line-height:1.4}
+#visualProjectWizard .video-duration-choice{min-width:0;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:900px){#visualProjectWizard .wizard-columns207{grid-template-columns:235px minmax(0,1fr)}#visualProjectWizard .wizard-info207,#visualProjectWizard .wizard-config207{padding:14px}#visualProjectWizard .wizard-generation-grid{grid-template-columns:minmax(0,1fr)}#visualProjectWizard .wizard-generation-card:first-child .wizard-field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#visualProjectWizard .wizard-generation-card:first-child .wizard-field-grid>label{grid-column:auto}}
+@media(max-width:600px){#visualProjectWizard{padding:8px}#visualProjectWizard .visual-project-wizard-shell{max-height:calc(var(--dialog-visible-height,100dvh) - 16px)}#visualProjectWizard .wizard-columns207{grid-template-columns:minmax(0,1fr)}#visualProjectWizard .wizard-info207{border-right:0;border-bottom:1px solid #42474c;gap:13px}#visualProjectWizard .visual-dialog-shell>header{padding:13px 14px}#visualProjectWizard .visual-dialog-shell>header b{font-size:17px}#visualProjectWizard .visual-dialog-shell>footer{padding:10px 13px}#visualProjectWizard .wizard-style-control{flex-wrap:wrap}#visualProjectWizard .wizard-style-control>select,#visualProjectWizard .wizard-style-control>.style-select-wrap{flex-basis:100%;width:100%}#visualProjectWizard .wizard-style-control>button{min-height:32px}#visualProjectWizard .wizard-generation-card:first-child .wizard-field-grid{grid-template-columns:minmax(0,1fr)}}

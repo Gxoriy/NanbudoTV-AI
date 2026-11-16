@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>图片去水印</title>
+  <link rel="stylesheet" href="/static/subtitle_removal242.css">
+  <link rel="stylesheet" href="/static/themes228.css">
+  <style>
+    a{color:var(--gold)} .return-link{display:inline-block;padding:6px 12px;border:1px solid var(--gold);border-radius:7px;text-decoration:none}.return-link:hover{text-decoration:underline} .image-stage{position:relative;display:table;max-width:100%;margin:auto}
+    .image-stage img,.preview{display:block;max-width:100%;max-height:70vh;object-fit:contain}
+    .image-stage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;opacity:.48}
+    button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+    .editor-scroll{max-height:72vh;overflow:auto}.image-stage.zoomed{max-width:none}
+    .image-stage.zoomed img{width:100%;max-height:none}
+    input[type="range"]{width:130px;vertical-align:middle} .workspace{align-items:start}
+  </style>
+</head>
+<body><main>
+  <header>
+    <a href="/" id="returnToSubtitle" class="return-link">← 返回上一个功能</a>
+    <h1>图片去水印</h1>
+    <p>可自动找出疑似水印，也可用细画笔手动标记。本地免费修补后另存 PNG。</p>
+  </header>
+  <div class="toolbar">
+    <label>导入图片 <input id="imageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
+    <button id="detect" type="button" disabled>自动识别水印</button>
+    <button id="paintMode" type="button" aria-pressed="true" disabled>手动精修</button>
+    <button id="eraseMode" type="button" aria-pressed="false" disabled>擦除选区</button>
+    <label>画笔大小 <input id="brushSize" type="range" min="2" max="60" value="6" disabled></label>
+    <label>查看比例 <select id="zoom" disabled><option value="0">适应窗口</option><option value="1">原图大小</option><option value="2">放大 2 倍</option></select></label>
+    <button id="undo" disabled>撤销上一步</button>
+    <button id="clear" disabled>清空选区</button>
+    <label title="粗圈文字后，可只修补其中识别到的笔画。实心图标请选择手动精修。"><input id="refine" type="checkbox" disabled> 只修识别到的文字笔画</label>
+    <button id="repair" class="primary" disabled>开始本地修补</button>
+  </div>
+  <p class="muted">支持 JPG、PNG、WebP，单张最多 8 MB、800 万像素。不上传、不扣积分。</p>
+  <p id="status" role="status">请选择一张图片。</p>
+  <div class="workspace">
+    <section class="panel">
+      <h2>1 · 标记水印</h2>
+      <p class="muted">自动识别后先核对选区，可擦掉误选或用细笔补画。沿文字和描边涂抹，尽量避开主体边缘。</p>
+      <div class="editor-scroll"><div class="image-stage" id="imageStage" hidden><img id="original" alt="原图"><canvas id="mask" aria-label="在原图上涂抹水印"></canvas></div></div>
+    </section>
+    <section class="panel">
+      <h2>2 · 结果预览</h2>
+      <img class="preview" id="result" alt="修补后的图片" hidden>
+      <div class="actions"><a id="download" hidden>导出 PNG</a></div>
+    </section>
+  </div>
+</main><script src="/static/themes228.js"></script><script src="/static/image_watermark247.js"></script></body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "path": "/api/breakdown/projects",
+  "status": 200,
+  "body": {
+    "projects": []
+  }
+}

@@ -1,0 +1,19 @@
+.novel-main{max-width:1160px;margin:auto;padding:24px}
+.novel-crumb{color:var(--gold);font-size:.85rem}
+.novel-main header h1{margin:6px 0}
+.novel-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
+.novel-projects,.novel-process{margin-block:16px}
+.novel-project-controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+.novel-project-controls .novel-field{min-width:180px;flex:1}
+.novel-field{display:grid;gap:6px;margin:9px 0}
+.novel-field :is(input,textarea,select),.novel-file{padding:8px 10px}
+.novel-field textarea{width:100%;resize:vertical;box-sizing:border-box}
+.novel-field textarea[readonly]{color:inherit}
+.novel-file{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+.novel-file input{max-width:100%;box-sizing:border-box}
+.novel-stages{display:flex;gap:10px;flex-wrap:wrap;list-style:none;padding:0}
+.novel-stages li{padding:7px 11px;border:1px solid var(--line,#54616a);border-radius:8px}
+.novel-stages [aria-current="step"]{color:var(--gold);border-color:currentColor;font-weight:600}
+.novel-save{margin-block:12px}
+#sourceCount{margin:6px 0}
+@media(max-width:750px){.novel-main{padding:12px}.novel-grid{grid-template-columns:1fr}}

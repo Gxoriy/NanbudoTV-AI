@@ -1,0 +1,14 @@
+.reference-resolution233 { margin-top:12px; font-size:13px; color:inherit; }
+.reference-resolution233>details { margin:8px 0; padding:10px; border:1px solid #78878c66; border-radius:7px; }
+.reference-resolution233 summary { cursor:pointer; font-weight:600; }
+.reference-resolution233 p { margin:8px 0; font-size:12px; }
+.reference-resolution233 input[type=search] { margin:10px 0; width:100%; box-sizing:border-box; min-height:34px; }
+.reference-resolution233 .reference-choices233 { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr)); gap:8px; max-height:300px; overflow:auto; margin-top:8px; }
+.reference-resolution233 .reference-choice233 { display:flex; align-items:center; gap:8px; text-align:left; white-space:normal; min-width:0; padding:7px; color:inherit; font:inherit; background:transparent; border:1px solid #78878c88; border-radius:5px; }
+.reference-resolution233 .reference-choice233[aria-pressed=true] { border:2px solid #c6a34c; }
+.reference-resolution233 .reference-choice233>img { width:85px!important; height:76px!important; flex:none; object-fit:contain; background:#8c919222; }
+.reference-resolution233 .reference-choice233>span { display:grid; gap:4px; min-width:0; overflow-wrap:anywhere; }
+.reference-resolution233 .reference-choice233 strong { font:inherit; font-weight:600; }
+.reference-resolution233 .reference-choice233 small { font-size:11px; line-height:1.45; opacity:.85; max-height:6em; overflow:auto; }
+.reference-resolution233 .reference-choice233:disabled { opacity:.55; cursor:not-allowed; }
+@media (max-width:600px) { .reference-resolution233 .reference-choices233 { grid-template-columns:1fr; } }

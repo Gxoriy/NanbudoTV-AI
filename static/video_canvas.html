@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>单条视频画布</title><link rel="stylesheet" href="/static/video_canvas.css"><link rel="stylesheet" href="/static/model_activity.css"><link rel="stylesheet" href="/static/aspect_ratio.css"><script src="/static/model_activity.js"></script><script src="/static/aspect_ratio.js"></script><link rel="stylesheet" href="/static/themes228.css"><script src="/static/themes228.js"></script><link rel="stylesheet" href="/static/canvas_studio252.css"></head>
+<body class="tutorial-canvas-layout canvas-studio252 canvas-workspace254 canvas-gallery-active"><link rel="stylesheet" href="/static/tutorials.css"><link rel="stylesheet" href="/static/canvas_workspace254.css"><link rel="stylesheet" href="/static/canvas_assistant254.css"><link rel="stylesheet" href="/static/canvas_director254.css"><link rel="stylesheet" href="/static/canvas_project_assets.css"><link rel="stylesheet" href="/static/canvas_project_gallery.css">
+<header class="studio-topbar"><div><span class="eyebrow">CANVAS STUDIO 2.0</span><h1>画布 <small>2.0</small></h1></div><button id="showCanvasGallery">返回画布项目界面</button><input id="canvasName" aria-label="画布名称" maxlength="80" value="我的单条视频"><select id="documents" aria-label="已保存项目"></select><button id="newCanvas">新建</button><button id="saveCanvas">保存画布</button><button id="deleteCanvas">删除项目</button><button id="removedCanvases">已删除项目</button><button id="savedWorks">已保存作品</button><button id="resultArchive">画布历史结果</button><button id="fullscreen">全屏</button></header>
+
+<main>
+<aside class="tools" aria-label="画布工具">
+<button id="toggleAdd" title="添加节点" aria-label="添加节点" aria-expanded="false">＋</button>
+<button id="toggleNavigator" title="搜索与定位节点" aria-label="搜索与定位节点" aria-expanded="false">⌕</button>
+<button id="toggleMinimap" title="小地图" aria-label="小地图" aria-pressed="false">▧</button>
+<button id="layoutLock" title="锁定布局" aria-label="锁定布局" aria-pressed="false">♧</button>
+<button id="undo" title="撤销 Ctrl+Z" aria-label="撤销" disabled>↶</button>
+<button id="redo" title="重做 Ctrl+Shift+Z" aria-label="重做" disabled>↷</button>
+<button id="duplicateNode" title="复制选中节点 Ctrl+D" aria-label="复制选中节点" disabled>⧉</button>
+<button id="openCanvasAssistant254" title="文字协作 AI" aria-label="文字协作 AI">✧</button>
+<button id="openCanvasDirector254" title="打开导演台" aria-label="打开导演台">▱</button>
+<button id="openCanvasProjectAssets" type="button" title="项目资产" aria-label="项目资产">▤</button>
+</aside>
+<section id="addPanel" class="studio-popover" aria-label="添加节点菜单" hidden><b>添加到画布</b><span class="muted">素材与汇合</span><button data-add="prompt">✎ 创意提示词</button><button data-add="person">♙ 人物形象</button><button data-add="scene">▧ 场景</button><button data-add="prop">◇ 产品 / 道具</button><button data-add="reference">▷ 视频参考</button><span class="muted">生成与编辑</span><button data-add="image_generator">▧ 图片生成 / 编辑</button><button data-add="generator">▶ 视频生成</button><small>上传、连接、整理免费；生成时单独确认积分。</small></section>
+<section id="navigatorPanel" class="studio-popover" aria-label="节点导航" hidden><b>查找画布内容</b><input id="nodeSearch" type="search" placeholder="搜索节点名称、类型或描述" aria-label="搜索画布节点"><div id="nodeSearchResults"></div></section>
+<div class="studio-viewtools"><label for="interactionMode">拖动空白</label><select id="interactionMode" aria-label="空白拖动方式"><option value="pan">移动画布</option><option value="select">框选节点</option></select><button id="fit" title="显示全部节点">适应</button><button id="resetView" title="恢复原始大小">100%</button><button id="shortcutsHelp" title="查看画布操作说明">?</button></div>
+<section id="viewport" aria-label="自由连线画布"><div id="world"><div id="groups"></div><svg id="wires" aria-label="素材连接"></svg><div id="nodes"></div><svg id="wireEndpoints" aria-label="已选连接的改接端点"></svg></div><div id="wireDragHint" role="status" aria-live="polite" hidden><span id="wireDragText"></span><i aria-hidden="true"></i></div><div id="marquee" hidden></div><div id="selectionToolbar" role="toolbar" aria-label="多选操作" hidden><b id="selectionCount"></b><button data-studio-action="copy">复制</button><button data-studio-action="duplicate">创建副本</button><button data-studio-action="group">分组</button><button data-studio-action="ungroup">解组</button><button data-studio-action="align-left">左对齐</button><button data-studio-action="arrange">排列</button><button data-studio-action="delete">删除</button></div><div id="minimap" aria-label="画布小地图" hidden><div>小地图 · 点击定位</div><svg viewBox="0 0 220 130" role="img" aria-label="节点位置概览"></svg></div><div id="emptyHint">右键添加 / 操作 · Shift 多选 · Ctrl+拖空白框选 · 空格+拖动平移</div><div id="zoomBadge">100%</div></section>
+<aside id="inspector" class="studio-inspector" hidden><div class="inspector-heading"><b id="inspectorTitle">节点设置</b><button id="inspectorToggle" aria-label="收起节点设置" aria-expanded="true">收起</button><button id="inspectorClose" aria-label="关闭节点设置">×</button></div><div id="inspectorBody"><section id="fields"><p>选择节点查看设置。</p></section><section class="run"><h2 id="runTitle">运行所选生成节点</h2><p id="quote">正在读取已发布模型…</p><p id="balance">积分读取中…</p><button id="generate" class="primary" disabled>确认积分并生成</button><button id="recharge" hidden>充值积分</button><button id="observe" hidden>继续查询原任务（不重复扣费）</button><p id="progress" role="status"></p><p class="muted">只运行当前节点，不自动扣费重跑整条链。上游结果就绪后才可运行下一步；修改输入会标记旧结果过期，历史文件仍保留。</p></section></div></aside></main>
+<footer id="status" role="status">正在载入画布…</footer>
+<section id="canvasGallery" class="canvas-gallery" aria-labelledby="canvasGalleryTitle">
+  <div class="canvas-gallery-shell">
+    <div class="canvas-gallery-heading">
+      <div><span class="canvas-gallery-kicker">CANVAS STUDIO 2.0</span><h1 id="canvasGalleryTitle" tabindex="-1">画布项目</h1><p>选一张画布继续创作，也可以新建项目。</p></div>
+      <button class="primary" type="button" data-gallery-create>＋ 新建画布</button>
+    </div>
+    <div class="canvas-gallery-toolbar"><input type="search" aria-label="搜索画布项目" placeholder="搜索项目名称"><div class="canvas-gallery-selection"><label class="canvas-gallery-check"><input type="checkbox" data-gallery-select-all> 全选当前列表</label><span data-gallery-selected-count aria-live="polite">已选 0 个</span><button type="button" data-gallery-delete-selected disabled>删除选中</button></div><div><button type="button" data-gallery-action="refresh">刷新列表</button><button type="button" data-gallery-action="removed">已删除项目</button></div></div>
+    <p data-project-status role="status">正在读取已保存的画布…</p>
+    <div data-project-grid></div>
+  </div>
+</section>
+<section id="canvasBoot254" class="canvas-boot254" aria-label="画布准备状态" hidden><div class="boot-mark254" aria-hidden="true">N·TV</div><h2 id="canvasBootTitle254">正在打开画布</h2><p id="canvasBootDetail254" role="status" aria-live="polite">读取已保存的画布与节点</p><div class="boot-track254"><span id="canvasBootProgress254"></span></div></section>
+<div id="canvasContextMenu" role="menu" aria-label="画布右键菜单" hidden></div><dialog id="shortcutsDialog"><button id="closeShortcuts">关闭</button><h2>画布 2.0 · 这样操作</h2><p>右键空白处添加节点；右键节点复制、分组或整理，右键连线改接或断开。</p><p>Shift+点击多选；Ctrl+拖动空白处框选。选中多个节点后，拖任意一个标题即可一起移动。空格+拖动始终移动画布，滚轮缩放。</p><p>Ctrl+C / Ctrl+V 复制粘贴选中节点及内部连线；Ctrl+D 直接创建副本。Ctrl+Z 撤销，Ctrl+Shift+Z / Ctrl+Y 重做。Delete 删除所选节点或连接。</p><p>拖动端口连线，拖到空白可添加下一步；按住连线拉远，看到“松手断开”再松手。Esc 取消当前拖动。</p><p>选中一个节点，在附近设置面板编辑模型和提示词。可收起或关闭面板，重新点击节点即可展开。分组与排列不运行任务、不扣积分。</p></dialog><input id="upload" type="file" hidden>
+<dialog id="viewer"><button id="closeViewer">关闭</button><div id="viewerMedia"></div></dialog>
+<dialog id="newCanvasProjectDialog" aria-labelledby="newCanvasProjectTitle">
+  <form id="newCanvasProjectForm" class="canvas-create-form">
+    <h2 id="newCanvasProjectTitle">新建画布项目</h2>
+    <label>项目名称 <input id="newCanvasProjectName" name="projectName" maxlength="80" required autofocus></label>
+    <label>默认图片模型 <select id="newCanvasImageModel" name="imageModel"></select></label>
+    <label>默认视频模型 <select id="newCanvasVideoModel" name="videoModel"></select></label>
+    <p class="muted">默认模型用于新建节点，进入画布后也可以在单个节点里换模型。</p>
+    <p id="newCanvasProjectStatus" role="status" aria-live="polite"></p>
+    <div class="canvas-create-actions"><button id="cancelNewCanvasProject" type="button">取消</button><button id="submitNewCanvasProject" class="primary" type="submit">创建并进入</button></div>
+  </form>
+</dialog>
+<dialog id="removedCanvasesDialog" aria-labelledby="removedCanvasesTitle"><button id="closeRemovedCanvases">关闭</button><h2 id="removedCanvasesTitle">已删除项目</h2><p>删除项目只从当前列表隐藏；本机素材、历史结果和原订单保留。恢复项目后可继续查询未决原任务，本次操作不退款、不生成。</p><div id="removedCanvasRows"></div></dialog>
+<style>#removedCanvasesDialog{position:fixed;width:min(80vw,760px);max-width:760px;max-height:80dvh;overflow:auto}#removedCanvasRows .saved-work{display:flex;gap:16px;align-items:center;justify-content:space-between}#removedCanvasRows .saved-work b{overflow-wrap:anywhere}#removedCanvasRows .saved-work small{display:block;margin-top:5px;font-size:12px}#removedCanvasRows button{flex-shrink:0}</style>
+<script>
+// Keep this archive chooser in the visible parent viewport of a tall iframe,
+// using the same frame-offset positioning as the studio confirmation dialog.
+(() => {
+  const dialogs=['removedCanvasesDialog','newCanvasProjectDialog'].map(id=>document.getElementById(id));
+  let parentWindow=null;
+  function positionDialog(dialog){
+    if(!dialog.open)return;
+    try{
+      if(parent===window||!window.frameElement)return;
+      const frame=window.frameElement.getBoundingClientRect();
+      const top=Math.max(0,-frame.top),bottom=Math.min(innerHeight,parent.innerHeight-frame.top);
+      if(bottom<=top)return;
+      dialog.style.maxHeight=Math.max(1,bottom-top-32)+'px';
+      dialog.style.top=Math.max(top+16,top+(bottom-top-dialog.getBoundingClientRect().height)/2)+'px';
+      dialog.style.bottom='auto';dialog.style.margin='0 auto';
+    }catch(_){/* Standalone and cross-origin embeds keep native positioning. */}
+  }
+  const position=()=>dialogs.forEach(positionDialog);
+  const observer=new MutationObserver(position);
+  dialogs.forEach(dialog=>observer.observe(dialog,{attributes:true,attributeFilter:['open']}));
+  window.addEventListener('resize',position);
+  try{if(parent!==window){parentWindow=parent;parentWindow.addEventListener('resize',position);parentWindow.addEventListener('scroll',position,{passive:true});}}catch(_){}
+  window.addEventListener('pagehide',()=>{observer.disconnect();try{parentWindow?.removeEventListener('resize',position);parentWindow?.removeEventListener('scroll',position);}catch(_){}},{once:true});
+})();
+</script>
+<dialog id="savedWorksDialog"><button id="closeSavedWorks">关闭</button><h2>已保存作品 · 程序内作品库</h2><p>“收藏到作品库”仅添加收藏标记，文件保存在本机程序数据目录；“另存到电脑”会让你选择导出位置。不要直接删除此目录的文件。</p><div id="savedWorksRows"></div></dialog>
+<dialog id="resultLocationDialog"><button id="closeResultLocation">关闭</button><h2>结果文件位置</h2><p id="resultLocationText"></p><button id="revealResult">打开所在文件夹</button></dialog>
+<dialog id="canvasResultsDialog"><button id="closeCanvasResults">关闭</button><h2>画布历史结果</h2><p class="muted">生成结果已合并到所属生成卡。这里保留本画布的历史记录；无法确认所属节点或原节点已删除的结果仍可查看、收藏和另存，不会挂到其他卡上。移除只隐藏记录，本机文件保留。</p><div id="canvasResultsRows"></div></dialog>
+<div id="linkMenu" hidden><b>选择下一步</b><button data-next="prompt">✎ 文字 / 素材汇合</button><button data-next="person">♙ 人物形象汇合</button><button data-next="scene">▧ 场景汇合</button><button data-next="prop">◇ 产品 / 道具汇合</button><button data-next="reference">▷ 视频参考汇合</button><button data-next="image_generator">▧ 图片生成 / 编辑</button><button data-next="generator">▶ 视频生成</button><button id="cancelLink">取消连接</button></div>
+<script src="/static/tutorials.js"></script><script src="/static/studio_dialog.js"></script><script src="/static/model_presentation.js"></script><script src="/static/character_picker.js"></script><script src="/static/canvas_graph.js"></script><script src="/static/reference_mentions.js"></script><script src="/static/canvas_studio252.js"></script><script src="/static/canvas_assistant254.js"></script><script src="/static/canvas_director254.js"></script><script src="/static/canvas_project_assets.js"></script><script src="/static/canvas_project_gallery.js"></script><script src="/static/video_canvas.js"></script></body></html>

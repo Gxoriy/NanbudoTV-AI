@@ -1,0 +1,1609 @@
+{
+  "count": 265,
+  "routes": [
+    {
+      "path": "/api/",
+      "owners": [
+        "DesktopApi.save_download"
+      ]
+    },
+    {
+      "path": "/api/asr/download",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/asr/status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/asset-library/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/audio-observe",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/breakdown/motion",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/motion-cancel",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/motion-install",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/motion-runtime",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/breakdown/outputs",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/breakdown/project",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/breakdown/projects",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/breakdown/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/records",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/reference-crop",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/reference-workflow",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/restore-audio",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/breakdown/save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/assets/",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/assistant/catalog",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/assistant/history",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/assistant/observe",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/assistant/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/assistant/start",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/cover",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/create",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/disconnect",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/document",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/list",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/location",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/result",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/reveal",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/run-status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/canvas/saved",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/styles",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/canvas/upload",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/characters/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters/combine",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters/hall",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/characters/hall-import",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters/hall-media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/characters/image-models",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/characters/library",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/characters/manage",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/characters/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters/recording-diagnostics",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/characters/recording-session",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters/recording-session/cancel",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/characters/upload",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/client/config",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/creation/submission",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/download",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/ecommerce-showcase",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/ecommerce-showcase-media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/ecommerce/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/ecommerce/batch/",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/ecommerce/batch/archive",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/ecommerce/workbench/",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/ecommerce/workbench/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/hall/downloads",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/hall/downloads/cover",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/hall/downloads/stream",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/hall/episodes",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/hall/rank",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/hall/series/download",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/hall/series/transcribe",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/health",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/history",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/history/delete",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/history/item",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/history/policy",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/history/rename",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/image-watermark/detect",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/image-watermark/repair",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/license/activate",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/license/refresh",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/license/status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/link/analyze",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/link/cover",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/link/download",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/link/import",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/link/stream",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/local-cache",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/local-storage/retry",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/local-storage/settings",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/marketing/analyze",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/marketing/generate",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/model-profiles",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/model-profiles/save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/model-profiles/test",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/novel-projects250/",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/novel-screenplay/quote",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/novel-screenplay/start",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/original/field-optimize",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/original/recommend",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/analyze",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/audio",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/project",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/projects",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/quote",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/reconcile",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/restore-audio",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/to-canvas",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/prompt-reverse/upload",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/quality/optimize",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/quality/repair-episode",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/quality/score",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/rewrite-projects",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/rewrite-projects/delete",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/rewrite-projects/item",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/rewrite-projects/rename",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/rewrite-projects/save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/rewrite/reconcile",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/rewrite/resume",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/rewrite/settings-suggest",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/runtime/status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/script-alignment/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/script-alignment/submit",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/script/revision",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/session/login",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/session/status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/shutdown",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/source/analyze",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/source/profile",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/source/proposal-refine",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/source/proposals",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/source/proposals/recover",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/source/refine",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/storage/clear",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/storage/status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/store/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/store/create",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/store/prepare",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/store/project",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/store/projects",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/store/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/store/result",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/store/save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/store/upload",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/story-workflow/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/capabilities",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/subtitle/detect",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/existing",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/subtitle/import-existing",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/list",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/subtitle/local-start",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/local-stop",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/subtitle/projects",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/subtitle/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/record",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/subtitle/resume",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/stop",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/submit",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/subtitle/upload",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/tasks",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/tasks/",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/test-model",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/transcribe",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/tutorial-video",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/tutorials",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/update/download",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/update/install",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/update/reveal",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/upload",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/video-voice/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/video-voice/source",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/video-voice/status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/archive",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/add",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/bind-character",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/generate",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/history/select",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/observe",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/prompt",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/reset",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/restore",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/split",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/asset/upload",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/assets/analyze",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/assets/deduplicate",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/cover/generate",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/cut-storyboard",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/cut/decision",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/cut/prompt-save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/cut/source-save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/cut/storyboard-one",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/download",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/episode-cut",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/frame",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/prompt",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/references",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/settings",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/settings/apply-all",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/state",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/video",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/video/observe",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/episode/video/reset",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/live-quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/card/draft",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/card/reference",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/card/reference/delete",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/card/source",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/history",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/media/cancel-quotes",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/media/catalog",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/media/detach",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/media/observe",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/media/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/media/scene-quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/media/submit",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/pipeline-return",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/quote",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/recheck-return",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/recover",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/regroup/apply",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/regroup/preview",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/return-draft",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/state",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/macro/submit",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/models",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/normalize",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/plan",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/points",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/profile",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/profile/save",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/project",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/project-thumbnail",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/project/create",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/project/delete",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/project/scenes",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/projects",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/scene-videos/archive",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/script-storyboard",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/settings",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/style/create",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/style/delete",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/styles",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/unlock",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/usage",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/visual/video-history/clear",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/visual/video-preview",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/voices/",
+      "owners": [
+        "Handler.do_GET",
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/voices/catalog",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/voices/media",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/voices/quote",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/watch/discard",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/watch/open",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/watch/start",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/watch/status",
+      "owners": [
+        "Handler.do_GET"
+      ]
+    },
+    {
+      "path": "/api/watch/stop",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    },
+    {
+      "path": "/api/writing/auxiliary/recover",
+      "owners": [
+        "Handler.do_POST"
+      ]
+    }
+  ]
+}

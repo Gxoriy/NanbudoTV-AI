@@ -1,0 +1,55 @@
+/* Approved black/gold identity. Keep the existing workspace layout intact. */
+.brand-mark img,
+.brand > img,
+.local-badge img {
+  object-fit: contain;
+  filter: none !important;
+}
+
+.brand h1,
+.login-shell .brand > div > b {
+  letter-spacing: -.025em;
+  font-kerning: normal;
+  font-weight: 800;
+}
+
+.brand-mark,
+.brand > img,
+.local-badge img {
+  flex-shrink: 0;
+}
+
+.top-actions #openUserGuide247 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+#openUserGuide247 .guide-entry-avatar271 {
+  display: block;
+  flex: none;
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 7px;
+}
+
+#openUserGuide247 .guide-entry-copy271 {
+  display: grid;
+  gap: 2px;
+  text-align: start;
+  line-height: 1.15;
+}
+
+#openUserGuide247 .guide-entry-name271 {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  #openUserGuide247 .guide-entry-avatar271 {
+    inline-size: 26px;
+    block-size: 26px;
+  }
+}

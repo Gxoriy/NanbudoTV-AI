@@ -1,0 +1,9 @@
+{
+  "path": "/api/hall/downloads",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "records": [],
+    "storagePath": "F:\\WorkAPP\\短剧改写工作台\\data\\outputs\\我的下载"
+  }
+}

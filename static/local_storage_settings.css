@@ -1,0 +1,59 @@
+/* The settings dialog lives in the host page's top layer, above all iframes. */
+#localStorageSettings227{width:min(920px,calc(100vw - 32px));max-width:none;max-height:min(900px,calc(100dvh - 32px));padding:0;border:1px solid #64605a;border-radius:14px;background:#25282c;color:#f0eee8;box-shadow:0 24px 90px #0008;overflow:hidden}
+#localStorageSettings227::backdrop{background:#0009;backdrop-filter:blur(3px)}
+#localStorageSettings227 .storage-settings-shell{display:flex;flex-direction:column;max-height:min(900px,calc(100dvh - 32px));min-height:0}
+#localStorageSettings227 .storage-settings-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px 22px;border-bottom:1px solid #494c50;flex:0 0 auto}
+#localStorageSettings227 h2{margin:0;font-size:21px;line-height:1.4;color:#fff0ca}
+#localStorageSettings227 .storage-settings-head p{margin:5px 0 0;font-size:13px;line-height:1.65;color:#c2c0ba}
+#localStorageSettings227 .storage-settings-close{flex:none;min-width:36px;min-height:36px;padding:4px 8px;font-size:21px;line-height:1}
+#localStorageSettings227 .storage-settings-body{padding:16px 22px;overflow:auto;overscroll-behavior:contain;flex:1 1 auto;min-height:0;scrollbar-gutter:stable}
+#localStorageSettings227 .storage-settings-note{margin:0 0 14px;padding:11px 13px;border:1px solid #695b3c;border-radius:9px;background:#373125;color:#e1d4b5;font-size:13px;line-height:1.75}
+#localStorageSettings227 .storage-settings-native-note{margin:0 0 12px;color:#c2c0ba;font-size:12px;line-height:1.7}
+#localStorageSettings227 .storage-settings-row{padding:13px 0;border-bottom:1px solid #414449}
+#localStorageSettings227 .storage-settings-row:first-child{padding-top:0}
+#localStorageSettings227 .storage-settings-row label{display:block;margin-bottom:7px;font-size:14px;font-weight:700;color:#eee8da}
+#localStorageSettings227 .storage-settings-path{display:flex;gap:8px;align-items:center;min-width:0}
+#localStorageSettings227 input{box-sizing:border-box;min-width:0;flex:1 1 auto;width:auto;margin:0;padding:10px 11px;border:1px solid #646363;border-radius:7px;background:#1f2226;color:#f4eee2;font-size:13px;line-height:1.5}
+#localStorageSettings227 input::placeholder{color:#989b9d}
+#localStorageSettings227 .storage-settings-path button{flex:0 0 auto;min-height:38px;padding:8px 11px;font-size:12px;white-space:nowrap}
+#localStorageSettings227 .storage-settings-errors{margin-top:15px;padding:12px;border:1px solid #93695d;border-radius:8px;background:#422e29;font-size:13px;line-height:1.7}
+#localStorageSettings227 .storage-settings-errors p{margin:0 0 6px;font-weight:700}
+#localStorageSettings227 .storage-settings-errors ul{margin:0;padding-left:20px;overflow-wrap:anywhere}
+#localStorageSettings227 .storage-settings-errors small{display:block;margin-top:8px;font-size:12px;font-weight:400}
+#localStorageSettings227 .storage-settings-errors button{margin-top:9px;padding:7px 12px;font-size:12px;min-height:34px}
+#openStorageSettings.storage-settings-alert{border-color:#c68870!important;color:#ffd0bd!important}
+#localStorageSettings227 .storage-settings-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 22px;border-top:1px solid #494c50;background:#292c30;flex:0 0 auto}
+#localStorageSettings227 .storage-settings-status{margin:0;min-width:0;font-size:13px;line-height:1.6;color:#d4d0c5;overflow-wrap:anywhere}
+#localStorageSettings227 .storage-settings-status.error{color:#ffbdad}
+#localStorageSettings227 .storage-settings-status.success{color:#a8d7bc}
+#localStorageSettings227 .storage-settings-actions{display:flex;align-items:center;gap:8px;flex:none}
+#localStorageSettings227 .storage-settings-actions button{min-height:37px;padding:8px 14px;white-space:nowrap;font-size:13px}
+#localStorageSettings227 .storage-settings-discard{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 22px;background:#473a26;border-top:1px solid #7c6944;flex:0 0 auto;font-size:13px;line-height:1.6}
+#localStorageSettings227 .storage-settings-discard[hidden],#localStorageSettings227 [hidden]{display:none!important}
+#localStorageSettings227 .storage-settings-discard div{display:flex;gap:8px;flex:none}
+#localStorageSettings227 .storage-settings-discard button{padding:7px 11px;font-size:12px;min-height:33px}
+#localStorageSettings227 .storage-cache269{margin:0 0 16px;padding:13px;border:1px solid #646363;border-radius:9px;background:color-mix(in srgb,currentColor 4%,transparent)}
+#localStorageSettings227 .storage-cache269 h3{margin:0 0 7px;font-size:15px}
+#localStorageSettings227 .storage-cache269 p{margin:7px 0;font-size:13px;line-height:1.7}
+#localStorageSettings227 .storage-cache269 button{min-height:34px;padding:7px 11px;font-size:12px}
+#localStorageSettings227 [data-cache-confirmation269]{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:13px}
+#localStorageSettings227 [data-cache-confirmation269]>span{flex:1 1 200px}
+#localStorageSettings227 [data-cache-status269].error{color:#ffbdad}
+#localStorageSettings227 .storage-inventory279,#localStorageSettings227 .storage-cleanup279{margin:12px 0 0;min-width:0;padding:10px 12px;border:1px solid var(--theme-border,#646363);border-radius:8px}
+#localStorageSettings227 .storage-inventory279 h4,#localStorageSettings227 .storage-cleanup279 legend{margin:0;font-size:13px;font-weight:700}
+#localStorageSettings227 .storage-inventory279 small{margin-left:7px;font-size:11px;font-weight:400;color:var(--theme-muted,#c2c0ba)}
+#localStorageSettings227 .storage-inventory279 dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 16px;margin:8px 0 0;font-size:13px}
+#localStorageSettings227 .storage-inventory279 dl>div,#localStorageSettings227 [data-cache-categories279] label{display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px}
+#localStorageSettings227 .storage-inventory279 dd{margin:0}
+#localStorageSettings227 .storage-inventory279 dd,#localStorageSettings227 [data-cache-categories279] label>span:last-of-type{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--theme-muted,#c2c0ba)}
+#localStorageSettings227 .storage-inventory279 details{margin-top:10px;border-top:1px solid var(--theme-border,#646363);padding-top:8px;font-size:13px}
+#localStorageSettings227 .storage-inventory279 details summary{cursor:pointer}
+#localStorageSettings227 .storage-inventory279 details h5{margin:8px 0 0;font-size:12px}
+#localStorageSettings227 [data-cache-categories279] label>small{flex-basis:100%;padding-left:24px;color:var(--theme-muted,#c2c0ba)}
+#localStorageSettings227 .storage-cleanup-all279{display:flex;align-items:center;gap:8px;font-size:13px}
+#localStorageSettings227 [data-cache-categories279] label{margin-top:7px;padding-top:7px;border-top:1px solid var(--theme-border,#646363);font-size:13px}
+#localStorageSettings227 .storage-cleanup279 input[type=checkbox]{flex:none;width:16px;height:16px;margin:0;padding:0;accent-color:var(--theme-accent,#ffcf71)}
+#localStorageSettings227 .storage-cleanup-result279{margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.6}
+@media(max-width:510px){#localStorageSettings227 .storage-inventory279 dl{grid-template-columns:1fr}}
+@media(max-width:650px){#localStorageSettings227{width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}#localStorageSettings227 .storage-settings-shell{max-height:calc(100dvh - 16px)}#localStorageSettings227 .storage-settings-head{padding:12px 14px}#localStorageSettings227 h2{font-size:18px}#localStorageSettings227 .storage-settings-head p{font-size:12px}#localStorageSettings227 .storage-settings-body{padding:12px 14px}#localStorageSettings227 .storage-settings-path{flex-wrap:wrap;gap:6px}#localStorageSettings227 input{flex-basis:100%}#localStorageSettings227 .storage-settings-path button{min-height:32px;padding:6px 10px}#localStorageSettings227 .storage-settings-footer{padding:10px 14px;gap:8px;align-items:flex-end}#localStorageSettings227 .storage-settings-actions{gap:6px}#localStorageSettings227 .storage-settings-actions button{padding:7px 10px}#localStorageSettings227 .storage-settings-status{font-size:12px}#localStorageSettings227 .storage-settings-discard{padding:10px 14px;flex-wrap:wrap}}
+@media(max-height:540px){#localStorageSettings227 .storage-settings-head{padding-top:11px;padding-bottom:11px}#localStorageSettings227 .storage-settings-head p{margin-top:3px}#localStorageSettings227 .storage-settings-footer{padding-top:9px;padding-bottom:9px}}

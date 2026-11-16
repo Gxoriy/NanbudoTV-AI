@@ -1,0 +1,640 @@
+/* Graphite editing desk. Keep existing controls and the approved rewrite layout. */
+/* Fluid desktop canvas, no fixed 1600px cap at full-screen resolutions. */
+.atelier-shell .workspace{width:calc(100% - clamp(24px,3vw,72px));max-width:none;grid-template-columns:clamp(185px,13vw,270px) minmax(0,1fr);gap:clamp(18px,1.6vw,36px)}
+.atelier-workflow .visual-page-workspace{width:calc(100% - clamp(20px,2.2vw,56px));max-width:none}
+.atelier-shell .client-notice{width:calc(100% - clamp(24px,3vw,72px));max-width:none}
+.atelier-shell .content-column{min-width:0;max-width:none;width:100%}
+.atelier-shell .content-column:has(>#sourceCard:not(.hidden)){grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+@media(min-width:1900px){.atelier-shell .panel,.atelier-workflow .visual-studio-panel{padding:30px}.atelier-shell :is(input,select,textarea),.atelier-workflow :is(input,select,textarea){font-size:19px!important}.atelier-shell :is(label>span,.field>span),.atelier-workflow :is(label>span,.visual-asset-prompt-label){font-size:18px!important}.atelier-shell :is(button,.secondary-btn,.ghost-btn),.atelier-workflow :is(button,.secondary-btn,.ghost-btn){font-size:18px!important}.atelier-shell #sourceText,.atelier-workflow :is(.visual-episode-script,.visual-episode-storyboard) pre{font-size:20px!important}.atelier-workflow .visual-card-grid{grid-template-columns:repeat(auto-fill,minmax(350px,1fr))}.atelier-shell .atelier-page-heading h2{font-size:38px}}
+@media(max-width:1199px){.atelier-shell .content-column:has(>#sourceCard:not(.hidden)){grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){.atelier-shell .workspace{width:calc(100% - 20px);display:flex}.atelier-workflow .visual-page-workspace{width:calc(100% - 16px)}}
+:root{color-scheme:dark;--bg:#202123;--panel:#2b2d30;--panel-2:#34363b;--text:#edf0f4;--muted:#bcc1ca;--line:#4b4e54;--accent:#ffca68;--accent-2:#f2b94f;--cyan:#a7ddbd;--success:#a7ddbd;--danger:#ffb4b4}
+body,.atelier-shell,.atelier-workflow{background:#202123!important;color:#edf0f4!important}
+.topbar,.atelier-sidebar{background:#2b2d30!important;border-color:#4b4e54!important}
+.atelier-shell .content-column>.panel,.atelier-workflow .visual-studio-panel{background:#202123!important;border-color:#4b4e54!important}
+.atelier-workflow :is(.visual-asset-section,.visual-episode-section,.visual-project-center){background:#25272a!important;border-color:#46494e!important}
+.atelier-workflow :is(.visual-card.asset-compact,.visual-project-card,.visual-episode-card){background:#2b2d30!important;border-color:#50535a!important}
+.atelier-workflow .asset-compact .visual-card-preview{background:#242527!important;color:#b7bdc7!important}
+/* Asset editors live inside narrow cards, not the wide episode settings column.
+   Zero-minimum tracks keep intrinsic form widths from expanding the editor. */
+.atelier-workflow .visual-card.asset-compact .visual-card-body{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.atelier-workflow .visual-card.asset-compact .asset-edit-panel{grid-template-columns:minmax(0,1fr);min-width:0;width:100%;max-width:100%}
+.atelier-workflow .visual-card.asset-compact .asset-edit-panel>*{min-width:0;max-width:100%}
+.atelier-workflow .visual-card.asset-compact .asset-edit-panel textarea{width:100%;min-width:0;max-width:100%;margin:0;resize:vertical}
+.atelier-workflow .visual-card.asset-compact .asset-local-model{grid-template-columns:minmax(0,1fr);min-width:0;width:100%;max-width:100%;gap:6px}
+.atelier-workflow .visual-card.asset-compact .asset-local-model :is(span,select,small){grid-column:1;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.atelier-workflow .visual-card.asset-compact .asset-local-model select{width:100%}
+.atelier-workflow .visual-card.asset-compact .asset-eye-mask{display:block;white-space:normal;overflow-wrap:anywhere}
+.atelier-workflow .visual-card.asset-compact .asset-eye-mask input{width:auto;vertical-align:middle;margin-right:6px}
+.atelier-workflow .visual-card.asset-compact .visual-asset-dossier{width:100%;min-width:0;max-width:100%}
+.atelier-workflow .visual-card.asset-compact .visual-asset-dossier summary{white-space:normal;overflow-wrap:anywhere}
+.atelier-workflow .visual-card.asset-compact .visual-asset-dossier-row{grid-template-columns:minmax(0,.4fr) minmax(0,1fr)}
+.atelier-workflow .visual-card.asset-compact .asset-edit-panel .visual-result-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));min-width:0}
+.atelier-workflow .visual-card.asset-compact .visual-result-actions>button{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.atelier-workflow .visual-card.asset-compact .visual-card-actions{display:flex!important;flex-wrap:wrap;align-items:stretch;gap:8px;min-width:0}
+.atelier-workflow .visual-card.asset-compact .visual-card-actions>.asset-generate{flex:1 1 120px}
+.atelier-workflow .visual-card.asset-compact .visual-card-actions>:is(.asset-edit-toggle,.delete-asset){flex:0 1 auto}
+.atelier-workflow .visual-card.asset-compact .visual-card-actions>.pick-character{flex:1 1 100%;width:100%}
+.atelier-workflow .visual-card.asset-compact .visual-card-actions>.credit-hint{flex:1 1 100%;min-width:0;max-width:100%;margin:0;flex-wrap:wrap;white-space:normal;overflow-wrap:anywhere}
+.atelier-workflow .visual-card.asset-compact .visual-card-actions>.credit-hint>span{min-width:0;max-width:100%}
+.atelier-workflow .visual-card.asset-compact .visual-card-actions>button{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.45}
+.atelier-shell :is(input,textarea,select),.atelier-workflow :is(input,textarea,select),.login-shell :is(input,textarea,select){background:#242629!important;border-color:#565a61!important;color:#f0f2f5!important}
+input::placeholder,textarea::placeholder{color:#aeb4be!important;opacity:1}
+select option{background:#2b2d30!important;color:#edf0f4!important}
+.atelier-shell .primary-btn,.atelier-workflow .primary-btn,.login-shell .primary-btn,.atelier-workflow .asset-compact .asset-generate{background:#ffca68!important;color:#29231a!important;border-color:#ffca68!important;font-weight:700}
+.atelier-shell .primary-btn:disabled,.atelier-workflow .primary-btn:disabled{opacity:.6}
+.atelier-shell .work-mode-tab:not(.active){background:transparent!important;color:#d7dbe2!important}
+.atelier-shell .work-mode-tab.active{background:#423a2b!important;color:#ffca68!important}
+.atelier-workflow .visual-section-title>div>b{color:#edf0f4!important;border-left-color:#ffca68}
+.atelier-workflow .visual-section-title{border-color:#4b4e54!important}
+.atelier-workflow :is(.visual-image-model-bar,.visual-video-model-bar,.visual-stage-action,.visual-cover-section,.asset-local-model){background:#2b2d30!important;border-color:#4b4e54!important}
+.atelier-workflow :is(label>span,.visual-stage-action b,.visual-cover-disclosure>summary b),.atelier-shell label>span{color:#e5e8ee!important}
+.atelier-workflow .visual-stage-action{padding:18px 20px;margin:18px 0}
+.atelier-workflow .visual-stage-action .primary-btn{min-height:44px}
+.atelier-workflow .visual-workflow-steps{position:relative;top:auto;display:flex;gap:16px;border:0!important;border-bottom:1px solid #4b4e54!important;border-radius:0;background:transparent!important;padding:0;margin:22px 0}
+.atelier-workflow .visual-workflow-steps>b{display:none}
+.atelier-workflow .visual-workflow-steps button{flex:1;justify-content:flex-start;min-height:58px;background:transparent!important;border:0!important;border-bottom:3px solid transparent!important;border-radius:0;box-shadow:none!important}
+.atelier-workflow .visual-workflow-steps button.active{color:#ffca68!important;border-bottom-color:#ffca68!important}
+.atelier-workflow .visual-workflow-steps button i{background:#34363b!important;color:#d9dde4!important}
+.atelier-workflow .visual-studio-intro h1{font-size:32px;letter-spacing:-.5px;margin:8px 0}
+.atelier-workflow .visual-studio-panel{padding:24px}
+.atelier-workflow .visual-episode-card{padding:0;gap:0;overflow:hidden;margin-bottom:20px}
+.atelier-workflow .episode-card-heading{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid #4b4e54;background:#303237}
+.atelier-workflow .episode-card-heading b{font-size:19px;color:#f0f2f5}
+.atelier-workflow .episode-card-heading .visual-select-item{margin:0;font-size:16px}
+.atelier-workflow .visual-episode-prompt{padding:20px;border-right:1px solid #4b4e54}
+.atelier-workflow .visual-episode-output{gap:0}
+.atelier-workflow .visual-episode-output>.visual-episode-storyboard{padding:20px;border:0;border-right:1px solid #4b4e54!important;border-radius:0;background:#26282b!important}
+.atelier-workflow .visual-episode-output>*:not(.visual-episode-storyboard){margin:10px 18px}
+.atelier-workflow .visual-episode-script{padding:0;border:0!important;background:transparent!important}
+.atelier-workflow :is(.visual-episode-script,.visual-episode-storyboard) pre{background:transparent!important;color:#edf0f4!important;font-size:18px!important;line-height:1.9}
+.atelier-workflow .episode-generation-settings{padding:12px;border:1px solid #4b4e54;border-radius:8px;background:#25272a}
+.atelier-workflow .episode-generation-settings>summary{cursor:pointer;color:#ffca68;font-size:16px;font-weight:650}
+.atelier-workflow .episode-generation-settings[open]>summary{margin-bottom:14px}
+.atelier-workflow .visual-output-box{min-height:230px;background:#202123!important;border-color:#555962!important}
+.atelier-workflow .visual-episode-card>.visual-reference-picker{margin:0;padding:16px 20px;border:0;border-top:1px solid #4b4e54!important;border-radius:0;background:#25272a!important}
+.atelier-workflow .visual-episode-card h4{font-size:18px!important;color:#e9edf3!important}
+.atelier-workflow .visual-video-toolbar{margin:16px 0;background:#2b2d30!important}
+.atelier-workflow .visual-video-concurrency-note{margin:12px 0 0;color:#bcc1ca;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.danger-outline-btn,.history-delete{background:#432e34!important;color:#ffb4b4!important;border-color:#87565e!important}
+.login-shell .hero-copy h1{color:#f0f2f5!important}.login-shell .hero-copy h1 em{color:#ffca68!important}
+.login-shell{background:#202123!important;isolation:isolate;animation:none}
+.login-shell::before{content:'';position:absolute;inset:-6%;z-index:0;background:url('/static/login-hero-combined.png') center/cover no-repeat;transform-origin:center;transform:translate3d(9%,0,0) scale(-1.15,1.15);animation:none;pointer-events:none}
+.login-shell.scene-ready::before{visibility:hidden}
+.login-scene-canvas,.login-particle-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;pointer-events:none}
+.login-shell::after{z-index:0;background:linear-gradient(90deg,rgba(24,26,30,.18),rgba(24,26,30,.35) 56%,rgba(24,26,30,.5));mask-image:none}
+.login-shell .brand-side{background:rgba(25,27,31,.38)!important;border-right:0!important}
+.login-shell .login-side{background:rgba(25,27,31,.38)!important;border-left:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@media(max-width:1100px){.atelier-workflow .visual-episode-prompt{border-right:0;border-bottom:1px solid #4b4e54}.atelier-workflow .visual-episode-output>.visual-episode-storyboard{border-right:0!important;border-bottom:1px solid #4b4e54!important}}
+@media(prefers-reduced-motion:no-preference){.asset-edit-panel{animation:atelier-arrive .18s ease both}.visual-cover-disclosure[open] .visual-cover-workspace{animation:atelier-arrive .18s ease both}}
+/* Login controls: a clear primary action, outlined alternatives, quiet status. */
+.login-shell .login-card{background:rgba(43,45,48,.94)!important;border:1px solid #696c73!important;box-shadow:0 24px 64px #0008!important}
+.login-shell .card-heading h2{color:#f5f6f8!important}
+.login-shell .card-heading p{color:#c7ccd3!important;font-size:15px!important}
+.login-shell .mode-tabs{background:#202123!important;border:1px solid #555a60!important;padding:5px;gap:5px}
+.login-shell .mode-tabs button{min-height:44px;background:transparent!important;color:#dce1e7!important;border:1px solid transparent!important;border-radius:8px;font-size:15px!important;font-weight:600;cursor:pointer}
+.login-shell .mode-tabs button.active{background:#ffca68!important;color:#29231a!important;border-color:#ffca68!important;box-shadow:0 2px 8px #0003!important;font-weight:800}
+.login-shell .mode-tabs button:not(.active):hover{background:#393c40!important;border-color:#727780!important;color:#fff!important}
+.login-shell .key-input{background:#202123!important;border-color:#6a7079!important}
+.login-shell .key-input:focus-within{border-color:#ffca68!important;box-shadow:0 0 0 3px #ffca6833!important}
+.login-shell .key-help{font-size:14px!important;color:#c5cad1!important}
+.login-shell #toggleMode{min-height:36px;padding:6px 12px;border:1px solid #8e9299!important;border-radius:8px;background:#373a3e!important;color:#f2f4f7!important;font-size:14px!important;font-weight:650;cursor:pointer}
+.login-shell #toggleMode:hover{background:#484b50!important;border-color:#c6cad0!important}
+.login-shell #loginButton,.login-shell #updateButton{display:flex!important;align-items:center;justify-content:center;min-height:54px;padding:14px 20px;background:#ffca68!important;border:2px solid #ffca68!important;border-radius:11px;color:#28231a!important;font-size:18px!important;font-weight:850;line-height:1.2;box-shadow:0 10px 26px #0005!important;cursor:pointer}
+.login-shell #loginButton:hover:not(:disabled),.login-shell #updateButton:hover:not(:disabled){background:#ffe09b!important;border-color:#ffe09b!important;transform:translateY(-2px)}
+.login-shell #loginButton:active:not(:disabled),.login-shell #updateButton:active:not(:disabled){transform:translateY(0)}
+.login-shell #loginButton:focus-visible,.login-shell #toggleMode:focus-visible,.login-shell .mode-tabs button:focus-visible{outline:3px solid #ffca68!important;outline-offset:3px}
+.login-shell #loginButton:disabled,.login-shell #updateButton:disabled{background:#70644d!important;border-color:#70644d!important;color:#e0ddda!important;box-shadow:none!important;cursor:wait}
+.login-shell #enterApp{min-height:48px;background:#34373b!important;border:1px solid #90949b!important;border-radius:9px;color:#f2f4f7!important;font-size:15px!important;font-weight:700;cursor:pointer}
+.login-shell #enterApp:hover{background:#484b50!important}
+.login-shell .service-state{padding:6px 9px;border-radius:999px;background:#1d382e!important;color:#ade7bc!important;font-size:13px!important}
+.login-shell .update-panel,.login-shell .announcement-panel{background:#25272a!important;border-color:#4e5359!important}
+.login-shell .update-state b,.login-shell .section-title b{color:#e6e9ee!important;font-size:15px!important}
+.login-shell .update-state small,.login-shell .announcement-list p,.login-shell .data-note{color:#b7bec8!important;font-size:13px!important}
+/* Header license time and stronger workflow section boundaries. */
+.top-actions .card-time-remaining{display:inline-flex;align-items:baseline;gap:7px;white-space:nowrap;min-height:42px;padding:9px 13px;border:1px solid #74654d;border-radius:9px;background:#373329;color:#e8d4a5;font-size:14px}
+.card-time-remaining b{color:#ffca68;font-size:16px;font-weight:800}
+.card-time-remaining.expired{background:#453035;border-color:#a56a71}.card-time-remaining.expired b{color:#ffb4b4}
+.atelier-workflow .visual-studio-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:120px;padding:5px 0 22px;margin-bottom:14px;border-bottom:1px solid #484b51}
+.atelier-workflow .visual-studio-intro{min-width:0}.atelier-workflow .visual-studio-intro h1{margin:5px 0 6px}.atelier-workflow .visual-studio-intro p{margin:0;color:#bec3ca!important;font-size:15px!important}
+.atelier-workflow #visualWorkspaceActions{display:flex;align-items:center;justify-content:flex-end;flex:none;margin:0}
+.atelier-workflow #newWorkflowProject{min-height:42px;background:#35383c!important;border:1px solid #656a71!important;color:#edf0f4!important;font-weight:700}
+.visual-center-view #visualWorkspaceActions{display:none!important}
+.atelier-workflow .visual-workflow-steps{margin:0 0 16px;padding:0 10px;background:#2b2d30!important;border:1px solid #4b4e54!important;border-radius:10px}
+.atelier-workflow .visual-workflow-steps button{padding:11px 14px}.atelier-workflow .visual-workflow-steps button.active{background:#35332d!important}
+.atelier-workflow .visual-stage-status{margin:0 0 20px;padding:14px 18px;border:1px solid #4d6558!important;border-left:4px solid #a7ddbd!important;border-radius:9px;background:#293530!important;color:#c4edd0!important;font-size:15px!important}
+.atelier-workflow #visualSourceSection,.atelier-workflow [data-workflow-panel="2"],.atelier-workflow #visualEpisodeSection{border-color:#4b4e54!important}
+@media(max-width:760px){.top-actions .card-time-remaining{flex:1 1 auto;justify-content:center}.atelier-workflow .visual-studio-heading{align-items:flex-start;flex-wrap:wrap}.atelier-workflow #visualWorkspaceActions{width:100%;justify-content:flex-start}}
+/* Original studio: the familiar three-part rewrite layout, with optional depth tucked away. */
+.atelier-shell .original-trend-paused{display:none!important}
+.atelier-shell .original-more-settings{grid-column:1/-1;border:1px solid #50545a;border-radius:10px;background:#292c30;overflow:hidden}
+.atelier-shell .original-more-settings>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;color:#ffca68;cursor:pointer;list-style:none}
+.atelier-shell .original-more-settings>summary::-webkit-details-marker{display:none}
+.atelier-shell .original-more-settings>summary b{font-size:16px}.atelier-shell .original-more-settings>summary span{font-size:13px;color:#bfc5ce}
+.atelier-shell .original-more-settings>summary:after{content:'⌄';font-size:18px;color:#ffca68}.atelier-shell .original-more-settings[open]>summary:after{content:'⌃'}
+.atelier-shell #originalCard>.original-form,.atelier-shell #originalCard>.original-more-settings{width:min(100%,1440px);box-sizing:border-box}
+.atelier-shell #originalCard>.original-form{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.atelier-shell #originalCard>.original-form .field.wide{grid-column:1/-1}
+.atelier-shell .original-advanced-grid{padding:14px 16px 18px;border-top:1px solid #4b4e54;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.atelier-shell .original-advanced-grid .field.wide{grid-column:1/-1}.atelier-shell .original-advanced-grid .field:not(.wide) :is(input,select){max-width:100%}
+.atelier-shell #originalTheme{min-height:96px;max-height:160px}.atelier-shell #originalCard .recommend-bar{margin-bottom:18px}
+.atelier-shell .content-column:has(>#originalCard:not(.hidden)){grid-template-columns:minmax(0,1fr);gap:18px}
+.atelier-shell .content-column:has(>#originalCard:not(.hidden))>:is(#originalCard,#rewriteCard,#generateCard){grid-column:1 / -1;grid-row:auto;min-width:0}
+@media(max-width:760px){.atelier-shell .original-more-settings>summary{align-items:flex-start;flex-direction:column}.atelier-shell .original-advanced-grid{grid-template-columns:1fr}}
+@media(max-width:1100px){.atelier-shell #originalCard>.original-form,.atelier-shell .original-advanced-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.atelier-shell #originalCard>.original-form .field.wide,.atelier-shell .original-advanced-grid .field.wide{grid-column:1/-1}}
+/* Project cover lives in project center, never in a workflow stage. */
+.atelier-workflow #visualProjectCoverEditor{margin-top:22px;padding:20px;border:1px solid #62666d!important;background:#303237!important}
+.atelier-workflow #visualProjectCoverEditor.hidden{display:none!important}
+.atelier-workflow #visualProjectCoverEditor .visual-cover-workspace{display:block}.atelier-workflow #visualProjectCoverEditor .visual-cover-result{margin-top:18px}
+.atelier-workflow .visual-project-actions .project-cover-action{min-height:38px;white-space:nowrap}
+.atelier-workflow .visual-episode-script h4{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.atelier-workflow .source-locked-mark{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #666a70;border-radius:6px;background:#33363a;color:#d0d5dd;font-size:12px;font-weight:600;white-space:nowrap}
+.atelier-workflow .source-locked-mark svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* Script result reads as one focused document, with export and continuation at its foot. */
+.atelier-shell #generateCard{overflow:hidden;padding:0!important;border:1px solid #56595f!important;border-radius:14px!important}
+.atelier-shell #generateCard>.generate-head{display:flex;align-items:center;min-height:68px;padding:17px 22px;border-bottom:1px solid #4b4e54;background:#303237}
+.atelier-shell #generateCard>.generate-head h2{margin:0;font-size:19px!important}
+.atelier-shell #generateCard>.generate-head .eyebrow,.atelier-shell #generateCard>.generate-head p{display:none}
+.atelier-shell #generateCard>.generate-head:before{content:'03';display:inline-grid;place-items:center;flex:none;width:28px;height:28px;margin-right:12px;border-radius:7px;background:#50432d;color:#ffca68;font-size:13px;font-weight:800}
+.atelier-shell #generateCard #resultArea{display:flex;flex-direction:column;min-width:0}
+.atelier-shell #generateCard #resultArea.hidden{display:none!important}
+.atelier-shell #generateCard .result-toolbar{padding:14px 20px;border-bottom:1px solid #4b4e54}
+.atelier-shell #generateCard .result-tabs{display:flex;flex-wrap:wrap;gap:8px;border:0!important}
+.atelier-shell #generateCard .result-tab{min-height:38px;padding:8px 13px;border:1px solid transparent;border-radius:7px;background:#303237!important;color:#c6cbd3!important}
+.atelier-shell #generateCard .result-tab.active{background:#50432d!important;border-color:#8c7346!important;color:#ffca68!important}
+.atelier-shell #generateCard .result-content{min-height:300px;max-height:min(65vh,780px);margin:0;padding:22px 24px;overflow:auto;border:0!important;background:#292b2e!important;color:#edf0f4!important;font-size:17px!important;line-height:2!important;white-space:pre-wrap;overflow-wrap:anywhere}
+.atelier-shell #generateCard .atelier-result-footer{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding:17px 20px;border-top:1px solid #4b4e54;background:#303237}
+.atelier-shell #generateCard .atelier-result-footer :is(button,a){min-height:40px}
+.atelier-shell #generateCard #createVisualPlanTop{order:10}
+.atelier-shell #generateCard #emptyResult{margin:18px}
+/* Compact settings instead of a long single-column accordion. */
+.atelier-shell #rewriteCard .atelier-more-settings{width:min(100%,1440px);box-sizing:border-box;margin:18px 0;padding:0;border:1px solid #60646b;border-radius:10px;background:#292c30;overflow:hidden}
+.atelier-shell #rewriteCard .atelier-more-settings>summary{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:13px 17px;border:0;background:#39352d;color:#ffca68!important;font-size:16px!important;font-weight:800;cursor:pointer;list-style:none}
+.atelier-shell #rewriteCard .atelier-more-settings>summary::-webkit-details-marker{display:none}
+.atelier-shell #rewriteCard .atelier-more-settings>summary:after{content:'展开设置  ⌄';color:#e9cf98;font-size:13px}
+.atelier-shell #rewriteCard .atelier-more-settings[open]>summary:after{content:'收起设置  ⌃'}
+.atelier-shell #rewriteCard .atelier-more-settings>summary:hover{background:#49402f}
+.atelier-shell #rewriteCard .atelier-more-settings>.form-grid{padding:16px;gap:14px;border-top:1px solid #56595f}
+.atelier-shell #rewriteCard .atelier-more-settings .asset-grid{padding:0 16px 18px;gap:10px}
+.atelier-shell #rewriteCard .atelier-more-settings .asset-card{min-width:0;padding:13px}
+.atelier-shell #rewriteCard .atelier-more-settings :is(select,input){width:100%;min-width:0}
+.atelier-shell #rewriteCard .atelier-more-settings .section-divider{margin:10px 16px 14px}
+.atelier-shell #rewriteCard .atelier-more-settings #assetCapHint{margin:0 16px 14px}
+.atelier-shell #rewriteCard #commerceOptions{padding:10px 13px;margin-top:10px}
+.atelier-shell #rewriteCard #commerceOptions .section-divider{margin:4px 0 10px}
+.atelier-shell #originalCard .recommend-bar .ai-action-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.atelier-shell #originalCard #recommendOriginal{background:#ffca68!important;border-color:#ffca68!important;color:#29231a!important;font-weight:800}
+.atelier-shell #originalCard #refreshOriginalSettings{border:1px solid #74777e!important;color:#edf0f4!important;font-weight:700}
+.atelier-shell #originalCard .original-type-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.atelier-shell #originalCard .original-type{display:grid;gap:3px;min-height:0;padding:11px 13px;text-align:left}
+.atelier-shell #originalCard .original-type b{font-size:15px}.atelier-shell #originalCard .original-type span{font-size:12px;line-height:1.4}
+.atelier-shell #originalCard .recommend-bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.95fr);gap:12px;width:min(100%,980px);box-sizing:border-box;padding:12px 14px}
+.atelier-shell #originalCard .recommend-bar>div:first-child{min-width:0}.atelier-shell #originalCard .recommend-bar>div:first-child span{display:block;margin-top:5px;line-height:1.5}
+.atelier-shell #originalCard .recommend-bar .ai-action-cluster{display:grid;grid-template-columns:1fr;gap:8px;min-width:0}
+.atelier-shell #originalCard .recommend-bar .stage-model-control{width:100%;max-width:none;min-width:0}
+.atelier-shell #originalCard .recommend-bar .ai-action-buttons>button{flex:1 1 160px;min-height:40px}
+@media(min-width:1450px){.atelier-shell #rewriteCard .atelier-more-settings>.form-grid.two{grid-template-columns:repeat(3,minmax(0,1fr))!important}.atelier-shell #rewriteCard .atelier-more-settings>.form-grid.two .field.wide{grid-column:1/-1}.atelier-shell #rewriteCard .atelier-more-settings .asset-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:1449px){.atelier-shell #rewriteCard .atelier-more-settings>.form-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))!important}.atelier-shell #rewriteCard .atelier-more-settings .asset-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:760px){.atelier-shell #rewriteCard .atelier-more-settings>.form-grid.two,.atelier-shell #rewriteCard .atelier-more-settings .asset-grid{grid-template-columns:1fr!important}}
+@media(max-width:760px){.atelier-shell #originalCard .original-type-grid{grid-template-columns:1fr!important}}
+@media(max-width:900px){.atelier-shell #originalCard .recommend-bar{grid-template-columns:1fr;width:100%}}
+/* Shared interaction language: controls must look and feel clickable. */
+:is(.atelier-shell,.atelier-workflow) :is(button,.secondary-btn,.ghost-btn,.danger-outline-btn,summary,[role="tab"]){touch-action:manipulation}
+:is(.atelier-shell,.atelier-workflow) :is(.primary-btn,.secondary-btn,.ghost-btn,.danger-outline-btn){min-height:40px;border-width:1px!important;border-style:solid!important;border-radius:8px;font-weight:650;transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .12s ease}
+:is(.atelier-shell,.atelier-workflow) :is(.secondary-btn,.ghost-btn){background:#35383d!important;border-color:#686d75!important;color:#edf0f4!important}
+:is(.atelier-shell,.atelier-workflow) :is(.secondary-btn,.ghost-btn):hover:not(:disabled){background:#42464d!important;border-color:#a0a5ae!important;color:#fff!important;box-shadow:0 4px 14px #0003}
+:is(.atelier-shell,.atelier-workflow) .primary-btn:hover:not(:disabled){background:#ffda8e!important;border-color:#ffda8e!important;box-shadow:0 5px 16px #ffca6830}
+:is(.atelier-shell,.atelier-workflow) :is(.danger-outline-btn,.ghost-btn.danger){background:#3b3033!important;border-color:#96646c!important;color:#ffc1c8!important}
+:is(.atelier-shell,.atelier-workflow) :is(.danger-outline-btn,.ghost-btn.danger):hover:not(:disabled){background:#56383f!important;border-color:#d9909c!important;color:#fff!important}
+:is(.atelier-shell,.atelier-workflow) :is(button,.secondary-btn,.ghost-btn,.danger-outline-btn):active:not(:disabled){transform:translateY(1px);box-shadow:inset 0 2px 5px #0003!important}
+:is(.atelier-shell,.atelier-workflow) :is(button,a,summary,input,textarea,select,[role="tab"]):focus-visible{outline:2px solid #ffca68!important;outline-offset:3px!important}
+:is(.atelier-shell,.atelier-workflow) button:disabled{cursor:not-allowed!important;opacity:.48!important;box-shadow:none!important;filter:saturate(.55)}
+:is(.atelier-shell,.atelier-workflow) :is(.source-input-tabs,.result-tabs,.hall-channel-tabs) button{min-height:40px;border:1px solid #60646b!important;border-radius:7px!important;padding:8px 12px!important}
+:is(.atelier-shell,.atelier-workflow) :is(.source-input-tabs,.result-tabs,.hall-channel-tabs) button:hover:not(:disabled){border-color:#a99975!important;background:#3e3b35!important}
+:is(.atelier-shell,.atelier-workflow) :is(.source-input-tabs,.result-tabs,.hall-channel-tabs) button.active{border-color:#a7894d!important;background:#51442f!important;color:#ffca68!important}
+:is(.atelier-shell,.atelier-workflow) details>summary{cursor:pointer;transition:background-color .16s ease,color .16s ease}
+:is(.atelier-shell,.atelier-workflow) details>summary:hover{background:#3c3f44;color:#ffca68!important}
+@media(prefers-reduced-motion:reduce){:is(.atelier-shell,.atelier-workflow) :is(button,.secondary-btn,.ghost-btn,.danger-outline-btn,summary){transition:none!important}}
+/* Keep the twelve style previews in three rows on desktop. */
+#visualStylePickerDialog .visual-dialog-shell{width:min(1040px,calc(100vw - 32px))}
+#visualStylePickerDialog .visual-style-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.visual-style-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;position:sticky;top:-16px;z-index:2;background:var(--studio-panel,#292c30);padding:10px 0;margin-bottom:12px}
+.visual-style-toolbar>div{display:flex;gap:5px;flex-wrap:wrap}.visual-style-toolbar label{flex:1;min-width:160px}.visual-style-toolbar input{width:100%}.visual-style-toolbar>small{width:100%;color:#c0c6cd}
+.visual-style-filter.selected{border-color:#ffcf70;color:#ffcf70;background:#443c2e}
+.visual-style-name-preview{display:flex!important;flex-direction:column;justify-content:center;align-items:center;padding:14px;gap:8px;background:linear-gradient(135deg,#313a45,#24282e)!important;color:#dde6ef;overflow:hidden}
+.visual-style-name-preview strong{font-size:17px;line-height:1.5;text-align:center;overflow-wrap:anywhere}.visual-style-name-preview small{font-size:10px;opacity:.65}
+.visual-style-name-preview[data-style-category="3d"]{background:linear-gradient(135deg,#35394d,#222a35)!important;color:#d9dcff}.visual-style-name-preview[data-style-category="2d"]{background:linear-gradient(135deg,#41384b,#292b38)!important;color:#ead9ef}
+.visual-style-picker-button .visual-style-name-preview{padding:4px;gap:0}.visual-style-picker-button .visual-style-name-preview strong{font-size:9px}.visual-style-picker-button .visual-style-name-preview small{display:none}
+#visualStylePickerDialog .visual-style-choice{min-width:0;padding-bottom:9px}
+#visualStylePickerDialog .visual-style-choice b{margin:8px 10px 3px;font-size:14px}
+#visualStylePickerDialog .visual-style-choice small{margin-left:10px;font-size:12px}
+/* Source actions belong beside the section heading, not on a separate row. */
+.atelier-workflow .visual-source-heading{align-items:center;flex-wrap:wrap;gap:12px 18px}
+.atelier-workflow .visual-source-heading>div:first-child{min-width:280px;flex:1 1 430px}
+.atelier-workflow .visual-source-heading .visual-source-switch{align-items:center;flex:0 1 auto;flex-wrap:nowrap;gap:8px;margin:0}
+.atelier-workflow .visual-source-heading .visual-source-switch button{flex:none;white-space:nowrap}
+.atelier-workflow .visual-source-heading #sourceHistory{width:clamp(190px,17vw,300px);min-width:150px;min-height:40px}
+.atelier-workflow .visual-source-heading{display:grid;grid-template-columns:minmax(260px,1fr) minmax(400px,auto) auto;align-items:center}
+.atelier-workflow .visual-source-heading>div:first-child{min-width:0;flex:none}
+.atelier-workflow .visual-source-heading .visual-source-switch{justify-content:center;min-width:0}
+.atelier-workflow .visual-source-heading #sourceHistory{flex:1 1 190px;width:clamp(190px,15vw,280px)}
+.atelier-workflow .visual-recognition-action{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.atelier-workflow .visual-recognition-action #confirmSourceReference{min-height:54px;padding:12px 24px;font-size:17px!important;font-weight:850;white-space:nowrap}
+.atelier-workflow .visual-recognition-action #confirmSourceReference.is-working{display:inline-flex;align-items:center;gap:10px;cursor:progress}
+.atelier-workflow .visual-recognition-action #confirmSourceReference.is-working::before{content:"";width:17px;height:17px;flex:none;border:3px solid #3b3323;border-top-color:transparent;border-radius:50%;animation:studio-spin .8s linear infinite}
+.atelier-workflow .visual-recognition-action small{max-width:260px;color:#ffd18a;font-size:12px;line-height:1.4;text-align:right}
+.atelier-workflow .visual-source-presets{grid-template-columns:minmax(0,1fr);width:100%}
+.atelier-workflow .visual-source-presets>label{width:100%;min-width:0}
+.atelier-workflow .visual-source-presets .visual-style-picker-button,
+.atelier-workflow .visual-source-presets select{width:100%;min-width:0}
+.atelier-workflow .visual-source-presets label[hidden]{display:none!important}
+.atelier-workflow .visual-source-presets .visual-style-description{display:block;width:100%;box-sizing:border-box;margin-top:9px;padding:12px 14px;border:1px solid #81603a;border-radius:9px;background:#392d22;color:#e8d6b9!important;font-size:13px!important;line-height:1.65;overflow-wrap:anywhere}
+/* The compact asset settings belong to the asset step only. Keep this rule
+   explicit as a fallback for restored projects and cached markup. */
+body[data-workflow-stage="1"] .atelier-workflow .visual-toolbar[data-workflow-panel="2"],
+body[data-workflow-stage="1"] .atelier-workflow .visual-project-settings-row[data-workflow-panel="2"],
+body[data-workflow-stage="3"] .atelier-workflow .visual-toolbar[data-workflow-panel="2"],
+body[data-workflow-stage="3"] .atelier-workflow .visual-project-settings-row[data-workflow-panel="2"]{display:none!important}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"].workflow-stage-hidden,
+.atelier-workflow .visual-project-settings-row[data-workflow-panel="2"].workflow-stage-hidden{display:none!important}
+/* Global task status lives in the header so it remains visible while the
+   workflow iframe scrolls through long scripts and video cards. */
+body:not(.atelier-workflow) .topbar .task-manager-toggle{position:static;left:auto;bottom:auto;margin:0;padding:8px 11px;border-radius:9px;box-shadow:none!important;white-space:nowrap}
+body:not(.atelier-workflow) .task-manager-panel{top:76px;right:22px;left:auto;bottom:auto}
+#visualStyleDialog{z-index:700!important}
+#visualStylePickerDialog{z-index:650!important}
+.visual-custom-style-card{position:relative;min-width:0}
+.visual-custom-style-card>.visual-style-choice{width:100%;height:100%}
+.visual-custom-style-card .delete-custom-style{position:absolute;right:8px;top:8px;z-index:2;display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid #ffaaaa;border-radius:50%;background:#632a32;color:#fff;font-size:20px!important;line-height:1;cursor:pointer}
+#visualStylePickerDialog .create-custom-style-inline{min-height:200px;width:100%;margin:0}
+@media(max-width:1250px){.atelier-workflow .visual-source-heading{grid-template-columns:minmax(260px,1fr) auto}.atelier-workflow .visual-source-heading .visual-source-switch{grid-column:1 / -1;grid-row:2;justify-content:flex-start}.atelier-workflow .visual-recognition-action{grid-column:2;grid-row:1}}
+@media(max-width:700px){.atelier-workflow .visual-source-heading{grid-template-columns:1fr}.atelier-workflow .visual-recognition-action{grid-column:1;grid-row:3;align-items:stretch}.atelier-workflow .visual-recognition-action small{text-align:left}.atelier-workflow .visual-source-heading .visual-source-switch{grid-column:1;grid-row:2}}
+@media(max-width:950px){#visualStylePickerDialog .visual-style-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){#visualStylePickerDialog .visual-style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.atelier-workflow .visual-source-heading .visual-source-switch{width:100%;flex-wrap:wrap}.atelier-workflow .visual-source-heading #sourceHistory{flex:1 1 180px;width:auto}}
+/* One consistent action hierarchy throughout the studio. */
+:is(.atelier-shell,.atelier-workflow) .primary-btn:not(:disabled){background:#ffca68!important;border-color:#ffca68!important;color:#24211b!important;font-weight:800!important}
+:is(.atelier-shell,.atelier-workflow) .secondary-btn:not(:disabled){background:#443b2c!important;border-color:#b9965b!important;color:#ffe2aa!important;font-weight:750!important}
+:is(.atelier-shell,.atelier-workflow) .secondary-btn:hover:not(:disabled){background:#594a32!important;border-color:#ffd489!important;color:#fff0cb!important}
+:is(.atelier-shell,.atelier-workflow) .ghost-btn:not(:disabled){background:#343940!important;border-color:#747d89!important;color:#edf0f4!important}
+:is(.atelier-shell,.atelier-workflow) .ghost-btn:hover:not(:disabled){background:#424a53!important;border-color:#b4bdc8!important;color:#fff!important}
+:is(.atelier-shell,.atelier-workflow) button:disabled{opacity:.78!important;background:#49494a!important;border-color:#686663!important;color:#c9c5bd!important;cursor:not-allowed!important}
+.atelier-shell #proposalGrid .proposal-card{border-color:#5d626a!important}
+.atelier-shell #proposalGrid .proposal-card.selected{border-color:#ffca68!important;box-shadow:0 0 0 1px #ffca68aa!important}
+.atelier-shell #proposalGrid [data-select-proposal]{min-height:46px;background:#493d2b!important;border:1px solid #c49b5a!important;color:#ffe2a8!important;font-size:15px!important;font-weight:800!important}
+.atelier-shell #proposalGrid [data-select-proposal]:hover{background:#ffca68!important;border-color:#ffca68!important;color:#272118!important}
+.atelier-shell #proposalGrid .proposal-card.selected [data-select-proposal]{background:#ffca68!important;border-color:#ffca68!important;color:#272118!important}
+.atelier-shell #proposalChoiceActions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.atelier-shell #proposalChoiceActions p{width:100%;margin:0 0 4px}
+.atelier-shell #proposalSkipAfterGenerateBtn{background:#443b2c!important;border-color:#c49b5a!important;color:#ffe2a8!important}
+.atelier-shell #proposalRegenerateBtn{background:#343940!important;border-color:#7e8996!important;color:#edf0f4!important}
+/* Switches have a visible track, thumb and state label even in graphite mode. */
+.atelier-shell .switch{position:relative;min-height:54px;gap:12px;padding:8px 11px;border:1px solid #62676e;border-radius:9px;background:#303338;transition:border-color .16s ease,background-color .16s ease}
+.atelier-shell .switch:hover{border-color:#ddb96f;background:#393a3b}
+.atelier-shell .switch input{display:block!important;position:absolute;width:1px;height:1px;opacity:0}
+.atelier-shell .switch>i{width:44px;height:25px;border:1px solid #818894;background:#474d54!important;box-shadow:inset 0 1px 3px #0005}
+.atelier-shell .switch>i:after{top:3px;left:3px;width:17px;height:17px;background:#e5e8ec!important;box-shadow:0 1px 3px #0008}
+.atelier-shell .switch input:checked+i{border-color:#ffca68;background:#ffca68!important}
+.atelier-shell .switch input:checked+i:after{left:21px;background:#2b2d30!important}
+.atelier-shell .switch input:focus-visible+i{outline:2px solid #ffca68;outline-offset:3px}
+.atelier-shell .switch:has(input:checked){border-color:#9e834f;background:#37352f}
+.atelier-shell .visual-switch:after{content:'已关闭';margin-left:auto;color:#c2c6cc;font-size:13px;font-weight:700;white-space:nowrap}
+.atelier-shell .visual-switch:has(input:checked):after{content:'已开启';color:#ffca68}
+/* Supporting copy should be legible without overpowering the document text. */
+.atelier-shell #sourceText{font-size:16px!important;line-height:1.8!important}
+.atelier-shell #sourceCard :is(.text-source-head p,.source-input-pane p,.source-input-pane span,.source-input-pane small,.source-ready-summary,.analysis-billing-hint,.speech-heading span,.speech-hint,.switch span small){font-size:14px!important;line-height:1.55!important}
+.atelier-shell #sourceCard :is(.text-source-head h3,.speech-heading b,.switch span b){font-size:16px!important;line-height:1.45!important}
+@media(min-width:1900px){.atelier-shell #sourceText{font-size:17px!important}.atelier-shell #sourceCard :is(.text-source-head p,.source-input-pane p,.source-input-pane span,.source-input-pane small,.source-ready-summary,.analysis-billing-hint,.speech-heading span,.speech-hint,.switch span small){font-size:15px!important}.atelier-shell #sourceCard :is(.text-source-head h3,.speech-heading b,.switch span b){font-size:17px!important}}
+/* Stage guidance lands below the sticky header and ends on interaction. */
+.atelier-shell :is(#sourceCard,#rewriteProposalSection,#rewriteCard,#generateCard){scroll-margin-top:120px}
+.atelier-shell .rewrite-step-attention{animation:rewrite-step-breathe 3s ease-in-out infinite!important;border-color:#b9924f!important}
+@keyframes rewrite-step-breathe{0%,100%{box-shadow:0 0 0 1px #ffca6840,0 0 8px #ffca6814}50%{box-shadow:0 0 0 2px #ffca6899,0 0 34px #ffca6855}}
+@media(prefers-reduced-motion:reduce){.atelier-shell .rewrite-step-attention{animation:none!important;box-shadow:0 0 0 2px #ffca68!important}}
+/* Explicit icons and state labels make both expandable settings areas discoverable. */
+.atelier-shell #rewriteCard .atelier-more-settings>summary{gap:12px}
+.atelier-shell #rewriteCard .atelier-more-settings>summary:after{content:none!important}
+.atelier-shell #rewriteCard .atelier-more-settings .atelier-accordion-cue{display:inline-flex;align-items:center;gap:8px;flex:none;padding:7px 11px;border:1px solid #bd9554;border-radius:7px;background:#54462e;color:#ffe1a1!important;font-size:14px!important;font-weight:800}
+.atelier-shell #rewriteCard .atelier-more-settings .atelier-accordion-cue svg,.atelier-shell .atelier-commerce-expand svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s ease}
+.atelier-shell #rewriteCard .atelier-more-settings[open] .atelier-accordion-cue svg,.atelier-shell .atelier-commerce-expand[aria-expanded="true"] svg{transform:rotate(180deg)}
+.atelier-shell .atelier-commerce-section{margin:14px 0;border:1px solid #8f794f;border-radius:10px;background:#2f3031;overflow:hidden}
+.atelier-shell .atelier-commerce-heading{display:flex;align-items:center;gap:10px;padding:10px;background:#39352d}
+.atelier-shell .atelier-commerce-heading .product-switch{flex:1;min-width:0;margin:0;border:0;background:transparent!important}
+.atelier-shell .atelier-commerce-heading .product-switch:hover{background:#49402e!important}
+.atelier-shell .atelier-commerce-heading .product-switch>i{width:29px;height:29px;border:2px solid #e2c580;border-radius:6px;background:#292b2e!important;box-shadow:none}
+.atelier-shell .atelier-commerce-heading .product-switch>i:after{content:'✓';display:grid;place-items:center;top:0;left:0;width:100%;height:100%;border-radius:0;background:transparent!important;color:transparent;font-size:20px;font-weight:900;box-shadow:none}
+.atelier-shell .atelier-commerce-heading .product-switch input:checked+i{background:#ffca68!important;border-color:#ffca68}
+.atelier-shell .atelier-commerce-heading .product-switch input:checked+i:after{left:0;background:transparent!important;color:#272118}
+.atelier-shell .atelier-commerce-heading .product-switch span b{font-size:17px!important;color:#fff1cf!important}
+.atelier-shell .atelier-commerce-heading .product-switch span small{font-size:13px!important;color:#d1d3d5!important}
+.atelier-shell .atelier-commerce-heading .product-switch:after{content:'未勾选';color:#d1d3d5;font-size:13px;font-weight:800;white-space:nowrap}
+.atelier-shell .atelier-commerce-heading .product-switch:has(input:checked):after{content:'已勾选';color:#ffca68}
+.atelier-shell .atelier-commerce-expand{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:none;min-height:40px;padding:8px 12px!important;white-space:nowrap}
+.atelier-shell .atelier-commerce-content{padding:15px;border-top:1px solid #60574a}
+.atelier-shell .atelier-commerce-content[hidden]{display:none!important}
+@media(max-width:720px){.atelier-shell .atelier-commerce-heading{flex-wrap:wrap}.atelier-shell .atelier-commerce-expand{margin-left:auto}.atelier-shell #rewriteCard .atelier-more-settings>summary{flex-wrap:wrap}.atelier-shell #rewriteCard .atelier-more-settings .atelier-accordion-cue{margin-left:auto}}
+.studio-dialog{position:fixed;inset:0;width:min(540px,calc(100vw - 32px));max-height:min(80vh,680px);margin:auto;padding:0;border:1px solid #777d86;border-radius:16px;background:#2b2d30;color:#edf0f4;box-shadow:0 24px 80px #0009;overflow:auto}
+.studio-dialog::backdrop{background:#0c0e12aa;backdrop-filter:blur(4px)}
+.studio-dialog form{padding:24px}
+.studio-dialog-heading{display:flex;align-items:center;gap:12px}
+.studio-dialog-heading h2{margin:0;color:#fff;font-size:21px}
+.studio-dialog-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid #a98c59;border-radius:10px;background:#4b3e2b;color:#ffca68;font-size:19px;font-weight:900}
+.studio-dialog.danger .studio-dialog-icon{border-color:#a86e77;background:#4d3339;color:#ffc7cf}
+.studio-dialog-message{margin:18px 0 22px;color:#e0e4ea;font-size:15px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.studio-dialog-input{display:grid;gap:8px;margin:0 0 20px;color:#e0e4ea;font-size:14px;font-weight:700}
+.studio-dialog-input.hidden,.studio-dialog .hidden{display:none!important}
+.studio-dialog-input input{width:100%;min-height:44px;padding:9px 12px;border:1px solid #777d86;border-radius:8px;background:#222427;color:#fff;font:inherit}
+.studio-dialog-input input:focus-visible{outline:2px solid #ffca68;outline-offset:2px}
+.studio-dialog-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+.studio-dialog-actions button{min-height:42px;padding:9px 18px;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer}
+.studio-dialog-actions .ghost-btn{border:1px solid #818893;background:#3c424a;color:#fff}
+.studio-dialog-actions .primary-btn{border:1px solid #ffca68;background:#ffca68;color:#262018}
+.studio-dialog.danger .studio-dialog-actions .primary-btn{border-color:#bd6d78;background:#a94b5a;color:#fff}
+.studio-dialog-actions button:hover{filter:brightness(1.1)}
+#confirmSourceReference.is-working,#useSource.is-working,#fillStoryboard.is-working{display:inline-flex!important;align-items:center;justify-content:center;gap:9px;cursor:progress}
+#confirmSourceReference.is-working::before,#useSource.is-working::before,#fillStoryboard.is-working::before{content:'';width:15px;height:15px;flex:none;border:2px solid #473a22;border-top-color:transparent;border-radius:50%;animation:studio-spin .8s linear infinite}
+.visual-dialog:not(.hidden) .visual-dialog-shell,.studio-dialog[open]{animation:workflow-dialog-enter .18s ease-out}
+@keyframes workflow-dialog-enter{from{opacity:0;translate:0 10px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.visual-dialog:not(.hidden) .visual-dialog-shell,.studio-dialog[open]{animation:none}}
+/* Larger, distinct navigation pictograms retain text labels and active state. */
+.atelier-shell .atelier-sidebar .work-mode-tab{min-height:58px!important}
+.atelier-shell .atelier-sidebar .work-mode-tab>b{gap:12px!important;font-size:17px!important}
+.atelier-shell .atelier-sidebar .module-lockup{width:36px!important}
+.atelier-shell .atelier-sidebar .module-icon{display:inline-grid!important;place-items:center!important;flex:none!important;width:36px!important;height:36px!important;border:1px solid currentColor!important;border-radius:10px!important;background:color-mix(in srgb,currentColor 16%,#2b2d30)!important;color:#ffb08a!important}
+.atelier-shell .atelier-sidebar .module-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.atelier-shell .atelier-sidebar [data-work-mode="original"] .module-icon{color:#d7b7ff!important}
+.atelier-shell .atelier-sidebar [data-work-mode="workflow"] .module-icon{color:#ffca68!important}
+.atelier-shell .atelier-sidebar [data-work-mode="ecommerce"] .module-icon{color:#8ce3d3!important}
+.atelier-shell .atelier-sidebar [data-work-mode="store"] .module-icon{color:#afe0a6!important}
+.atelier-shell .atelier-sidebar [data-work-mode="advertising"] .module-icon{color:#adccff!important}
+.atelier-shell .atelier-sidebar .work-mode-tab:disabled .module-icon{opacity:.65}
+.atelier-shell .atelier-sidebar .atelier-utility-link{display:flex;align-items:center;gap:12px;min-height:56px;font-size:16px!important}
+.atelier-shell .atelier-sidebar .atelier-utility-link svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;color:#c7b6eb}
+.atelier-shell .atelier-sidebar .atelier-utility-link:last-child svg{color:#8bd4da}
+.atelier-workflow .visual-workflow-steps button{display:flex;align-items:center;justify-content:center;gap:12px;min-height:66px;padding:11px 16px!important;font-size:17px!important;font-weight:800}
+.atelier-workflow .visual-workflow-steps button i{display:grid;place-items:center;flex:none;width:38px!important;height:38px!important;border:1px solid #ad9260;border-radius:10px;background:#443a2b;color:#ffca68;font-style:normal}
+.atelier-workflow .visual-workflow-steps button[data-workflow-stage="1"] i{border-color:#bd8777;background:#4d3632;color:#ffb094}
+.atelier-workflow .visual-workflow-steps button[data-workflow-stage="2"] i{border-color:#7aa9a0;background:#2f4946;color:#9be4d5}
+.atelier-workflow .visual-workflow-steps button[data-workflow-stage="3"] i{border-color:#b99a64;background:#4c412d;color:#ffca68}
+.atelier-workflow .visual-workflow-steps button i svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.atelier-workflow .visual-workflow-steps button span{display:grid;gap:1px;text-align:left;line-height:1.25}
+.atelier-workflow .visual-workflow-steps button span small{font-size:11px!important;letter-spacing:.08em;opacity:.8}
+@media(max-width:760px){.atelier-workflow .visual-workflow-steps button{gap:5px;min-height:58px;padding:7px!important;font-size:13px!important}.atelier-workflow .visual-workflow-steps button i{width:29px!important;height:29px!important}.atelier-workflow .visual-workflow-steps button i svg{width:18px;height:18px}}
+/* Scores are badges, not plain body text. */
+.atelier-shell .proposal-score{display:inline-flex;align-items:center;justify-content:center;min-width:68px;min-height:38px;padding:4px 9px;border:1px solid;border-radius:9px;font-size:22px!important;font-weight:900;white-space:nowrap}
+.atelier-shell .proposal-score.score-high{color:#ffd88f!important;border-color:#a98343;background:#4b3d27}
+.atelier-shell .proposal-score.score-good{color:#9de8d2!important;border-color:#568e7c;background:#29433e}
+.atelier-shell .proposal-score.score-moderate{color:#bfcaff!important;border-color:#737fb1;background:#343b55}
+/* Visible, centered waiting indicators across text and visual generation. */
+:is(.atelier-shell,.atelier-workflow) :is(.task-progress,.speech-progress):not(.hidden){min-height:115px;border-color:#817051!important;background:#31302d!important}
+:is(.atelier-shell,.atelier-workflow) :is(.task-progress,.speech-progress):not(.hidden):before{content:'';display:block;width:34px;height:34px;margin:0 auto 13px;border:3px solid #6b655a;border-top-color:#ffca68;border-radius:50%;animation:studio-spin .9s linear infinite}
+.atelier-workflow .visual-task-status.is-generating:before{content:'';display:inline-block;width:15px;height:15px;margin-right:7px;vertical-align:-3px;border:2px solid #6b655a;border-top-color:#ffca68;border-radius:50%;background:none;box-shadow:none;animation:studio-spin .9s linear infinite}
+.atelier-workflow button[data-busy="1"]:before{content:'';display:inline-block;width:15px;height:15px;margin-right:8px;vertical-align:-3px;border:2px solid #6b655a;border-top-color:currentColor;border-radius:50%;animation:studio-spin .9s linear infinite}
+@keyframes studio-spin{to{transform:rotate(360deg)}}
+.visual-episode-card .visual-output-box{position:relative}
+.visual-episode-card .episode-video-loading{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:14px;border-radius:inherit;background:rgba(30,33,35,.8);color:#ffcf77;pointer-events:none;z-index:1}
+.visual-episode-card .episode-video-loading-spinner{display:block;width:42px;height:42px;border:3px solid rgba(255,207,119,.2);border-top-color:#ffcf77;border-radius:50%;animation:studio-spin 1s linear infinite}
+.visual-episode-card .episode-video-loading small{color:#d3dccf;font-size:12px}
+@media(prefers-reduced-motion:reduce){.visual-episode-card .episode-video-loading-spinner{animation:none;border-color:#ffcf77}}
+@media(prefers-reduced-motion:reduce){:is(.atelier-shell,.atelier-workflow) :is(.task-progress,.speech-progress):not(.hidden):before,.atelier-workflow .visual-task-status.is-generating:before,.atelier-workflow button[data-busy="1"]:before{animation:none;border-color:#ffca68}}
+:is(.atelier-shell,.atelier-workflow) .task-progress[data-state="error"]:before{display:none;animation:none}
+.task-progress[data-state="error"]>i>span:after{display:none;animation:none}
+/* Platform identity is visible in the selected value and every menu option. */
+.atelier-shell #rewriteCard .atelier-more-settings[open]{overflow:visible}
+.atelier-shell #platform.platform-native-select{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none}
+.atelier-shell .atelier-platform-picker{position:relative;min-width:0}
+.atelier-shell .atelier-platform-trigger{display:flex;align-items:center;gap:11px;width:100%;min-height:46px;padding:6px 11px;border:1px solid #777f89;border-radius:8px;background:#26282b;color:#edf0f4;text-align:left;font-size:15px;font-weight:700;cursor:pointer}
+.atelier-shell .atelier-platform-trigger:hover,.atelier-shell .atelier-platform-trigger[aria-expanded="true"]{border-color:#ffca68;background:#33312b}
+.atelier-shell .atelier-platform-chevron{margin-left:auto;color:#ffca68;font-size:21px;line-height:1}
+.atelier-shell .atelier-platform-menu{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:50;display:grid;gap:3px;max-height:320px;padding:7px;border:1px solid #a58c5e;border-radius:9px;background:#292b2e;box-shadow:0 18px 40px #0009;overflow:auto}
+.atelier-shell .atelier-platform-menu[hidden]{display:none!important}
+.atelier-shell .atelier-platform-option{display:flex;align-items:center;gap:11px;min-height:43px;padding:5px 9px;border:1px solid transparent;border-radius:7px;background:transparent;color:#edf0f4;text-align:left;font-size:14px;cursor:pointer}
+.atelier-shell .atelier-platform-option:hover,.atelier-shell .atelier-platform-option:focus-visible,.atelier-shell .atelier-platform-option[aria-selected="true"]{border-color:#a88b52;background:#443b2d;color:#ffe2a8}
+.atelier-shell .atelier-platform-mark{display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:7px;background:#3d705c;color:#fff;font-size:16px;font-weight:900}
+.atelier-shell .atelier-platform-mark.douyin{background:#182b36;color:#8cf5ed;text-shadow:2px 1px #e6729a}
+.atelier-shell .atelier-platform-mark.kuaishou{background:#ee842f;color:#fff}
+.atelier-shell .atelier-platform-mark.redbook{background:#c8474c;color:#fff;font-size:14px}
+.atelier-shell .atelier-platform-mark.bilibili{background:#3b9dc2;color:#fff}
+.atelier-shell .atelier-platform-mark.weibo{background:#ce6542;color:#fff}
+.atelier-shell .atelier-platform-mark.tencent{background:#2b9e9e;color:#fff}
+.atelier-shell .atelier-platform-mark.iqiyi{background:#65a646;color:#fff}
+.atelier-shell .atelier-platform-mark.youku{background:#5276ca;color:#fff}
+.atelier-shell .atelier-platform-mark.custom{background:#555c67;color:#fff}
+/* Announcements are a centered, readable graphite overlay; updates keep their actions. */
+.client-notice-backdrop{position:fixed;inset:0;z-index:240;background:#090a0dcc;backdrop-filter:blur(6px)}
+.client-notice-backdrop.hidden{display:none!important}
+.atelier-shell .client-notice,.client-notice{position:fixed!important;top:50%;left:50%;z-index:241;display:flex;flex-direction:column;gap:0;width:min(640px,calc(100vw - 28px))!important;max-width:none!important;max-height:min(82vh,780px);margin:0!important;padding:0!important;transform:translate(-50%,-50%);border:1px solid #5d6067!important;border-radius:16px!important;background:#252629!important;box-shadow:0 24px 80px #000b!important;overflow:hidden}
+.client-notice.hidden{display:none!important}
+.client-notice-icon{position:absolute;top:17px;left:20px;z-index:1;flex:none;width:33px;height:33px;border:1px solid #a9884c!important;border-radius:10px!important;background:#513b20!important;color:#ffca68!important;font-size:17px!important}
+.client-notice-copy{display:flex;flex-direction:column;min-height:0;width:100%;padding-top:0}
+.client-notice-title-row{min-height:70px;padding:15px 22px 15px 64px;border-bottom:1px solid #484b51;background:#2d2b2a}
+.client-notice-title-row b{font-size:20px!important;color:#fff!important}
+.client-announcement-list{display:grid;gap:12px;max-height:calc(min(82vh,780px) - 205px);margin:0!important;padding:16px 18px!important;overflow:auto;scrollbar-color:#957a4f #262629}
+.client-announcement-card{margin:0!important;padding:16px!important;border:1px solid #80683d!important;border-radius:11px!important;background:linear-gradient(125deg,#34302a,#2b2b2d)!important}
+.client-announcement-card:nth-child(3n + 2){border-color:#4b8975!important;background:linear-gradient(125deg,#253a34,#2b2e2e)!important}
+.client-announcement-card:nth-child(3n){border-color:#7273a1!important;background:linear-gradient(125deg,#303043,#2b2b2f)!important}
+.client-announcement-card>b{font-size:17px!important;color:#ffca68!important}
+.client-announcement-card:nth-child(3n + 2)>b{color:#9ce6cb!important}
+.client-announcement-card:nth-child(3n)>b{color:#c6c4ff!important}
+.client-announcement-card p{max-height:none!important;margin-top:9px!important;font-size:14px!important;line-height:1.7!important;color:#e3e5e8!important;overflow:visible!important}
+.client-announcement-card img,.client-announcement-card video{max-height:260px!important;margin-top:12px!important;border-radius:8px}
+.client-update-notes{max-height:110px;margin:0 18px 12px!important;padding:11px 13px;border:1px solid #6e744b;border-radius:8px;background:#30332b;color:#e2e8cc!important;overflow:auto}
+.client-update-progress{margin:0 18px 12px!important}
+.client-notice-actions{display:flex;align-self:stretch;justify-content:flex-end;gap:10px;min-height:67px;padding:12px 18px;border-top:1px solid #484b51;background:#292a2c}
+.client-notice-actions button{min-height:40px;padding:8px 16px;font-size:14px;font-weight:800}
+.client-notice-remember{display:flex;align-items:center;gap:7px;margin-right:auto;color:#c9cdd2;font-size:13px;cursor:pointer}
+.client-notice-remember input{width:17px;height:17px;accent-color:#ffca68}
+.client-notice-remember.hidden{display:none!important}
+@media(max-width:620px){.client-notice-title-row{min-height:64px}.client-notice-actions{flex-wrap:wrap}.client-notice-remember{width:100%}.client-announcement-list{max-height:calc(82vh - 240px)}}
+.visual-recognition-progress{margin:14px 0;padding:16px;border:1px solid #a67d3d;border-radius:10px;background:#2d2b27;color:#f4eee3}
+.visual-recognition-progress.hidden{display:none!important}
+.visual-recognition-head{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:15px}
+.visual-recognition-head b{display:flex;align-items:center;gap:10px;color:#ffca68}
+.visual-recognition-head>span{font-size:12px;color:#c3c8cc}
+.visual-recognition-spinner{width:19px;height:19px;border:2px solid #74654d;border-top-color:#ffca68;border-radius:50%;animation:studio-spin .9s linear infinite}
+.visual-recognition-track{height:8px;margin-top:14px;overflow:hidden;border-radius:99px;background:#4b4640}
+.visual-recognition-track i{display:block;width:0;height:100%;border-radius:99px;background:linear-gradient(90deg,#d38d36,#ffca68);transition:width .35s ease}
+.visual-recognition-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:15px}
+.visual-recognition-steps span{display:grid;place-items:center;min-height:48px;padding:7px;border:1px solid #5d6266;border-radius:8px;background:#343638;color:#c5c9cc;text-align:center;font-size:13px;font-weight:750;transition:background .35s,border-color .35s,box-shadow .35s}
+.visual-recognition-steps span.active{border-color:#ffca68;background:#544328;color:#ffe7b0;box-shadow:0 0 0 1px #ffca6877,0 0 15px #ffca6830}
+.visual-recognition-progress p{margin:11px 0 0;font-size:12px;color:#adb3bb}
+@media(max-width:650px){.visual-recognition-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.visual-recognition-spinner{animation:none}}
+.visual-cut-progress{margin:15px 0;padding:17px;border:1px solid #ae7d37;border-radius:11px;background:linear-gradient(110deg,#342d23,#29292b);color:#f5efe5}
+.visual-cut-progress.hidden{display:none!important}
+.visual-cut-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.visual-cut-head b{display:flex;align-items:center;gap:9px;color:#ffd18a;font-size:16px}
+.visual-cut-head>span{color:#ffca68;font-size:16px;font-weight:900}
+.visual-cut-track{height:8px;margin:14px 0;background:#4b4640;border-radius:20px;overflow:hidden}
+.visual-cut-track i{display:block;width:0;height:100%;border-radius:20px;background:linear-gradient(90deg,#d38d36,#ffca68);transition:width .3s ease}
+.visual-cut-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.visual-cut-steps span{padding:10px 5px;border:1px solid #575b60;border-radius:7px;background:#333538;color:#afb5ba;text-align:center;font-size:13px;font-weight:750}
+.visual-cut-steps span.done{border-color:#488a70;background:#274337;color:#a7eac8}
+.visual-cut-steps span.active{border-color:#e2ab52;background:#594024;color:#ffdfaa;animation:visual-cut-breathe 2s ease-in-out infinite}
+.visual-cut-progress p{margin:12px 0 0;color:#d8dbe0;font-size:13px}
+.visual-cut-running .visual-episode-section{display:block!important}
+.atelier-workflow .visual-workflow-steps{scroll-margin-top:112px}
+.atelier-workflow :is(.visual-cut-progress,.visual-recognition-progress){scroll-margin-top:112px}
+.atelier-workflow .visual-page-actions .visual-source-model,.atelier-workflow .visual-stage-action .visual-source-model{min-width:0;flex:0 1 auto}
+.atelier-workflow .visual-page-actions .visual-source-model>span,.atelier-workflow .visual-page-actions .visual-source-model>select,.atelier-workflow .visual-stage-action .visual-source-model>span,.atelier-workflow .visual-stage-action .visual-source-model>select{display:none!important}
+.atelier-workflow .visual-page-actions #confirmSourceReference{order:0;min-height:58px;padding:14px 28px;font-size:18px!important;font-weight:850}
+.atelier-workflow .visual-page-actions #confirmSourceReference.is-working{display:inline-flex;align-items:center;gap:10px;opacity:1;cursor:progress}
+.atelier-workflow .visual-page-actions #confirmSourceReference.is-working::before{content:"";width:17px;height:17px;flex:none;border:3px solid #3b3323;border-top-color:transparent;border-radius:50%;animation:studio-spin .8s linear infinite}
+.atelier-workflow .visual-page-actions .visual-source-model{order:1}
+.atelier-workflow .visual-page-actions .visual-source-model small,.atelier-workflow .visual-stage-action .visual-source-model small{font-size:14px!important;line-height:1.5;color:#ffd18a!important}
+.atelier-workflow .visual-stage-action .primary-btn{min-height:54px;padding:12px 24px;font-size:17px!important;font-weight:850}
+@keyframes visual-cut-breathe{50%{box-shadow:0 0 20px #ffca6866}}
+@media(max-width:650px){.visual-cut-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.visual-cut-steps span.active{animation:none}}
+/* Global video defaults are kept as hidden state for existing workflow/API
+   compatibility; users no longer see model, duration, resolution, ratio,
+   apply-all, or the points quote in the video-card section. */
+.atelier-workflow .visual-video-model-bar{display:none!important}
+.atelier-workflow .visual-reference-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.atelier-workflow .visual-reference-heading>b{margin:0!important;color:#c8f1e7!important;font-size:14px!important;line-height:1.5}
+.atelier-workflow .visual-reference-heading .episode-reference-upload{flex:none;min-height:36px;padding:7px 12px;border-color:#4ebfae!important;background:#173b37!important;color:#aef4e3!important;font-size:13px!important;font-weight:800}
+.atelier-workflow .visual-reference-heading .episode-reference-upload:hover{border-color:#78e8d0!important;background:#20544d!important}
+.atelier-workflow .visual-reference-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.atelier-workflow .visual-reference-heading .episode-reference-auto-fill{flex:none;min-height:36px;padding:7px 12px;border-color:#aa8c50!important;background:#3b3323!important;color:#ffe0a3!important;font-size:13px!important;font-weight:800}
+.atelier-workflow .visual-reference-empty{display:block;padding:10px 12px;border:1px dashed #5b666b;border-radius:8px;color:#b4bbc2;font-size:13px}
+.atelier-workflow .visual-reference-option{border-color:#416760!important;background:#182b2b!important;color:#d5eee9!important;font-size:13px!important}
+.atelier-workflow .visual-reference-option:has(input:checked){border-color:#58d7bf!important;background:#234d47!important;box-shadow:0 0 0 1px #58d7bf55}
+.atelier-workflow .visual-reference-option img{width:44px;height:44px}
+.atelier-workflow .visual-reference-option{position:relative;box-sizing:border-box;min-height:54px;padding-right:32px;overflow:hidden}
+.atelier-workflow .episode-reference-remove{position:absolute;right:5px;top:50%;z-index:2;display:grid;place-items:center;width:18px;height:18px;margin:0;padding:0;border:1px solid #e77878;border-radius:50%;background:#4a2026;color:#ffb5b5;font-size:15px;line-height:1;font-weight:900;transform:translateY(-50%);cursor:pointer}
+.atelier-workflow .episode-reference-remove:hover{background:#e77878;color:#241718}
+/* Step 2 controls stay compact: labels are carried by the selected controls,
+   while each function gets a clear color identity. */
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"]{display:flex!important;align-items:center;gap:8px;flex-wrap:nowrap;margin:0 0 10px;padding:10px 12px;border:1px solid #4b4e54;border-radius:10px;background:#25272a}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"]>label,
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"]>.visual-image-model-bar{flex:0 1 auto;min-width:0;margin:0!important;padding:0!important;border:0!important;background:transparent!important}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"]>label>span:first-child,
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-image-model-bar label>span{display:none!important}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"]>label select,
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-image-model-bar label select{width:clamp(108px,12vw,176px);min-width:104px;padding:8px 10px;font-size:13px;font-weight:750}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"]>.visual-image-model-bar{display:contents!important}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-image-model-bar label:first-child{flex:0 1 auto!important;min-width:0!important}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-save-project-settings{margin-left:auto;min-height:36px;padding:8px 14px;white-space:nowrap;flex:none}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-check-line{display:flex;align-items:center;gap:7px;min-height:36px;padding:0 10px;border:1px solid #d85c9d;border-radius:8px;background:#421f36;color:#ffb8dc;font-size:13px;font-weight:800;white-space:nowrap}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-check-line input{width:16px;height:16px;accent-color:#ff67ae}
+.atelier-workflow #visualRoleLayout{border-color:#4f9bff!important;background:#172e4c!important;color:#b9d9ff!important}
+.atelier-workflow #visualSceneLayout{border-color:#b875ff!important;background:#30204e!important;color:#e0c2ff!important}
+.atelier-workflow #visualEyeMaskMode{border-color:#ff9a55!important;background:#482717!important;color:#ffd0aa!important}
+.atelier-workflow #visualImageTier{border-color:#38d6c3!important;background:#123c3a!important;color:#b4fff2!important}
+.atelier-workflow #visualImageResolution{border-color:#55a9ff!important;background:#162e4b!important;color:#c2e1ff!important}
+.atelier-workflow #visualRatio{border-color:#d277ff!important;background:#36204d!important;color:#edcaff!important}
+.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-video-quote{max-width:150px;color:#ffca68;font-size:11px;font-weight:750;line-height:1.3}
+@media(max-width:1000px){.atelier-workflow .visual-toolbar[data-workflow-panel="2"]{flex-wrap:wrap}.atelier-workflow .visual-toolbar[data-workflow-panel="2"]>label,.atelier-workflow .visual-toolbar[data-workflow-panel="2"] .visual-image-model-bar label{flex:1 1 145px}}
+/* Body is itself the shell, not an ancestor of another shell. */
+.atelier-shell #generateCard>.generate-head{display:flex!important;align-items:center;justify-content:space-between;gap:18px}
+.atelier-shell #generateCard .atelier-generate-action{margin:0!important;padding:0!important;width:auto!important;flex:none}
+.atelier-shell #generateCard .atelier-generate-action .stage-model-control{display:none!important}
+.atelier-shell #generateCard #generateBtn{width:auto!important;min-width:150px}
+.atelier-shell .atelier-sidebar{position:sticky;top:120px;z-index:20;overflow:hidden;transition:padding .4s ease,background .4s ease,border-color .4s ease}
+.atelier-shell .workspace{width:calc(100% - 24px)!important;margin-left:0!important;gap:12px!important;transition:grid-template-columns .4s cubic-bezier(.22,.8,.25,1),width .4s ease,gap .4s ease}
+.atelier-sidebar-handle{display:none;animation:none}
+.atelier-shell .atelier-sidebar .work-mode-tab:has(.atelier-beta-badge){position:relative;flex-wrap:wrap}
+.atelier-shell .atelier-sidebar .work-mode-tab .atelier-beta-badge{display:block!important;visibility:visible!important;opacity:1!important;margin:3px 0 0 49px;color:#ffca68!important;font-size:11px!important;line-height:1.3}
+.atelier-beta-note{margin:12px 0 0;padding-top:10px;border-top:1px solid #4b4e54;color:#abb1bd;font-size:11px;line-height:1.7}
+.atelier-shell .atelier-sidebar .work-mode-tab:disabled{cursor:not-allowed;opacity:.48}
+body.atelier-shell.atelier-sidebar-collapsed .workspace{grid-template-columns:24px minmax(0,1fr)!important;width:calc(100% - 24px)!important;gap:12px!important;margin-left:0!important}
+body.atelier-shell.atelier-sidebar-collapsed .atelier-sidebar{padding:0!important;min-width:0!important;width:24px!important;border:0!important;background:transparent!important;box-shadow:none!important;align-self:stretch;overflow:visible!important}
+body.atelier-shell.atelier-sidebar-collapsed .atelier-sidebar>:not(.atelier-sidebar-handle){visibility:hidden;opacity:0;pointer-events:none}
+/* B: a quiet floating capsule; the 24px rail and main content geometry stay fixed. */
+body.atelier-shell.atelier-sidebar-collapsed .atelier-sidebar-handle{display:grid;place-items:center;position:sticky;top:calc(50vh - 30px);box-sizing:border-box;width:24px;height:60px;padding:0;border:1px solid #9b8251;border-radius:999px;background:linear-gradient(140deg,#4a3c24,#302c23);color:#f2d28a;font-size:0!important;line-height:1;text-shadow:none;box-shadow:3px 3px 12px #0006,inset 0 1px 0 #ffe3a22b;cursor:pointer;animation:none;transition:background .18s ease,box-shadow .18s ease,border-color .18s ease}
+.atelier-sidebar-handle-icon{display:block;width:14px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+body.atelier-shell.atelier-sidebar-collapsed .atelier-sidebar-handle:hover{border-color:#c5a467;background:linear-gradient(140deg,#55442a,#363025);box-shadow:3px 3px 14px #0006,inset 0 1px 0 #ffe3a23b}
+body.atelier-shell.atelier-sidebar-collapsed .atelier-sidebar-handle:focus-visible{outline:2px solid #e8c579;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){
+  .atelier-shell .workspace,.atelier-shell .atelier-sidebar,.atelier-sidebar-handle{animation:none!important;transition:none!important}
+}
+body.atelier-shell.atelier-sidebar-collapsed .atelier-sidebar:after{display:none!important}
+/* The main studio rail tucks into a slim left drawer on desktop. */
+@media(min-width:761px){
+  .atelier-shell .workspace{grid-template-columns:205px minmax(0,1fr);transition:grid-template-columns .42s cubic-bezier(.22,.8,.25,1)}
+  .atelier-shell .atelier-sidebar{position:sticky;z-index:20;transition:width .42s cubic-bezier(.22,.8,.25,1),padding .42s ease,transform .42s ease,box-shadow .42s ease;overflow:hidden}
+  /* The state class is toggled on body, while the shell remains the stable
+     layout root. Keep every collapsed rule under that ancestor so the rail
+     actually shrinks instead of letting its labels wrap vertically. */
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .workspace{grid-template-columns:56px minmax(0,1fr)}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar{padding:14px 7px;box-shadow:4px 10px 28px #0004}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar:after{content:'›';position:absolute;right:4px;top:50%;display:grid;place-items:center;width:16px;height:30px;border:1px solid #5c6066;border-radius:7px;background:#303338;color:#ffca68;font-size:20px;line-height:1;transform:translateY(-50%)}
+  body:not(.atelier-sidebar-collapsed) :is(.atelier-shell,.atelier-workflow) .atelier-sidebar:after{content:'‹';position:absolute;right:5px;top:50%;display:grid;place-items:center;width:16px;height:30px;border:1px solid #5c6066;border-radius:7px;background:#303338;color:#ffca68;font-size:20px;line-height:1;transform:translateY(-50%);opacity:.65}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar-title{height:0;margin:0;padding:0;overflow:hidden;opacity:0}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .work-mode-tabs{gap:8px}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .work-mode-tab{justify-content:center;min-height:50px;padding:9px 5px}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .work-mode-tab>b{justify-content:center;font-size:0}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .work-mode-tab>b>span:not(.module-lockup){display:none}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .module-lockup{margin:0;width:34px!important;justify-content:center}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .module-icon{width:32px!important;height:32px!important}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .atelier-utility-link{justify-content:center;min-height:50px;padding:8px 4px;font-size:0}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .atelier-utility-link svg{width:25px;height:25px}
+  body.atelier-sidebar-collapsed :is(.atelier-shell,.atelier-workflow) .atelier-sidebar .script-center-entry+.work-mode-tab{margin-top:12px;padding-top:9px;border-top:1px solid #4b4e54}
+}
+/* Step 1 uses the same full-width studio canvas as steps 2 and 3. Keep the
+   editor tall enough for a complete script while retaining a compact mobile
+   layout. */
+.atelier-workflow #visualSourceSection[data-workflow-panel="1"]{width:100%;max-width:none;min-height:clamp(520px,68vh,960px);box-sizing:border-box;display:flex;flex-direction:column}
+.atelier-workflow #visualSourceSection[data-workflow-panel="1"] .visual-source-heading{flex:0 0 auto}
+.atelier-workflow #visualSourceSection[data-workflow-panel="1"] .visual-source-text{flex:1 1 auto;min-height:clamp(340px,46vh,760px);height:auto;box-sizing:border-box}
+.atelier-workflow #visualSourceSection[data-workflow-panel="1"] .visual-stage-feedback{flex:0 0 auto}
+@media(max-width:760px){.atelier-workflow #visualSourceSection[data-workflow-panel="1"]{min-height:auto}.atelier-workflow #visualSourceSection[data-workflow-panel="1"] .visual-source-text{min-height:300px}}
+/* Fixed balanced creation layout; narrow screens retain a single column. */
+.atelier-shell[data-creation-layout] #originalCard>.original-form,.atelier-shell[data-creation-layout] #originalCard>.original-more-settings,.atelier-shell[data-creation-layout] #originalCard .recommend-bar,.atelier-shell[data-creation-layout] #rewriteCard .atelier-more-settings{width:100%;max-width:none}
+.atelier-shell[data-creation-layout] .content-column{align-items:start;gap:16px}
+.atelier-shell[data-creation-layout] .content-column>:is(#sourceCard,#originalCard,#rewriteCard){grid-row:auto!important;min-width:0}
+.atelier-shell[data-creation-layout] #sourceText{min-height:220px;height:clamp(220px,30vh,380px)}
+.atelier-shell[data-creation-layout] #generateCard #emptyResult{min-height:120px}
+.atelier-shell[data-creation-layout] #originalTheme{min-height:96px;width:100%}
+@media(min-width:1200px){
+ .atelier-shell[data-creation-layout="dual"] .content-column:has(>#sourceCard:not(.hidden)),.atelier-shell[data-creation-layout="dual"] .content-column:has(>#originalCard:not(.hidden)){grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .atelier-shell[data-creation-layout="dual"] .content-column>:is(#sourceCard,#originalCard){grid-column:1!important}
+ .atelier-shell[data-creation-layout="dual"] .content-column>#rewriteCard{grid-column:2!important}
+ .atelier-shell[data-creation-layout="dual"] #originalCard>.original-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .atelier-shell[data-creation-layout="dual"] #sourceText{min-height:300px;height:clamp(300px,40vh,540px)}
+ .atelier-shell[data-creation-layout="dual"] #rewriteCard .atelier-more-settings>.form-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+.atelier-shell.workflow-mode .workflow-frame{min-height:calc(100dvh - 130px)}
+.atelier-shell.breakdown-mode .workspace,.atelier-shell.breakdown-mode .content-column,.atelier-shell.breakdown-mode #breakdownCard{width:100%;max-width:none;min-width:0}
+.atelier-shell.breakdown-mode #breakdownCard{padding:0;border:0;background:transparent}
+.atelier-shell.breakdown-mode #breakdownFrame{height:calc(100dvh - 125px)!important;min-height:640px!important}
+.atelier-shell.canvas-mode .workspace,.atelier-shell.canvas-mode .content-column,.atelier-shell.canvas-mode #canvasCard{width:100%;max-width:none;min-width:0}
+.atelier-shell.canvas-mode #canvasCard{padding:0;border:0;background:transparent;grid-column:1/-1!important}
+.atelier-shell.characters-mode .workspace,.atelier-shell.characters-mode .content-column,.atelier-shell.characters-mode #charactersCard{width:100%;max-width:none;min-width:0}
+.atelier-shell.characters-mode #charactersCard{padding:0;border:0;background:transparent;grid-column:1/-1!important}
+@media(max-width:1199px){.atelier-shell[data-creation-layout] .content-column{grid-template-columns:1fr!important}.atelier-shell[data-creation-layout] .content-column>:is(#sourceCard,#originalCard,#rewriteCard){grid-column:1/-1!important}}
+
+/* Keep the grouped workbench navigation usable at short desktop heights. */
+body.atelier-shell:not(.atelier-sidebar-collapsed) .atelier-sidebar { overflow-x: hidden; overflow-y: auto; }
+.atelier-nav-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; min-width: 0; }
+.atelier-nav-group + .atelier-nav-group { margin-top: 8px; }
+.atelier-nav-group-script { --atelier-group-color: #8ce3d3; }
+.atelier-nav-group-video { --atelier-group-color: #9bd9ff; }
+.atelier-nav-group-tools { --atelier-group-color: #efb7da; }
+.atelier-nav-heading {
+  display: flex; align-items: center; gap: 7px; margin: 3px 2px 1px;
+  font-size: 12px; font-weight: 800; color: var(--atelier-group-color);
+}
+.atelier-nav-heading::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.atelier-nav-heading::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .24; }
+.atelier-shell .atelier-sidebar .atelier-nav-group .work-mode-tab {
+  display: flex; align-items: center; gap: 4px; box-sizing: border-box;
+  width: 100%; min-height: 48px!important; padding: 7px 9px; margin: 0; flex-wrap: nowrap;
+  border: 1px solid var(--line); border-radius: 12px;
+}
+.atelier-shell .atelier-sidebar .atelier-nav-group .work-mode-tab:is(:hover,:focus-visible,.active) { border-color: var(--atelier-group-color); }
+.atelier-shell .atelier-sidebar .atelier-nav-group .work-mode-tab > b { font-size: 14px!important; gap: 8px!important; }
+.atelier-shell .atelier-sidebar .atelier-nav-group .module-lockup { width: 30px!important; }
+.atelier-shell .atelier-sidebar .atelier-nav-group .module-icon {
+  width: 30px!important; height: 30px!important; color: var(--atelier-group-color)!important;
+}
+.atelier-shell .atelier-sidebar .atelier-nav-group .module-icon svg { width: 17px; height: 17px; }
+.atelier-shell .atelier-sidebar .atelier-nav-group .work-mode-tab .atelier-beta-badge {
+  flex: none; padding: 0 4px; margin: 0 0 0 auto; border: 1px solid currentColor;
+  border-radius: 7px; font-size: 9px!important; font-weight: 700;
+}
+@media(max-width:760px) {
+  .atelier-shell .atelier-sidebar .atelier-nav-group { width: 100%; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .atelier-nav-heading { grid-column: 1 / -1; }
+}
+@media(max-width:480px) {
+  .atelier-shell .atelier-sidebar .atelier-nav-group { grid-template-columns: minmax(0,1fr); }
+}

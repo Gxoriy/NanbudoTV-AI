@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>剧情分场与编排 · NanbudoTV·AI</title>
+  <link rel="stylesheet" href="/static/macro_arrangement.css">
+  <link rel="stylesheet" href="/static/model_activity.css">
+  <link rel="stylesheet" href="/static/aspect_ratio.css">
+  <script defer src="/static/model_activity.js"></script>
+  <script defer src="/static/aspect_ratio.js"></script>
+<script defer src="/static/reference_matcher.js"></script>
+<script defer src="/static/reference_mentions.js"></script>
+  <script defer src="/static/macro_card_editor.js"></script>
+  <script defer src="/static/model_presentation.js"></script>
+  <script defer src="/static/macro_arrangement.js"></script>
+<link rel="stylesheet" href="/static/themes228.css"><script src="/static/themes228.js"></script>  <link rel="stylesheet" href="/static/reference_resolution233.css">
+</head>
+<body>
+  <main class="macro-shell">
+    <header class="macro-heading">
+      <div><a id="macroBack" class="back-link" href="/static/visual.html">← 返回项目与参考图</a><h1>剧情分场与编排</h1>
+        <p>先识别集／场目录，再生成完整镜头，按顺序组合为视频卡；已完成场次可先使用。</p></div>
+      <button id="macroRefresh" type="button" class="secondary">刷新已保存状态</button>
+    </header>
+    <p class="scope-note">先按完整剧情任务划分场次，再单独处理所选场次。点击视频“生成”即按当前设置核价并提交收费生成，不再二次确认；其他收费操作保留确认。旧切割稿、视频与历史记录保留。</p>
+    <section class="source-panel" aria-labelledby="sourceTitle">
+      <div class="section-heading"><h2 id="sourceTitle">1 · 原稿与节奏</h2><span id="sourceLockNote"></span></div>
+      <label class="field-label" for="macroSource">原稿（按原文连续覆盖，不增删对白）</label>
+      <textarea id="macroSource" rows="9" placeholder="当前已有项目的原稿。识别大段不会改写原文。" spellcheck="false"></textarea>
+      <div class="setting-row">
+        <label>编排模式<select id="macroMode"><option value="smart">智能自然节奏</option><option value="custom">自定义全剧目标</option></select></label>
+        <label>单张视频卡上限<select id="macroMaxSeconds"><option value="15">15 秒</option><option value="30">30 秒</option></select></label>
+        <label id="macroTargetField" hidden>全剧目标（参考）<select id="macroTarget"><option value="60">60 秒</option><option value="90">90 秒</option><option value="120">120 秒</option></select></label>
+      </div>
+      <p class="hint">已标明集/场的长剧本可先本地识别目录，再分批切卡，已返回的场次可先使用。每次模型请求仍有容量限制；没有明确集/场标题的大稿请先补标题。不会截断原文，也不会重做参考图。</p>
+      <div class="actions"><button id="macroPlanQuote" type="button" class="primary">镜头优先编排 · 核价</button><button id="macroResume" type="button" class="primary" hidden>继续未完成编排 · 核价</button><span>先免费核价；确认后调用模型，逐批返回镜头与视频卡。</span></div>
+    </section>
+    <div id="macroStatus" class="status" role="status" aria-live="polite">正在读取项目…</div>
+    <div class="actions"><button id="macroRecover" type="button" class="secondary" hidden>免费核对原调用 · 不重新生成</button><span id="macroRecoveryNote" hidden>仅查询原返回与核对旧订单，不创建新的模型调用或预扣。</span></div>
+    <section class="segments-panel" aria-labelledby="segmentsTitle">
+      <div class="section-heading"><h2 id="segmentsTitle">2 · 场次与当前段</h2><label class="scene-switch">场次切换<select id="macroSegmentFilter" aria-label="场次切换"><option value="all">全部场次</option></select></label></div>
+      <p id="macroSummary" class="hint">先识别剧情大段，再选择需要编排的一段；切换场次不会调用模型或扣费。</p>
+      <div id="macroSegments" class="segment-list"></div>
+    </section>
+    <section class="cards-panel" aria-labelledby="cardsTitle">
+      <div class="section-heading"><h2 id="cardsTitle">3 · 所选场次的视频卡与分镜</h2><button id="macroExport" type="button" class="secondary" disabled>导出当前显示分镜 · 免费</button></div>
+      <p class="hint">新编排已包含分镜，可直接生成视频；仅需修改时再选择重新补齐。</p>
+      <div id="macroCards" class="card-list"></div>
+    </section>
+  </main>
+  <dialog id="macroQuoteDialog" aria-labelledby="macroQuoteTitle">
+    <div class="quote-shell"><h2 id="macroQuoteTitle">请确认下一步</h2><div id="macroQuoteContent"></div>
+      <div class="quote-actions"><button id="macroQuoteCancel" type="button" class="secondary">取消</button><button id="macroQuoteConfirm" type="button" class="primary">确认</button></div>
+    </div>
+  </dialog>
+</body>
+</html>

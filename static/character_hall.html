@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>数字人形象大厅</title><link rel="stylesheet" href="/static/character_hall.css"><link rel="stylesheet" href="/static/themes228.css"><script src="/static/themes228.js"></script></head><body>
+<link rel="stylesheet" href="/static/tutorials.css"><main>
+  <header><div><span class="eyebrow">CHARACTER HALL · OFFLINE</span><h1>数字人形象大厅</h1><p>挑选形象，搭配自己的声音，保存为可复用角色。</p></div><div class="header-actions"><span class="free-label">内置素材 · 收藏免费</span><button id="closeHall" type="button">返回角色库</button></div></header>
+<section class="tutorial-standalone" data-tutorial-section="characters"></section>
+  <p id="hallStatus" role="status" aria-live="polite">正在载入本地形象…</p>
+  <section class="hall-filters" aria-label="筛选人物形象">
+    <label class="search">搜索形象<input id="hallSearch" placeholder="名称、编号或风格" type="search"></label>
+    <label>形象风格<select id="hallStyle"><option value="">全部风格</option><option>三维风格</option><option>写实风格</option></select></label>
+    <label>人物呈现<select id="hallSex"><option value="">全部人物</option><option value="female">女性形象</option><option value="male">男性形象</option></select></label>
+    <label>年龄设定<select id="hallAge"><option value="">全部年龄</option><option>青年</option><option>中年</option><option>长者</option><option>成年</option></select></label>
+    <label>素材分组<select id="hallRegion"><option value="">全部分组</option></select></label>
+    <button id="clearHallFilters" type="button">清除筛选</button>
+  </section>
+  <div class="gallery-heading"><h2>可选形象 <span id="hallCount">0</span></h2><span>点击图片放大 · 三维风格是图片，不是可旋转模型</span></div>
+  <section id="hallGrid" class="hall-grid" aria-label="内置人物图库"></section>
+  <section class="source-credit" aria-label="人物来源与许可"><h2>合成人物，来源可查</h2><p id="hallNotice"></p><div id="hallCredits"></div><p>保存到角色库不会生成声音，也不会产生视频或扣积分。用于对外作品时请遵守对应素材许可，保留署名与合成标记，不冒充真实人物或真实客户证言。</p></section>
+</main>
+<dialog id="hallDetail"><div class="detail-heading"><h2 id="hallDetailTitle">人物详情</h2><button id="closeHallDetail" aria-label="关闭人物详情" type="button">关闭</button></div><div class="detail-grid"><figure><img id="hallDetailImage" alt=""><figcaption id="hallDetailCaption"></figcaption></figure><section class="detail-settings"><span class="free-label">仅收藏形象与角色组合 · 免费</span><p id="hallDetailDescription"></p><label>形象名称<input id="hallImageName" maxlength="80"></label><button id="saveHallImage" class="gold" type="button">收藏到我的形象库</button><div class="role-settings"><h3>或保存一个角色组合</h3><label>角色名称<input id="hallRoleName" maxlength="80"></label><label>搭配我的声音<select id="hallVoice"><option value="">暂不绑定声音</option></select></label><p id="hallVoiceHint">可先保存只有形象的角色，之后自由搭配音色。</p><button id="saveHallRole" class="gold" type="button">保存角色卡</button></div><p id="hallDetailStatus" role="status" aria-live="polite"></p><div class="detail-license"><p id="hallDetailLicense"></p><a id="hallSourceLink" target="_blank" rel="noopener noreferrer">查看原素材与作者</a></div></section></div></dialog>
+<script src="/static/tutorials.js"></script><script src="/static/character_hall.js"></script></body></html>

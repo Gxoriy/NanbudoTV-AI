@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>对齐剧本</title>
+  <link rel="stylesheet" href="/static/script_alignment.css">
+<link rel="stylesheet" href="/static/themes228.css"><script src="/static/themes228.js"></script></head>
+<body>
+  <main class="script-align-shell">
+    <header class="script-align-header">
+      <div><span class="script-align-eyebrow">SCRIPT FORMAT ALIGNMENT</span><h1>对齐剧本</h1><p>把不同格式的原稿整理为统一漫剧分镜格式；只做格式转换，不负责续写或改编。</p></div>
+      <span class="script-align-model-badge">通过已发布文本模型处理</span>
+    </header>
+
+    <section class="script-align-panel">
+      <div class="script-align-panel-head"><div><h2>1. 导入剧本</h2><p>支持直接粘贴，或导入 TXT / Markdown 文本文件；内容只在本次任务内处理，不自动保存到项目。</p></div><div class="script-align-file-tools"><input id="alignmentFile" type="file" accept=".txt,.md,.markdown,text/plain,text/markdown" hidden><button id="alignmentChooseFile" class="secondary" type="button">导入文本文件</button><span id="alignmentCharCount">0 字</span></div></div>
+      <textarea id="alignmentSource" maxlength="750000" spellcheck="false" placeholder="粘贴原剧本、小说章节、大纲或对白稿……"></textarea>
+      <div class="script-align-options">
+        <fieldset><legend>切片规格</legend><label><input type="radio" name="alignmentDuration" value="15" checked><span><b>15 秒一段</b><small>节奏紧凑，按内容组织短切片</small></span></label><label><input type="radio" name="alignmentDuration" value="30"><span><b>30 秒一段</b><small>段落更连贯，适合较长对白</small></span></label></fieldset>
+        <label class="script-align-model"><span>文本模型</span><select id="alignmentModel"><option value="">正在读取后台模型…</option></select><small id="alignmentModelPrice">价格读取中…</small></label>
+      </div>
+      <p class="script-align-guard">模型会按原稿补齐统一格式；不得改变剧情走向、人物关系和台词核心意思。完整单集默认按60秒组织为15秒×4段或30秒×2段；提交前会先显示预计调用次数与积分。</p>
+      <div class="script-align-actions"><button id="alignmentRun" class="primary" type="button" disabled>核对费用并开始</button><span id="alignmentStatus" role="status" aria-live="polite">正在同步模型和价格…</span></div>
+    </section>
+
+    <section class="script-align-panel script-align-output-panel">
+      <div class="script-align-panel-head"><div><h2>2. 对齐结果</h2><p>结果可继续手动校对；模型未完成时，已返回片段会暂存在此处。</p></div><div class="script-align-file-tools"><button id="alignmentCopy" class="secondary" type="button" disabled>复制结果</button><button id="alignmentDownload" class="secondary" type="button" disabled>下载 TXT</button></div></div>
+      <div id="alignmentProgressWrap" class="script-align-progress-wrap" hidden><div class="script-align-progress-title"><span id="alignmentProgressMessage">等待任务…</span><b id="alignmentProgressPercent">0%</b></div><div class="script-align-progress"><i id="alignmentProgressBar"></i></div></div>
+      <textarea id="alignmentResult" spellcheck="false" placeholder="对齐后的剧本会显示在这里，可继续手动校对。"></textarea>
+      <p class="script-align-disclaimer">请在实际使用前对照原稿核对，尤其检查台词、角色名和原有集数。结果不会覆盖输入原文。</p>
+    </section>
+  </main>
+
+  <dialog id="alignmentConfirmDialog" class="script-align-dialog">
+    <form method="dialog"><h2>确认本次剧本对齐</h2><p id="alignmentQuoteText"></p><p class="script-align-dialog-note">预计值按文本长度分段计算；最终按后台确认成功的实际模型调用次数结算，失败调用按现有网关规则处理。</p><div class="script-align-actions"><button id="alignmentCancelQuote" class="secondary" value="cancel">返回修改</button><button id="alignmentConfirmQuote" class="primary" value="confirm">确认并调用模型</button></div></form>
+  </dialog>
+  <script src="/static/script_alignment.js"></script>
+</body>
+</html>

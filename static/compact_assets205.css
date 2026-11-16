@@ -1,0 +1,103 @@
+/* The selected compact-card layout is scoped to Step 2. */
+html body.atelier-workflow #visualAssetToolbar{display:block!important;margin:0 0 14px!important;padding:12px!important;background:#292c2f!important;border:1px solid #484d52!important;border-radius:9px!important;min-width:0;box-sizing:border-box}
+html body.atelier-workflow #visualAssetToolbar .compact-asset-setting-row205{display:flex!important;align-items:flex-end;flex-wrap:wrap;gap:10px;min-width:0;margin:0!important;padding:0!important;background:transparent!important;border:0!important}
+html body.atelier-workflow #visualAssetToolbar #visualAssetModelRow205{margin-top:10px!important;padding-top:10px!important;border-top:1px solid #484d52!important;border-radius:0!important}
+html body.atelier-workflow #visualAssetToolbar .compact-asset-setting-row205>label{display:flex;flex-direction:column;flex:0 1 auto!important;gap:4px;min-width:0!important;margin:0!important;max-width:100%}
+html body.atelier-workflow #visualAssetToolbar .compact-asset-setting-row205>label>span:first-child{display:block!important;color:#b6bec5!important;font-size:11px!important;font-weight:400!important;line-height:1.5}
+html body.atelier-workflow #visualAssetToolbar .compact-asset-setting-row205>label[hidden],html body.atelier-workflow #visualAssetToolbar .visual-image-ratio-note{display:none!important}
+html body.atelier-workflow #visualAssetToolbar #visualAssetLayoutRow205>label:nth-child(-n+2){flex:0 1 260px!important;width:260px}
+html body.atelier-workflow #visualAssetToolbar #visualAssetLayoutRow205>label:nth-child(4){flex:0 1 200px!important;width:200px}
+html body.atelier-workflow #visualAssetToolbar :is(select,.layout-picker-button,.aspect-ratio-trigger){min-height:32px!important;height:32px;width:100%;min-width:0!important;max-width:100%;padding:5px 10px!important;background:#303438!important;color:#eceff1!important;border:1px solid #565d63!important;border-radius:7px!important;font-size:13px!important;font-weight:400!important;line-height:20px;box-sizing:border-box}
+html body.atelier-workflow #visualAssetToolbar :is(.layout-picker,.aspect-ratio-picker){display:block;min-width:0;width:100%;max-width:100%}
+html body.atelier-workflow #visualAssetToolbar .layout-picker-button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+html body.atelier-workflow #visualAssetToolbar .layout-picker-menu{z-index:15;max-width:min(560px,calc(100vw - 56px))}
+html body.atelier-workflow #visualAssetToolbar .visual-check-line{display:flex!important;align-items:center;gap:6px;min-height:32px;padding:5px 0!important;border:0!important;border-radius:0!important;background:transparent!important;color:#eceff1!important;font-size:13px!important;font-weight:400!important;white-space:nowrap;box-sizing:border-box}
+html body.atelier-workflow #visualAssetToolbar #visualAssetModelRow205>label:first-child{flex:0 1 240px!important;width:240px}
+html body.atelier-workflow #visualAssetToolbar #visualAssetModelRow205>label:nth-child(2){flex:0 0 120px!important;width:120px}
+html body.atelier-workflow #visualAssetToolbar #visualImageQuote{display:block;align-self:center;flex:0 1 auto;max-width:260px;margin:15px 0 0;padding:0;color:#e7c784!important;font-size:12px!important;font-weight:400!important;line-height:1.5;overflow-wrap:anywhere}
+html body.atelier-workflow #visualAssetToolbar :is(#saveProjectSettings,#useSource){min-height:32px!important;height:auto;margin:0!important;padding:6px 10px!important;max-width:100%;font-size:12px!important;font-weight:500!important;line-height:1.5;white-space:nowrap;border-radius:7px!important;box-sizing:border-box}
+html body.atelier-workflow #visualAssetToolbar #saveProjectSettings{flex:0 0 auto;background:#34383b!important;border:1px solid #626769!important;color:#eceff1!important}
+html body.atelier-workflow #visualAssetToolbar #visualAssetPrimaryActions{display:flex;flex:0 0 auto;align-items:center;margin-left:auto;gap:0}
+html body.atelier-workflow #visualAssetToolbar #visualAssetPrimaryActions small{display:none!important}
+html body.atelier-workflow #visualAssetToolbar #useSource{background:#d1ad62!important;color:#28251e!important;border-color:#d1ad62!important}
+html body.atelier-workflow #visualAssetToolbar input[type=checkbox],html body.atelier-workflow #compactAssetWorkspace205 input[type=checkbox]{width:15px!important;height:15px!important;min-height:0;margin:0!important;accent-color:#d5b16a;flex:none}
+
+html body.atelier-workflow #compactAssetWorkspace205{min-width:0;max-width:100%}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-header205{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;min-width:0;flex-wrap:wrap}
+html body.atelier-workflow #compactAssetTabs205{display:flex;align-items:center;gap:4px;min-width:0;flex-wrap:wrap}
+html body.atelier-workflow #compactAssetWorkspace205 :is(button,summary){min-height:32px;margin:0;padding:5px 10px;border:1px solid #51585e;border-radius:7px;background:#303438;color:#e6ebee;font-size:12px!important;font-weight:400!important;line-height:1.5;box-sizing:border-box;white-space:nowrap;cursor:pointer}
+html body.atelier-workflow #compactAssetWorkspace205 :is(button,summary):hover{border-color:#d1ad62}
+html body.atelier-workflow #compactAssetWorkspace205 :is(button,summary):focus-visible{outline:2px solid #d1ad62;outline-offset:2px}
+html body.atelier-workflow #compactAssetTabs205>button{background:transparent!important;border-color:transparent!important;color:#e6ebee!important;font-size:13px!important;box-shadow:none!important;transition:none!important}
+html body.atelier-workflow #compactAssetTabs205>button[aria-selected=true]{background:#403a2e!important;border-color:#b69860!important;color:#f2d192!important}
+html body.atelier-workflow #compactAssetTabs205 [data-asset-count]{font-size:11px!important;opacity:.85;margin-left:3px}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-add205{display:flex;align-items:center;gap:6px;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-asset-section{margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;min-width:0;max-width:100%}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-section-title{display:block;margin:0 0 12px!important;padding:0!important;border:0!important;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 :is(.compact-asset-legacy-title205,.compact-asset-legacy-select205,.compact-asset-category-hidden205){display:none!important}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205{display:flex!important;align-items:center;flex-wrap:wrap;gap:7px!important;min-width:0;margin:0!important;padding:9px 0 0!important;border-top:1px solid #484d52}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-check205{display:flex;align-items:center;gap:6px;min-height:32px;margin:0;color:#e3e8eb;font-size:12px!important;font-weight:400;white-space:nowrap;cursor:pointer}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-selected205{display:block;flex:1;min-width:66px;margin:0!important;color:#acb6bd!important;font-size:12px!important;line-height:1.5}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.compact-asset-check205{order:0}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.invert-select-assets{order:1}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.compact-asset-selected205{order:2}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.batch-assets{order:3}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.download-selected-assets{order:4}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.compact-asset-more205{order:5}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.credit-hint{order:6}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-no-selection205 .compact-asset-bulk205>.credit-hint{display:none!important}
+html body.atelier-workflow #compactAssetWorkspace205 .batch-assets{background:#d1ad62!important;border-color:#d1ad62!important;color:#28251e!important;font-weight:500!important}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-more205{position:relative;flex:none;margin:0;padding:0;border:0;background:transparent;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-more205>summary{display:flex;align-items:center;justify-content:center;gap:7px;list-style:none}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-more205>summary::-webkit-details-marker{display:none}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-more205>summary::after{content:'⌄';font-size:13px}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-menu205{position:absolute;right:0;top:calc(100% + 5px);z-index:12;display:grid;gap:2px;width:142px;padding:5px;border:1px solid #565d63;border-radius:8px;background:#303438;box-shadow:0 6px 20px #0005}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-more205:not([open])>.compact-asset-menu205{display:none!important}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-menu205>button{display:block;width:100%;border-color:transparent!important;text-align:left;background:transparent!important}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-menu205>.delete-selected-assets{color:#efa6a6!important}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205>.credit-hint{flex-basis:100%;max-width:100%;margin:0;font-size:11px;white-space:normal;overflow-wrap:anywhere}
+
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card-grid{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;align-items:start;gap:10px!important;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card{min-width:0;border:1px solid #50565b!important;border-radius:8px!important;background:#2b2f32!important;box-shadow:none!important;overflow:hidden}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card.compact-asset-selected-card205{border-color:#d5b16a!important}
+/* Let the preview follow the card width: a fixed 92px strip made a 16:9
+   reference shrink into the middle of wide desktop cards. Keep the entire
+   reference visible, with the same reserved area in every generation state. */
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-preview{height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:16/9!important;background:#23272a!important;color:#a4afb6!important;position:relative;border-bottom:1px solid #454b50;box-sizing:border-box}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-preview>img{position:absolute;inset:0;display:block;width:100%!important;height:100%!important;max-height:none!important;object-fit:contain!important;object-position:center;background:#23272a!important;transform:none!important}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-preview-placeholder{font-size:28px!important;font-weight:400!important;opacity:.65}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-body{display:flex;flex-direction:column;gap:4px!important;padding:8px!important;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-body>b{display:block;min-width:0;margin:0!important;color:#e8edef!important;font-size:13px!important;font-weight:600!important;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-state205{display:block!important;min-width:0;margin:0 0 4px!important;color:#aab5bc!important;font-size:11px!important;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-state205[data-state=done]{color:#a5c8b5!important}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-state205[data-state=error]{color:#efa6a6!important}
+html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-state205[data-state=paused]{color:#e8cd94!important}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-actions{display:flex!important;align-items:stretch;flex-wrap:nowrap!important;gap:5px!important;margin:0!important;padding:0!important;border:0!important;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-actions>button{min-height:28px!important;min-width:0!important;max-width:100%;margin:0!important;padding:4px 5px!important;font-size:11px!important;font-weight:400!important;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:5px!important}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-actions>.asset-generate{flex:1 1 auto!important;width:auto!important;background:#403a2e!important;color:#f2d192!important;border-color:#806e4d!important}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-actions>:is(.asset-edit-toggle,.delete-asset){flex:0 0 30px!important;width:30px;padding-left:1px!important;padding-right:1px!important;background:#303438!important;border-color:#545c62!important}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-actions>.delete-asset{color:#efa6a6!important}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .asset-image-selection{top:7px!important;left:7px!important;width:23px!important;height:23px!important;padding:3px!important;border-radius:5px!important}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .asset-image-selection input{width:15px!important;height:15px!important}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-variant-control198{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px;margin:0!important;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-variant-control198>span{color:#aab5bc!important;font-size:10px!important;white-space:nowrap}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-variant-control198>select{min-width:0;width:100%;min-height:24px!important;margin:0;padding:2px 4px!important;font-size:11px!important;line-height:1.5;border-radius:5px;background:#303438!important;color:#e3e8eb!important}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-card-details{margin:0!important;padding:0!important;border:0!important;min-width:0}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-card-details[open]{display:flex;gap:8px!important;padding:6px 0!important}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-card-details :is(button,a,select,textarea,input,small,span,b,label,summary){font-size:12px!important;max-width:100%;min-width:0;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-card-details .visual-result-actions{display:flex;flex-wrap:wrap;gap:5px}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-card-details .asset-extra-actions{display:flex;flex-wrap:wrap;gap:5px}
+html body.atelier-workflow #compactAssetWorkspace205 .asset-card-details .asset-edit-panel{min-width:0;width:100%;margin:0}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .asset-preview-status{gap:5px;padding:8px 12px;z-index:2}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .asset-preview-spinner{width:18px;height:18px;border-width:2px}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .asset-preview-title{margin:0!important;font-size:12px!important;line-height:1.4}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-card .asset-preview-message{max-height:32px;font-size:10px!important;line-height:1.5}
+html body.atelier-workflow #compactAssetWorkspace205 .visual-empty{grid-column:1/-1;padding:20px;font-size:13px!important}
+html body.atelier-workflow .visual-asset-history{margin-top:15px!important;padding:10px 12px!important;border:1px solid #484d52;border-radius:8px;background:#292c2f}
+html body.atelier-workflow .visual-asset-history .visual-section-title{gap:10px;margin:0;align-items:center;flex-wrap:wrap}
+html body.atelier-workflow .visual-asset-history .visual-section-title b{font-size:13px!important}
+html body.atelier-workflow .visual-asset-history .visual-section-title span{font-size:11px!important;line-height:1.5}
+html body.atelier-workflow #toggleVisualAssetHistory{min-height:32px;padding:5px 10px;font-size:12px!important;white-space:nowrap}
+@media(max-width:1100px){html body.atelier-workflow #compactAssetWorkspace205 .visual-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}html body.atelier-workflow #visualAssetToolbar #visualAssetLayoutRow205>label:nth-child(-n+2){flex:1 1 220px!important;width:auto}html body.atelier-workflow #visualAssetToolbar #visualAssetPrimaryActions{flex:0 1 auto}}
+@media(max-width:680px){html body.atelier-workflow #compactAssetWorkspace205 .visual-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}html body.atelier-workflow #visualAssetToolbar #visualAssetLayoutRow205>label:nth-child(-n+2){flex:1 1 100%!important;width:100%}html body.atelier-workflow #visualAssetToolbar #visualAssetModelRow205>label:first-child{flex:1 1 180px!important;width:auto}html body.atelier-workflow #visualAssetToolbar #visualAssetModelRow205>label:nth-child(2){flex:1 1 100px!important;width:auto}html body.atelier-workflow #visualAssetToolbar #visualImageQuote{flex:1 1 100%;max-width:none;margin:0}html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-selected205{flex:1 1 60px}html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-bulk205{gap:5px!important}html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-actions{flex-wrap:wrap!important}html body.atelier-workflow #compactAssetWorkspace205 .visual-card .visual-card-actions>.asset-generate{flex-basis:100%!important}html body.atelier-workflow #compactAssetWorkspace205 .asset-variant-control198{grid-template-columns:minmax(0,1fr);gap:1px}}
+@media(max-width:460px){html body.atelier-workflow #compactAssetWorkspace205 .visual-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}html body.atelier-workflow #visualAssetToolbar{padding:10px!important}html body.atelier-workflow #visualAssetToolbar #visualAssetLayoutRow205>label:nth-child(4){flex:1 1 140px!important;width:auto}html body.atelier-workflow #visualAssetToolbar #visualAssetPrimaryActions{margin-left:0;max-width:100%}html body.atelier-workflow #visualAssetToolbar #useSource{white-space:normal}html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-selected205{flex:1 1 70px}html body.atelier-workflow #compactAssetWorkspace205 .batch-assets{margin-left:auto}html body.atelier-workflow #compactAssetWorkspace205 .compact-asset-header205{gap:7px}}
