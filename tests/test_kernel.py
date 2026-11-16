@@ -129,7 +129,9 @@ class ServerTest(unittest.TestCase):
         except urllib.error.HTTPError as exc:      # 501 会抛 HTTPError
             self.assertEqual(exc.code, 501)
             payload = json.loads(exc.read().decode("utf-8"))
-            self.assertEqual(payload["error"], "not_migrated")
+            # 未迁移的显式 501：not_migrated；需要模型/浏览器的用 model_required/browser_required
+            self.assertIn(payload["error"], ("not_migrated", "model_required",
+                                             "browser_required"))
         else:
             self.fail("未迁移路由应返回 501")
 

@@ -1,0 +1,89 @@
+"""首页可用性门禁：起一次内核，按首页真实调用顺序打一遍接口。
+
+判定：200 = 可用；501 = 明确未迁移/未接入（可接受）；其它 = 异常。
+用法：python tools/check_homepage.py
+"""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+CHECKS = [
+    ("GET", "/"), ("GET", "/api/health"), ("GET", "/api/runtime/status"),
+    ("GET", "/api/session/status"), ("GET", "/api/license/status"),
+    ("GET", "/api/client/config"), ("GET", "/api/tasks"), ("GET", "/api/history"),
+    ("GET", "/api/history/policy"), ("GET", "/api/model-profiles"),
+    ("GET", "/api/subtitle/capabilities"), ("GET", "/api/subtitle/list"),
+    ("GET", "/api/voices/catalog"), ("GET", "/api/visual/projects"),
+    ("GET", "/api/visual/styles"), ("GET", "/api/rewrite-projects"),
+    ("GET", "/api/breakdown/projects"), ("GET", "/api/prompt-reverse/projects"),
+    ("GET", "/api/ecommerce-showcase"), ("GET", "/api/ecommerce/"),
+    ("GET", "/api/store/projects"), ("GET", "/api/hall/downloads"),
+    ("GET", "/api/canvas/list"), ("GET", "/api/asset-library/"),
+    ("GET", "/api/tutorials"), ("GET", "/api/local-cache"),
+    ("GET", "/api/storage/status"), ("GET", "/api/local-storage/settings"),
+]
+
+
+def call(port: int, method: str, path: str):
+    req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.status, resp.headers.get("content-type", ""), len(resp.read())
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.headers.get("content-type", ""), len(exc.read())
+    except Exception as exc:  # noqa: BLE001
+        return 0, repr(exc)[:60], 0
+
+
+def main() -> int:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+        data = pathlib.Path(tmp) / "data"
+        data.mkdir()
+        for name in ("model-config.json", "llm-profiles.json"):
+            source = ROOT / "data" / name
+            if source.exists():
+                (data / name).write_bytes(source.read_bytes())
+        proc = subprocess.Popen([sys.executable, "-m", "app.main", "--no-gui", "--port", "0",
+                                 "--data-dir", str(data)], cwd=str(ROOT),
+                                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        try:
+            port = None
+            for _ in range(80):
+                files = list(data.glob("runtime-*.json"))
+                if files:
+                    port = json.loads(files[0].read_text(encoding="utf-8"))["port"]
+                    break
+                time.sleep(0.3)
+            if port is None:
+                print("内核未启动", (proc.stderr.read() or b"")[-400:])
+                return 1
+            print(f"[*] 内核端口 {port}")
+            bad = []
+            for method, path in CHECKS:
+                status, ctype, size = call(port, method, path)
+                mark = "OK " if status == 200 else ("501" if status == 501 else "!! ")
+                print(f"  {mark} {method:<4} {path:<32} {status:<4} {size}B")
+                if status not in (200, 501):
+                    bad.append((path, status))
+            print(f"\n合计 {len(CHECKS)} 项；异常 {len(bad)} 项")
+            urllib.request.urlopen(urllib.request.Request(
+                f"http://127.0.0.1:{port}/api/shutdown", data=b"{}", method="POST"),
+                timeout=10)
+            return 0 if not bad else 2
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait(timeout=5)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

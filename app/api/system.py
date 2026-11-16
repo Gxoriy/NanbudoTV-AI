@@ -12,6 +12,7 @@ import time
 from typing import Any, Callable
 
 from .router import Request, Response, Router
+from infra import llm
 from infra.tasks import TaskStore
 
 
@@ -22,7 +23,8 @@ def _public(task) -> dict[str, Any]:
 
 def build(router: Router, store: TaskStore, *, app_name: str, version: str,
           port_ref: dict[str, int], on_shutdown: Callable[[], None] | None = None,
-          profiles: Any = None, health_registry: Any = None) -> None:
+          profiles: Any = None, health_registry: Any = None,
+          workspace: Any = None, data_dir: Any = None) -> None:
     """把系统域路由挂到 router 上。
 
     `on_shutdown` 由入口注入：不能在这里 `from ..main import ...`，
@@ -112,9 +114,111 @@ def build(router: Router, store: TaskStore, *, app_name: str, version: str,
     router.register("S3", "/api/model-profiles", model_profiles)
     router.register("S3", "/api/_routes", routes_index)
     # S1 任务域（单一快照端点 + 明细查询）
+    def profile_save(req: Request) -> Response:
+        if profiles is None:
+            return Response.error(501, "not_migrated", "provider 注册表未注入")
+        body = req.json()
+        name = str(body.get("provider") or body.get("name") or "").strip()
+        if not name:
+            return Response.error(400, "invalid_input", "缺少 provider。")
+        try:
+            profiles.save(name,
+                          api_key=body.get("apiKey"),
+                          base_url=body.get("baseUrl"),
+                          model=body.get("model"),
+                          protocol=body.get("protocol"))
+        except (ValueError, KeyError) as exc:
+            return Response.error(400, "invalid_input", str(exc))
+        return Response(200, {"ok": True, "profiles": profiles.public_view()})
+
+    def profile_test(req: Request) -> Response:
+        """真发一次最小请求；失败也返回 200 + ok:false，便于前端展示原因。"""
+        if profiles is None:
+            return Response.error(501, "not_migrated", "provider 注册表未注入")
+        body = req.json()
+        name = str(body.get("provider") or body.get("name") or "").strip()
+        if not name:
+            return Response.error(400, "invalid_input", "缺少 provider。")
+        try:
+            provider = llm.get(name)
+            effective = profiles.effective(name)
+            started = time.perf_counter()
+            reply = llm.complete(provider,
+                                 [{"role": "user", "content": "只回复两个字：可用"}],
+                                 api_key=profiles.api_key(name),
+                                 base_url=effective["baseUrl"],
+                                 model=effective["model"], retries=0, max_tokens=32)
+            return Response(200, {"ok": True, "provider": name,
+                                  "latencyMs": round((time.perf_counter() - started) * 1000),
+                                  "reply": reply[:100]})
+        except Exception as exc:  # noqa: BLE001
+            return Response(200, {"ok": False, "provider": name, "error": repr(exc)[:200]})
+
+    def download_file(req: Request) -> Response:
+        """按相对路径下载 outputs 下的文件；越权一律 404。"""
+        if workspace is None or data_dir is None:
+            return Response.error(501, "not_migrated", "存储未注入")
+        relative = req.q1("file") or ""
+        path = workspace.file_path(relative)
+        if path is None:
+            candidate = (data_dir / "outputs" / relative).resolve()
+            try:
+                candidate.relative_to((data_dir / "outputs").resolve())
+            except ValueError:
+                return Response.error(404, "not_found", "文件不存在。")
+            path = candidate if candidate.is_file() else None
+        if path is None:
+            return Response.error(404, "not_found", "文件不存在。")
+        return Response(200, None, {}, raw=path.read_bytes(),
+                        content_type="application/octet-stream")
+
+    def tutorials(_req: Request) -> Response:
+        items = []
+        if data_dir is not None:
+            index = data_dir / "tutorials.json"
+            if index.exists():
+                try:
+                    body = json.loads(index.read_text(encoding="utf-8"))
+                    items = body.get("tutorials") if isinstance(body, dict) else body
+                except (json.JSONDecodeError, OSError):
+                    items = []
+        return Response(200, {"ok": True, "tutorials": items or []})
+
+    def tutorial_video(req: Request) -> Response:
+        if data_dir is None:
+            return Response.error(501, "not_migrated", "存储未注入")
+        name = req.q1("id") or req.q1("file") or ""
+        target = (data_dir / "tutorials" / name).resolve() if name else None
+        if target is None or not target.is_file():
+            return Response.error(404, "not_found", "教程视频不存在。")
+        try:
+            target.relative_to((data_dir / "tutorials").resolve())
+        except ValueError:
+            return Response.error(404, "not_found", "教程视频不存在。")
+        return Response(200, None, {}, raw=target.read_bytes(), content_type="video/mp4")
+
+    def update_unsupported(_req: Request) -> Response:
+        return Response.error(501, "unsupported",
+                              "本地重建版不支持在线更新；请更新代码后重启。")
+
     router.register("S1", "/api/tasks", tasks_snapshot)
     router.register("S1", "/api/tasks/list", tasks_list)
     router.register("S1", "/api/tasks/", task_item)
     router.register("S1", "/api/tasks/cancel/", task_cancel, methods=("POST",))
+
+    router.register("S3", "/api/model-profiles/save", profile_save, methods=("POST",))
+    router.register("S3", "/api/model-profiles/test", profile_test, methods=("POST",))
+    router.register("S3", "/api/test-model", profile_test, methods=("POST",))
+    router.register("S3", "/api/download", download_file)
+
+    router.register("S5", "/api/tutorials", tutorials)
+    router.register("S5", "/api/tutorial-video", tutorial_video)
+    router.register("S5", "/api/update/download", update_unsupported,
+                    methods=("GET", "POST"))
+    router.register("S5", "/api/update/install", update_unsupported,
+                    methods=("GET", "POST"))
+    router.register("S5", "/api/update/reveal", update_unsupported, methods=("POST",))
+    # 注意：不要注册 "/api/" 这种前缀路由——它会把所有未迁移接口吞成 200，
+    # 让"未迁移 = 501"的门禁失效（旧实现这个路径本身也是 404）。
     # S5 外壳
     router.register("S5", "/api/shutdown", shutdown, methods=("POST",))

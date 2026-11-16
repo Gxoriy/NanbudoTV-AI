@@ -28,6 +28,7 @@ from app.api import Request, Response, Router, parse_query
 from app.api import license as license_api
 from app.api import commerce as commerce_api
 from app.api import hall as hall_api
+from app.api import history as history_api
 from app.api import rewrite as rewrite_api
 from app.api import session as session_api
 from app.api import storage as storage_api
@@ -319,13 +320,15 @@ def main(argv: list[str] | None = None) -> int:
     router = Router()
     system_api.build(router, store, app_name=APP_NAME, version=__version__,
                      port_ref=_port_ref, on_shutdown=request_shutdown,
-                     profiles=profiles, health_registry=health)
+                     profiles=profiles, health_registry=health,
+                     workspace=workspace, data_dir=data_dir)
     subtitle_api.build(router, subtitle_service)
     license_api.build(router, license_service)
     session_api.build(router, license_service, workspace, version=__version__,
                       install_root=ROOT)
     voice_api.build(router, voice_service)
     visual_api.build(router, visual_service)
+    history_api.build(router, workspace, outputs_root=data_dir / "outputs")
     rewrite_api.build(router, workspace)
     commerce_api.build(router, workspace)
     hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
