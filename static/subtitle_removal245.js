@@ -18,7 +18,7 @@ function status(message,error=false){$('status').textContent=message;$('status')
 async function api(path,body){const response=await fetch('/api/subtitle/'+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const value=await response.json();if(!response.ok||value.error)throw Error(value.error||'操作未完成');return value;}
 function paintRegion(){const r=draft().region;if(!regions.canonical(r)&&!frozenRegion244())return;Object.assign($('selection').style,{left:r.x+'%',top:r.y+'%',width:r.width+'%',height:r.height+'%'});}
 function validRegion(){return regions.canonical(draft().region);}
-function localPrice245(){return strip245()?'只移除可单独关闭的内嵌字幕轨；不会擦除已经烧进画面的文字。不上传、不核价、不扣积分。':'本地处理不上传视频、不核价、不扣积分。在选区内逐帧识别并修补浅色字幕笔画，可能有模糊或涂抹痕迹；结果另存，原视频保留。';}
+function cost245(points){return Number(points)===0?'免费':('预计 '+points+' 积分');} function localPrice245(){return strip245()?'只移除可单独关闭的内嵌字幕轨；不会擦除已经烧进画面的文字。不上传、不核价、不扣积分。':'本地处理不上传视频、不核价、不扣积分。在选区内逐帧识别并修补浅色字幕笔画，可能有模糊或涂抹痕迹；结果另存，原视频保留。';}
 function changed(normalize=true){
   quoteDraft='';$('price').textContent=cloud245()?'区域或画质已调整，请重新获取费用。':localPrice245();
   if(normalize&&!frozenRegion244())try{const raw=draft().region,r=applyRegion(raw,false);$('regionNotice244').textContent=JSON.stringify(raw)===JSON.stringify(r)?'当前整数选区：'+regionText244(r):'选区已向外对齐到整数网格：'+regionText244(r)+'。请检查预览。';}catch(error){$('regionNotice244').textContent=error.message+' 预览保留上次有效选区。';}
@@ -78,7 +78,7 @@ function render(value,replace=false){
   paintMode245();if(active.has(record.phase)&&!settledWait245.has(record.phase))schedule();
 }
 function showQuote245(){
-  if(regions.quoted(record.quote)){const r=regions.outward(record.quote.effectiveRegion),stamp=JSON.stringify([record.id,record.quote.quoteId,r,record.quality]);if(stamp!==quoteStamp244){applyRegion(r,false);$('quality').value=record.quality;$('regionNotice244').textContent='后台确认的整数选区：'+regionText244(r)+'。请检查此预览后再确认处理。';quoteStamp244=stamp;}quoteDraft=JSON.stringify({region:r,quality:record.quality});$('price').textContent=`${record.quote.modelName||'去字幕处理'} · ${record.quote.duration||record.metadata.duration}秒 · 本次预计 ${record.quote.estimatedPoints} 积分 · ${regionText244(r)}。确认后才提交。`;}
+  if(regions.quoted(record.quote)){const r=regions.outward(record.quote.effectiveRegion),stamp=JSON.stringify([record.id,record.quote.quoteId,r,record.quality]);if(stamp!==quoteStamp244){applyRegion(r,false);$('quality').value=record.quality;$('regionNotice244').textContent='后台确认的整数选区：'+regionText244(r)+'。请检查此预览后再确认处理。';quoteStamp244=stamp;}quoteDraft=JSON.stringify({region:r,quality:record.quality});$('price').textContent=`${record.quote.modelName||'去字幕处理'} · ${record.quote.duration||record.metadata.duration}秒 · 本次${cost245(record.quote.estimatedPoints)} · ${regionText244(r)}。确认后才提交。`;}
   else{quoteDraft='';$('price').textContent='旧确认价没有有效的整数选区，请检查预览并重新获取费用。';$('regionNotice244').textContent='旧选区／确认价不会静默换区提交；请重新获取费用并明确确认。';}
 }
 function schedule(){clearTimeout(pollTimer);pollTimer=setTimeout(poll,1200);}
@@ -102,7 +102,7 @@ $('processingMode').onchange=async()=>{
     // Mode-specific drafts stay in the UI; switching never writes a cloud receipt.
     if(prior==='cloud')cloudDraft245={...draft(),quoteDraft,quoteStamp:quoteStamp244,newDraftOwner:newDraftOwner244};else localDraft245=draft().region;
     if(cloud245()){
-      if(cloudDraft245){newDraftOwner244=cloudDraft245.newDraftOwner;applyRegion(cloudDraft245.region,frozenRegion244());$('quality').value=cloudDraft245.quality;quoteDraft=cloudDraft245.quoteDraft;quoteStamp244=cloudDraft245.quoteStamp;$('price').textContent=quoteDraft&&record.quote?`${record.quote.modelName||'云端精修'} · 本次预计 ${record.quote.estimatedPoints} 积分。确认后才提交。`:'请检查整数选区预览并获取本次费用。';}
+      if(cloudDraft245){newDraftOwner244=cloudDraft245.newDraftOwner;applyRegion(cloudDraft245.region,frozenRegion244());$('quality').value=cloudDraft245.quality;quoteDraft=cloudDraft245.quoteDraft;quoteStamp244=cloudDraft245.quoteStamp;$('price').textContent=quoteDraft&&record.quote?`${record.quote.modelName||'云端精修'} · 本次${cost245(record.quote.estimatedPoints)}。确认后才提交。`:'请检查整数选区预览并获取本次费用。';}
       else if(record.requestId){newDraftOwner244='';applyRegion(receiptRegion244(),true);$('quality').value=record.quality||'standard';quoteDraft='';quoteStamp244='';}
       else if(record.phase==='quoted'&&record.quote){quoteStamp244='';showQuote245();}
       else{$('price').textContent='请检查整数选区预览并获取本次费用。';quoteDraft='';}
@@ -116,7 +116,7 @@ $('processingMode').onchange=async()=>{
 $('refresh').onclick=()=>Promise.all([library(),...(cloud245()?[ensureCapabilities245(true)]:[])]).catch(error=>status(error.message,true));
 $('detect').onclick=()=>run('detect');
 $('quote').onclick=()=>{if(!cloud245())return;try{applyRegion(draft().region,false);if(schemaReady244())run('quote',draft());}catch(error){status(error.message,true);}};
-$('submit').onclick=async()=>{if(!cloud245()||busy||!schemaReady244()||!regions.quoted(record?.quote)||quoteDraft!==JSON.stringify(draft()))return;const original=record.id,quote=record.quote.quoteId,confirmedDraft=JSON.stringify(draft());const yes=await confirmProcessing(`本次云端去字幕预计 ${record.quote.estimatedPoints} 积分。选区：${regionText244(draft().region)}。只处理此区域，原片保留。确定开始？`);if(yes&&cloud245()&&record?.id===original&&record.quote?.quoteId===quote&&confirmedDraft===JSON.stringify(draft())&&schemaReady244())run('submit',{...draft(),quoteId:quote,confirmed:true});};
+$('submit').onclick=async()=>{if(!cloud245()||busy||!schemaReady244()||!regions.quoted(record?.quote)||quoteDraft!==JSON.stringify(draft()))return;const original=record.id,quote=record.quote.quoteId,confirmedDraft=JSON.stringify(draft());const yes=await confirmProcessing(`本次云端去字幕${cost245(record.quote.estimatedPoints)}。选区：${regionText244(draft().region)}。只处理此区域，原片保留。确定开始？`);if(yes&&cloud245()&&record?.id===original&&record.quote?.quoteId===quote&&confirmedDraft===JSON.stringify(draft())&&schemaReady244())run('submit',{...draft(),quoteId:quote,confirmed:true});};
 $('localStart245').onclick=async()=>{
   if(!record||cloud245()||busy||working245())return;
   try{
