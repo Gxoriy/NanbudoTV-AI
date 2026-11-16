@@ -35,7 +35,7 @@ class CloudError(RuntimeError):
 class CloudClient:
     base_url: str
     token: str = ""
-    timeout: float = 600.0
+    timeout: float = 600.0          # 单条视频最长等 10 分钟
 
     def __post_init__(self) -> None:
         # 手改配置很容易带 BOM/空白：不清理会在 putheader 时抛

@@ -37,7 +37,7 @@ class ImageConfig:
     api_key: str = ""
     model: str = "gpt_image_2.5"
     size: str = "1024x1024"
-    timeout: float = 180.0
+    timeout: float = 600.0          # 图像模型慢，最长等 10 分钟
 
     @property
     def enabled(self) -> bool:

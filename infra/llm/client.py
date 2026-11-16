@@ -74,7 +74,7 @@ def extract_text(protocol: str, body: dict[str, Any]) -> str:
 def complete(provider: Provider, messages: Sequence[Message], *,
              api_key: str, transport: Transport | None = None,
              base_url: str | None = None, model: str | None = None,
-             timeout: float = 60.0, retries: int = 2,
+             timeout: float = 600.0, retries: int = 1,
              **options: Any) -> str:
     if not api_key:
         raise LLMError("auth", f"{provider.label} 未配置 API Key")

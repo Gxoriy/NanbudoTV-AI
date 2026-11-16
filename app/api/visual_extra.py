@@ -40,7 +40,7 @@ def _upload(req: Request, store, folder: str) -> Response:
 
 
 def build(router: Router, service: VisualService, library, *,
-          images=None, task_store=None, transport=None) -> None:
+          images=None, task_store=None, transport=None, assist=None) -> None:
     store = library
     if store is None:
         return
@@ -48,6 +48,7 @@ def build(router: Router, service: VisualService, library, *,
     import pathlib as _path
     import threading
 
+    from domain.visual.assist import AssistError
     from infra.media.images import ImageConfig, ImageError, generate as gen_image
 
     image_config = images or ImageConfig()
@@ -324,6 +325,26 @@ def build(router: Router, service: VisualService, library, *,
     def unavailable(_req: Request) -> Response:
         return Response.error(501, "model_required", MODEL_REQUIRED)
 
+    def _assist_call(req: Request, action: str) -> Response:
+        if assist is None:
+            return Response.error(503, "model_unconfigured", "LLM 未接入。")
+        body = req.json()
+        requirement = str(body.get("requirement") or body.get("prompt")
+                          or body.get("text") or "")
+        try:
+            if action == "plan":
+                shots = int(body.get("shots") or 6)
+                return Response(200, assist.plan(requirement, shots=max(1, min(shots, 40))))
+            return Response(200, assist.normalize(requirement))
+        except AssistError as exc:
+            return Response.error(exc.status, exc.code, exc.message)
+
+    def plan(req: Request) -> Response:
+        return _assist_call(req, "plan")
+
+    def normalize(req: Request) -> Response:
+        return _assist_call(req, "normalize")
+
     # ---------- 注册：离线可用 ----------
     router.register("D2", "/api/canvas/list", canvas_list)
     router.register("D2", "/api/canvas/document", canvas_document)
@@ -368,6 +389,10 @@ def build(router: Router, service: VisualService, library, *,
     router.register("D2", "/api/visual/media", project_media)
     router.register("D2", "/api/visual/project-thumbnail", project_thumbnail, methods=("POST",))
 
+    # ---------- 注册：LLM 辅助（分镜规划 / 需求归一） ----------
+    router.register("D2", "/api/visual/plan", plan, methods=("GET", "POST"))
+    router.register("D2", "/api/visual/normalize", normalize, methods=("GET", "POST"))
+
     # ---------- 注册：图像生成（已接入 OpenAI 兼容协议） ----------
     router.register("D2", "/api/visual/cover/generate", cover_generate,
                     methods=("GET", "POST"))
@@ -380,7 +405,6 @@ def build(router: Router, service: VisualService, library, *,
                  "/api/visual/assets/analyze", "/api/visual/assets/delete",
                  "/api/visual/cut-storyboard",
                  "/api/visual/episode-cut", "/api/visual/script-storyboard",
-                 "/api/visual/normalize", "/api/visual/plan",
                  "/api/visual/episode/frame", "/api/visual/episode/video",
                  "/api/visual/episode/video/observe", "/api/visual/episode/video/reset",
                  "/api/visual/episode/settings", "/api/visual/episode/state",

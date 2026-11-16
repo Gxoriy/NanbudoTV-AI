@@ -34,6 +34,7 @@ from app.api import voice as voice_api
 from domain.license import LicenseService, LicenseStore
 from domain.subtitle import SubtitleService, SubtitleStore
 from domain.visual import VisualService
+from domain.visual.assist import VisualAssist
 from domain.visual.library import LibraryStore
 from domain.visual.store import VisualStore
 from domain.voice import VoiceService
@@ -317,7 +318,8 @@ def main(argv: list[str] | None = None) -> int:
     visual_api.build(router, visual_service)
     visual_extra.build(router, visual_service, visual_library,
                        images=ImageConfig.load(data_dir / "model-config.json"),
-                       task_store=store)
+                       task_store=store,
+                       assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
 
     server = bind_server(args.host, args.port, router, static_dir=Path(args.static_dir))
     port = server.server_address[1]
