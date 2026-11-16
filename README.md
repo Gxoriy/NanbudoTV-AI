@@ -61,7 +61,7 @@ ffmpeg -version
 ### 2.3 验收与门禁
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests   # 138 项
+.\.venv\Scripts\python.exe -m unittest discover -s tests   # 147 项
 .\.venv\Scripts\python.exe tools\check_rules.py            # 行长/命名/freeze/依赖方向
 .\.venv\Scripts\python.exe tests\smoke\check_contract.py   # 起真进程对比旧样本
 .\.venv\Scripts\python.exe tools\audit_coverage.py         # 覆盖率
@@ -111,6 +111,26 @@ data/               运行时数据（gitignore；任务库、卡密库、上传
 
 字段口径：任务用 `state=done|error` + `progress` 0~100；字幕选区为整数百分比网格
 `outward_integer_percent166`；授权状态与旧版逐键对齐。
+
+### 模型接入（图像 / LLM）
+
+| 能力 | 配置位置 | 协议 |
+|---|---|---|
+| 图像生成 | `data/model-config.json`（模板见 `config/model-config.example.json`） | OpenAI 兼容 `POST {base}/v1/images/generations`，`model` 默认 `gpt_image_2.5`，支持 `b64_json` 与 `url` 两种返回 |
+| LLM | `data/llm-profiles.json`（或 `server.cli` 同款 profile 存储） | `chat_completions` / `responses` 两种协议，密钥只出掩码 |
+
+也可用环境变量覆盖：`NANBUDO_IMAGE_BASE_URL` / `NANBUDO_IMAGE_API_KEY` / `NANBUDO_IMAGE_MODEL`。
+未配置时 `/api/visual/cover/generate`、`/api/visual/asset/generate` 返回
+`503 model_unconfigured` 并提示该填什么，不会返回空图。
+
+### 代码仓库
+
+```
+origin  https://github.com/Gxoriy/NanbudoTV-AI.git   (branch: main)
+```
+
+`data/`、`.local/`、`.venv/`、`spec/extracted/`、`server-config/` 均已 gitignore，
+卡密、令牌、SSH 私钥不会入库。
 
 ### 云端（可选）
 
