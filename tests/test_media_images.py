@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import base64
+import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -25,6 +27,66 @@ class FakeTransport:
     def post_json(self, url, headers, payload, timeout):  # noqa: ANN001
         self.calls.append({"url": url, "headers": headers, "payload": payload})
         return self.status, self.body
+
+    def get_json(self, url, headers, timeout):  # noqa: ANN001
+        return 404, {}
+
+
+class KieTransport:
+    """模拟 KIE 异步任务：createTask → recordInfo(waiting…success) → 下载图片。"""
+
+    def __init__(self, states: list[str] | None = None, url: str = "") -> None:
+        self.states = states or ["waiting", "generating", "success"]
+        self.index = 0
+        self.calls: list[dict] = []
+        self.image_url = url or "https://img.example/x.png"
+
+    def post_json(self, url, headers, payload, timeout):  # noqa: ANN001
+        self.calls.append({"method": "POST", "url": url, "payload": payload})
+        return 200, {"code": 200, "msg": "success",
+                     "data": {"taskId": "task-1", "recordId": "task-1"}}
+
+    def get_json(self, url, headers, timeout):  # noqa: ANN001
+        self.calls.append({"method": "GET", "url": url})
+        state = self.states[min(self.index, len(self.states) - 1)]
+        self.index += 1
+        return 200, {"code": 200, "data": {
+            "taskId": "task-1", "state": state,
+            "resultJson": json.dumps({"resultUrls": [self.image_url]})}}
+
+
+class KieGenerateTest(unittest.TestCase):
+    def _config(self) -> ImageConfig:
+        return ImageConfig(base_url="http://43.130.31.50:18813", api_key="sk-kie-test",
+                           model="google/nano-banana", protocol="kie",
+                           poll_interval=0.0, poll_timeout=5)
+
+    def test_create_poll_and_download(self) -> None:
+        transport = KieTransport()
+        with mock.patch("infra.media.images._download", return_value=PNG) as download:
+            data = generate(self._config(), "霓虹封面", transport=transport)
+        self.assertEqual(data, PNG)
+        download.assert_called_once()
+        creates = [c for c in transport.calls if c["method"] == "POST"]
+        self.assertTrue(creates[0]["url"].endswith("/api/v1/jobs/createTask"))
+        self.assertEqual(creates[0]["payload"]["model"], "google/nano-banana")
+        self.assertEqual(creates[0]["payload"]["input"]["prompt"], "霓虹封面")
+        self.assertGreaterEqual(len([c for c in transport.calls if c["method"] == "GET"]), 3)
+
+    def test_failed_state_raises(self) -> None:
+        transport = KieTransport(states=["waiting", "fail"])
+        with self.assertRaises(ImageError) as ctx:
+            generate(self._config(), "x", transport=transport)
+        self.assertEqual(ctx.exception.code, "internal")
+        self.assertIn("生成失败", ctx.exception.message)
+
+    def test_poll_timeout(self) -> None:
+        config = self._config()
+        config.poll_timeout = 0.05
+        transport = KieTransport(states=["waiting"])
+        with self.assertRaises(ImageError) as ctx:
+            generate(config, "x", transport=transport)
+        self.assertEqual(ctx.exception.code, "timeout")
 
 
 class EndpointTest(unittest.TestCase):

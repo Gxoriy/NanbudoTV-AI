@@ -79,6 +79,42 @@ body: <!doctype html><html lang="zh-CN"> ...
 结论：**与内容无关，与输出长度/结构有关**。因此 `domain/visual/assist.py` 的 `plan()`
 改成「逐镜头各调一次、结果合并」——慢几秒，但稳定可用（`max_tokens=512` 也够单镜头）。
 
+## 4.3 第二家中转（`http://43.130.31.50:18813`，KIE 转发）
+
+`GET /v1/models` 200，**137 个模型**：图像疑似 31、视频疑似 39。
+
+| 能力 | 实测 | 说明 |
+|---|---|---|
+| 对话 `gpt-5-5` | **429** | `All available accounts are currently rate-limited`（上游账号池被打满） |
+| 对话 `claude-opus-4-8` | 502 | 同批次不稳定 |
+| OpenAI 兼容 `/v1/images/generations` | **不可用** | 返回 `model name ... not supported by KIE`（它只是把模型名透传给 KIE） |
+| **KIE 原生 `/api/v1/jobs/createTask`** | ✅ **可用** | `{"model":"google/nano-banana","input":{"prompt":"…"}}` → `taskId` |
+| 轮询 `/api/v1/jobs/recordInfo?taskId=` | ✅ | 状态 `waiting → generating → success`，约 40s |
+| 取图 | ✅ | `resultJson.resultUrls[0]`，实测 1.0~1.6 MB PNG |
+
+模型名必须带厂商前缀（`google/nano-banana` 可以，`nano-banana` 报 404）。
+
+**已落进代码**：`infra/media/images.py` 新增 `protocol: "kie"` 分支（createTask → 轮询 → 下载），
+配置 `data/model-config.json`：
+
+```json
+{"images": {"protocol": "kie", "baseUrl": "http://43.130.31.50:18813",
+            "apiKey": "sk-kie-…", "model": "google/nano-banana",
+            "pollTimeout": 600, "timeout": 600}}
+```
+
+端到端实测（走新内核，不是裸脚本）：
+
+```
+[*] 项目 b327c15f 封面联调
+[*] 生成 status=200 state=done 耗时=51s
+[*] 素材库 1 条 file=covers/402f988f….png
+[*] 项目缩略图 covers/402f988f….png
+[*] 取图 200 633435B 头=b'\x89PNG'
+```
+
+注意：该站是 **http 明文 + IP 直连**，key 在公网传输可被嗅探；只在这类内网/测试场景使用。
+
 ## 5. 建议
 
 1. 日常对话/写作用 `gpt-5-6-sol`；长文与代码审阅用 `claude-opus-5-5`

@@ -1,10 +1,19 @@
 {
-  "_comment": "复制为 data/model-config.json 后填入真实值；本文件不含密钥，可入库。协议见 infra/media/images.py",
+  "_comment": "复制为 data/model-config.json 后填真实值；本文件不含密钥，可入库。protocol 可选 openai / kie",
   "images": {
+    "protocol": "kie",
+    "baseUrl": "http://43.130.31.50:18813",
+    "apiKey": "",
+    "model": "google/nano-banana",
+    "pollTimeout": 600,
+    "timeout": 600
+  },
+  "_openaiExample": {
+    "protocol": "openai",
     "baseUrl": "https://your-relay.example.com/v1",
     "apiKey": "",
     "model": "gpt_image_2.5",
     "size": "1024x1024",
-    "timeout": 180
+    "timeout": 600
   }
 }
