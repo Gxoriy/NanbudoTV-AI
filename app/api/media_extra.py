@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import os
 import pathlib
 import shutil
 import subprocess
@@ -43,18 +44,48 @@ def build(router: Router, store: DocStore, *, data_dir: pathlib.Path,
 
     # ---------- D3：ASR / 图片水印 / 通用转写 ----------
     def asr_status(_req: Request) -> Response:
-        return Response(200, {"ok": True, "running": False, "progress": 0,
-                              "message": "本地未接入语音识别模型；字幕时间轴可手动编辑。"})
+        from infra.asr import DEFAULT_MODEL, available  # noqa: PLC0415
 
-    def asr_download(_req: Request) -> Response:
-        return Response.error(501, "model_required",
-                              "语音识别未接入，暂无可下载的转写结果。")
+        ready, message = available()
+        return Response(200, {"ok": True, "ready": ready, "engine": "faster-whisper",
+                              "model": os.environ.get("NANBUDO_ASR_MODEL") or DEFAULT_MODEL,
+                              "running": False, "progress": 0, "message": message})
+
+    def asr_download(req: Request) -> Response:
+        record = store.get(req.q1("id") or "")
+        if record is None or record["kind"] != "transcript":
+            return Response.error(404, "not_found", "没有这条转写结果。")
+        return _file(str(record["payload"].get("srtFile") or ""), "text/plain; charset=utf-8")
 
     def transcribe(req: Request) -> Response:
+        """音频 → 文本 + SRT。写盘后落一条 transcript 记录，供下载与后续对齐。"""
         if not req.body:
             return Response.error(400, "invalid_input", "缺少音频数据。")
-        return Response.error(501, "model_required",
-                              "转写需要 ASR 模型（如 whisper/funasr），当前未安装。")
+        from infra.asr import available, to_srt, transcribe as run_asr  # noqa: PLC0415
+
+        ready, message = available()
+        if not ready:
+            return Response.error(501, "model_required", message)
+
+        name = unquote(req.headers.get("x-filename", "")) or "audio.wav"
+        source = store.save_file("asr", name, req.body)
+        language = (req.headers.get("x-language") or "").strip() or None
+        try:
+            result = run_asr(store.files_root / source, language=language)
+        except Exception as exc:  # noqa: BLE001
+            return Response.error(502, "asr_failed", f"识别失败: {exc}")
+        if not result.segments:
+            return Response(200, {"ok": True, "text": "", "segments": [], "count": 0,
+                                  "language": result.language, "srt": "",
+                                  "message": "未识别到语音（静音或纯音乐）。"})
+
+        srt = to_srt(result.segments)
+        srt_file = store.save_file("asr", "transcript.srt", srt.encode("utf-8"))
+        record = store.create("transcript", name, {"sourceFile": source, "srtFile": srt_file,
+                                                   "language": result.language,
+                                                   "segments": len(result.segments)},)
+        return Response(200, {**result.public(), "srt": srt, "srtFile": srt_file,
+                              "id": record["id"], "sourceFile": source})
 
     def watermark_detect(req: Request) -> Response:
         """用 cv2 找"高频亮色小块"，给出候选区域；没有图就 400。"""

@@ -3,3 +3,4 @@
 numpy>=2.0          # 帧运算
 opencv-python>=4.10 # cv2.inpaint / 画质分析（若只做无 GUI 后端可换 opencv-python-headless）
 pywebview>=5.0     # 桌面壳（无窗口调试可用 --no-gui 跳过）
+faster-whisper>=1.2 # 本地语音识别（首次调用自动下载 tiny/base 权重）

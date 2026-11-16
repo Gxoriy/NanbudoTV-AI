@@ -16,7 +16,7 @@
 |---|---|---|
 | D1 改写 | 55/55 | 项目 CRUD、媒体/音频、上传/转画布、LLM 生成类（流式）、恢复类 |
 | D2 视觉 | 69/113（61%） | 样式/项目/画布/素材库/角色/偏好全部离线可用；需模型的路由明确 501 `model_required` |
-| D3 字幕 | 21/21 | 导入/媒体/拆轨/修补/检测/报价/云端提交；ASR 明确 501 |
+| D3 字幕 | 21/21 | 导入/媒体/拆轨/修补/检测/报价/云端提交；`transcribe` 已接本地 faster-whisper |
 | D4 配音 | 7/7 | 音色目录/试听（SAPI 实时合成）/整片配音任务 |
 | S1 任务/历史 | 7/7 | 任务快照/明细/取消、历史增删改查与保留策略 |
 | S2 会话/授权 | 7/7 | session status/login、client/config、creation/submission、license 三件套 |
@@ -63,7 +63,7 @@ ffmpeg -version
 ### 2.3 验收与门禁
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests   # 211 项
+.\.venv\Scripts\python.exe -m unittest discover -s tests   # 217 项
 .\.venv\Scripts\python.exe tools\check_rules.py            # 行长/命名/freeze/依赖方向
 .\.venv\Scripts\python.exe tests\smoke\check_contract.py   # 起真进程对比旧样本
 .\.venv\Scripts\python.exe tools\audit_coverage.py         # 覆盖率
@@ -104,8 +104,9 @@ data/               运行时数据（gitignore；任务库、卡密库、上传
 | 系统 | `/api/health`（含 components 健康位）、`/api/runtime/status`、`/api/model-profiles`、`/api/_routes`、`/api/shutdown` |
 | 任务 | `/api/tasks`、`/api/tasks/list`、`/api/tasks/{id}`、`/api/tasks/cancel/{id}` |
 | 字幕 | `/api/subtitle/{capabilities,list,projects,record,quote,submit,upload,media,local-start,local-stop,detect}` |
+| 语音识别 | `/api/transcribe`（音频→文本+SRT）、`/api/asr/{status,download}` |
 | 授权 | `/api/license/{status,activate,refresh}` |
-| 配音 | `/api/voices/{catalog,quote}`、`/api/video-voice/{status,source,quote,generate,observe}` |
+| 配音 | `/api/voices/{catalog,quote,media}`、`/api/video-voice/{status,source,quote,generate,observe}` |
 | 视觉 | `/api/visual/{styles,style,_nodes,projects,project,settings,profile,usage,points,models,media,style/create,style/delete}` |
 | 画布 | `/api/canvas/{list,document,save,create,styles,upload,media,run-status,quote,saved,assets/,location,reveal,disconnect}` |
 | 电商 | /api/ecommerce-showcase、/api/ecommerce{,/save,/upload,/batch/,/workbench/*}、/api/store/{projects,create,project,save,prepare,result,quote,upload} |
