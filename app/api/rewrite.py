@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+import json
+
 from .router import Request, Response, Router
 from domain.workspace.store import DocStore
 
@@ -62,10 +64,27 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
         return Response(200, {"ok": True, "estimatedPoints": 0.0, "pricingMode": "free",
                               "message": "免费。"})
 
-    def _llm_call(prompt: str, *, system: str = "你是短剧创作助手，回答简洁。"):
+    def _llm_call(prompt: str, *, system: str = "你是短剧创作助手，回答简洁明了。"):
         if assist is None:
             raise RuntimeError("LLM 未接入")
         return assist.complete(system, prompt)
+
+    def _llm_json(prompt: str, *, system: str = "你是短剧创作助手，只输出 JSON，不要解释。",
+                  ) -> dict:
+        if assist is None:
+            raise RuntimeError("LLM 未接入")
+        return assist.json_call(system, prompt)
+
+    def _guard(fn) -> Response:
+        """把 AssistError 映射成 HTTP；未配置 503，上游问题 502。"""
+        from domain.ai import AssistError
+
+        try:
+            return fn()
+        except AssistError as exc:
+            return Response.error(exc.status, exc.code, exc.message)
+        except RuntimeError as exc:
+            return Response.error(503, "model_unconfigured", str(exc))
 
     def _list(kind: str, *, with_ok: bool) -> Response:
         items = [_brief(row) for row in store.list(kind)]
@@ -241,11 +260,203 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
     router.register("D1", "/api/source/profile/save", source_profile_save,
                     methods=("POST",))
 
-    for path in ("/api/breakdown/motion",
-                 "/api/breakdown/motion-cancel", "/api/breakdown/motion-install",
-                 "/api/breakdown/motion-runtime", "/api/breakdown/reference-workflow",
-                 "/api/prompt-reverse/analyze",
-                 "/api/prompt-reverse/reconcile", "/api/novel-screenplay/start",
-                 "/api/original/recommend",
-                 "/api/original/field-optimize"):
+    # ---------- LLM 生成类 ----------
+    def source_analyze(req: Request) -> Response:
+        body = req.json()
+        text = str(body.get("text") or body.get("content") or "").strip()
+        if not text:
+            return Response.error(400, "invalid_input", "缺少素材文本。")
+
+        def run() -> Response:
+            data = _llm_json(
+                f"素材：{text[:4000]}\n"
+                '输出 JSON：{"genre":"","tone":"","characters":[""],"conflict":"",'
+                '"highlights":[""]}')
+            return Response(200, {"ok": True, "analysis": data})
+
+        return _guard(run)
+
+    def source_proposals(req: Request) -> Response:
+        body = req.json()
+        text = str(body.get("text") or body.get("content") or "").strip()
+        if not text:
+            return Response.error(400, "invalid_input", "缺少素材文本。")
+
+        def run() -> Response:
+            data = _llm_json(
+                f"素材：{text[:3000]}\n"
+                '给出 3 个选题 JSON：{"proposals":[{"title":"","hook":"","summary":""}]}')
+            proposals = data.get("proposals") or []
+            return Response(200, {"ok": True, "proposals": proposals,
+                                  "count": len(proposals)})
+
+        return _guard(run)
+
+    def source_proposal_refine(req: Request) -> Response:
+        body = req.json()
+        proposal = body.get("proposal") or {}
+        feedback = str(body.get("feedback") or "").strip()
+        if not proposal:
+            return Response.error(400, "invalid_input", "缺少 proposal。")
+
+        def run() -> Response:
+            data = _llm_json(
+                f"原方案：{json.dumps(proposal, ensure_ascii=False)[:1500]}\n"
+                f"修改意见：{feedback or '加强冲突与钩子'}\n"
+                '输出改进后的 JSON：{"proposal":{"title":"","hook":"","summary":""}}')
+            return Response(200, {"ok": True, "proposal": data.get("proposal") or data})
+
+        return _guard(run)
+
+    def source_refine(req: Request) -> Response:
+        body = req.json()
+        text = str(body.get("text") or "").strip()
+        if not text:
+            return Response.error(400, "invalid_input", "缺少文本。")
+
+        def run() -> Response:
+            out = _llm_call(
+                f"原文：{text[:3000]}\n要求：{body.get('instruction') or '更紧凑、更有钩子'}\n"
+                "只输出改写后的正文。")
+            return Response(200, {"ok": True, "text": out.strip()})
+
+        return _guard(run)
+
+    def quality_score(req: Request) -> Response:
+        body = req.json()
+        text = str(body.get("text") or "").strip()
+        if not text:
+            return Response.error(400, "invalid_input", "缺少文本。")
+
+        def run() -> Response:
+            data = _llm_json(
+                f"剧本片段：{text[:3000]}\n"
+                '输出评分 JSON：{"score":0,"dimensions":[{"name":"","score":0,'
+                '"comment":""}],"suggestions":[""]}（score 取 0~100）')
+            return Response(200, {"ok": True, **data})
+
+        return _guard(run)
+
+    def _rewrite_text_route(req: Request, *, system_hint: str) -> Response:
+        body = req.json()
+        text = str(body.get("text") or "").strip()
+        if not text:
+            return Response.error(400, "invalid_input", "缺少文本。")
+
+        def run() -> Response:
+            out = _llm_call(f"{system_hint}\n原文：{text[:3000]}\n只输出结果正文。")
+            return Response(200, {"ok": True, "text": out.strip()})
+
+        return _guard(run)
+
+    def quality_optimize(req: Request) -> Response:
+        return _rewrite_text_route(req, system_hint="请优化下面剧本的表达与节奏。")
+
+    def quality_repair(req: Request) -> Response:
+        return _rewrite_text_route(req, system_hint="修复下面剧本的错别字与逻辑断裂。")
+
+    def script_revision(req: Request) -> Response:
+        return _rewrite_text_route(req, system_hint="按剧本格式修订下面文本。")
+
+    def prompt_reverse_reconcile(req: Request) -> Response:
+        return _rewrite_text_route(req, system_hint="把下面的反推描述合并为一段连贯提示词。")
+
+    def original_recommend(req: Request) -> Response:
+        body = req.json()
+        topic = str(body.get("topic") or body.get("text") or "").strip()
+        if not topic:
+            return Response.error(400, "invalid_input", "缺少主题。")
+
+        def run() -> Response:
+            data = _llm_json(
+                f"主题：{topic[:1500]}\n"
+                '输出 3 条原创方向 JSON：{"suggestions":[{"title":"","angle":""}]}')
+            return Response(200, {"ok": True,
+                                  "suggestions": data.get("suggestions") or []})
+
+        return _guard(run)
+
+    def original_field_optimize(req: Request) -> Response:
+        body = req.json()
+        value = str(body.get("text") or body.get("value") or "").strip()
+        if not value:
+            return Response.error(400, "invalid_input", "缺少内容。")
+
+        def run() -> Response:
+            out = _llm_call(
+                f"字段：{body.get('field') or '设定'}\n原内容：{value[:1500]}\n"
+                "请优化，只输出优化后的内容。")
+            return Response(200, {"ok": True, "text": out.strip()})
+
+        return _guard(run)
+
+    def prompt_reverse_analyze(req: Request) -> Response:
+        body = req.json()
+        source = str(body.get("text") or body.get("url") or "").strip()
+        if not source:
+            return Response.error(400, "invalid_input", "缺少素材或链接。")
+
+        def run() -> Response:
+            data = _llm_json(
+                f"素材描述：{source[:2000]}\n"
+                '输出反推 JSON：{"prompt":"","negative":"","style":""}')
+            return Response(200, {"ok": True, "prompt": data.get("prompt") or "",
+                                  "negative": data.get("negative") or "",
+                                  "style": data.get("style") or "",
+                                  "raw": data})
+
+        return _guard(run)
+
+    def settings_suggest(req: Request) -> Response:
+        body = req.json()
+
+        def run() -> Response:
+            data = _llm_json(
+                f"当前设置：{json.dumps(body, ensure_ascii=False)[:1500]}\n"
+                '给出建议 JSON：{"suggestions":[{"key":"","value":"","reason":""}]}')
+            return Response(200, {"ok": True,
+                                  "suggestions": data.get("suggestions") or []})
+
+        return _guard(run)
+
+    def script_alignment_submit(req: Request) -> Response:
+        body = req.json()
+        text = str(body.get("text") or "").strip()
+        if not text:
+            return Response.error(400, "invalid_input", "缺少台词文本。")
+
+        def run() -> Response:
+            data = _llm_json(
+                f"台词：{text[:3000]}\n"
+                '切分为镜头对齐 JSON：{"segments":[{"start":0,"end":2,"text":""}]}')
+            return Response(200, {"ok": True, "segments": data.get("segments") or []})
+
+        return _guard(run)
+
+    router.register("D1", "/api/source/analyze", source_analyze, methods=("POST",))
+    router.register("D1", "/api/source/proposals", source_proposals, methods=("POST",))
+    router.register("D1", "/api/source/proposal-refine", source_proposal_refine,
+                    methods=("POST",))
+    router.register("D1", "/api/source/refine", source_refine, methods=("POST",))
+    router.register("D1", "/api/quality/score", quality_score, methods=("POST",))
+    router.register("D1", "/api/quality/optimize", quality_optimize, methods=("POST",))
+    router.register("D1", "/api/quality/repair-episode", quality_repair,
+                    methods=("POST",))
+    router.register("D1", "/api/script/revision", script_revision, methods=("POST",))
+    router.register("D1", "/api/script-alignment/submit", script_alignment_submit,
+                    methods=("POST",))
+    router.register("D1", "/api/prompt-reverse/analyze", prompt_reverse_analyze,
+                    methods=("POST",))
+    router.register("D1", "/api/prompt-reverse/reconcile", prompt_reverse_reconcile,
+                    methods=("POST",))
+    router.register("D1", "/api/original/recommend", original_recommend,
+                    methods=("POST",))
+    router.register("D1", "/api/original/field-optimize", original_field_optimize,
+                    methods=("POST",))
+    router.register("D1", "/api/rewrite/settings-suggest", settings_suggest,
+                    methods=("POST",))
+
+    for path in ("/api/breakdown/motion", "/api/breakdown/motion-cancel",
+                 "/api/breakdown/motion-install", "/api/breakdown/motion-runtime",
+                 "/api/breakdown/reference-workflow", "/api/novel-screenplay/start"):
         router.register("D1", path, unavailable, methods=("GET", "POST"))

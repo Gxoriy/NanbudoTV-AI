@@ -29,6 +29,9 @@ class Transport(Protocol):
     def post_json(self, url: str, headers: dict[str, str],
                   payload: dict[str, Any], timeout: float) -> HttpResult: ...
 
+    # 可选：支持流式的传输层实现它即可（当前只有 UrllibTransport）
+    # def post_stream(self, url, headers, payload, timeout) -> Iterator[str]: ...
+
 
 class UrllibTransport:
     def post_json(self, url: str, headers: dict[str, str],
@@ -45,6 +48,50 @@ class UrllibTransport:
             return HttpResult(exc.code, _maybe_json(raw), raw)
         except Exception as exc:  # noqa: BLE001
             raise LLMError("network", f"请求失败: {exc}") from exc
+
+    def post_stream(self, url: str, headers: dict[str, str],
+                    payload: dict[str, Any], timeout: float):
+        """SSE 流式：逐块 yield `delta.content`。
+
+        非流式 + 长输出会被部分中转直接掐断（实测 lk666 / new.api.edu 均如此），
+        流式则稳定；因此上层优先走这里，失败再回落普通请求。
+        """
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=data, method="POST",
+            headers={"Content-Type": "application/json", "Accept": "text/event-stream",
+                     **headers})
+        try:
+            resp = urllib.request.urlopen(req, timeout=timeout)
+        except urllib.error.HTTPError as exc:
+            raise LLMError("internal", f"流式请求返回 {exc.code}",
+                           detail=_maybe_json(exc.read()))
+        except Exception as exc:  # noqa: BLE001
+            raise LLMError("network", f"流式请求失败: {exc}") from exc
+
+        try:
+            with resp:
+                for raw in resp:
+                    line = raw.decode("utf-8", "replace").strip()
+                    if not line or not line.startswith("data:"):
+                        continue
+                    chunk = line[5:].strip()
+                    if chunk in ("", "[DONE]"):
+                        continue
+                    try:
+                        body = json.loads(chunk)
+                    except json.JSONDecodeError:
+                        continue
+                    for choice in body.get("choices") or []:
+                        delta = choice.get("delta") or {}
+                        content = delta.get("content")
+                        if isinstance(content, str) and content:
+                            yield content
+        finally:
+            try:
+                resp.close()
+            except Exception:  # noqa: BLE001
+                pass
 
 
 def _maybe_json(raw: bytes) -> dict[str, Any]:

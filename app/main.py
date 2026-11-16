@@ -39,6 +39,7 @@ from app.api import visual_extra
 from app.api import voice as voice_api
 from domain.license import LicenseService, LicenseStore
 from domain.subtitle import SubtitleService, SubtitleStore
+from domain.ai import TextAssist
 from domain.visual import VisualService
 from domain.visual.assist import VisualAssist
 from domain.visual.library import LibraryStore
@@ -329,7 +330,8 @@ def main(argv: list[str] | None = None) -> int:
     voice_api.build(router, voice_service)
     visual_api.build(router, visual_service)
     history_api.build(router, workspace, outputs_root=data_dir / "outputs")
-    rewrite_api.build(router, workspace)
+    rewrite_api.build(router, workspace,
+                      assist=TextAssist(data_dir / "llm-profiles.json"))
     commerce_api.build(router, workspace)
     hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
     storage_api.build(router, workspace, data_dir=data_dir, install_root=ROOT)

@@ -71,10 +71,22 @@ def extract_text(protocol: str, body: dict[str, Any]) -> str:
     raise LLMError("unsupported", f"不支持的协议: {protocol}")
 
 
+def _stream_complete(transport: Any, url: str, headers: dict[str, str],
+                     payload: dict[str, Any], timeout: float) -> str:
+    streamer = getattr(transport, "post_stream", None)
+    if streamer is None:
+        raise LLMError("unsupported", "该传输层不支持流式")
+    parts = [delta for delta in streamer(url, headers, {**payload, "stream": True}, timeout)
+             if delta]
+    if not parts:
+        raise LLMError("internal", "流式响应为空")
+    return "".join(parts)
+
+
 def complete(provider: Provider, messages: Sequence[Message], *,
              api_key: str, transport: Transport | None = None,
              base_url: str | None = None, model: str | None = None,
-             timeout: float = 600.0, retries: int = 1,
+             timeout: float = 600.0, retries: int = 1, stream: bool = False,
              **options: Any) -> str:
     if not api_key:
         raise LLMError("auth", f"{provider.label} 未配置 API Key")
@@ -87,6 +99,16 @@ def complete(provider: Provider, messages: Sequence[Message], *,
         "Authorization": f"Bearer {api_key}",
         **provider.extra_headers,
     }
-    result = post_with_retry(transport or UrllibTransport(), url, headers, payload,
+    client = transport or UrllibTransport()
+
+    # 实测：部分中转在"非流式 + 长输出"时直接断连，流式则稳定。
+    # 因此 chat_completions 默认可以走流式；失败再回落到普通请求。
+    if stream and provider.protocol == "chat_completions":
+        try:
+            return _stream_complete(client, url, headers, payload, timeout)
+        except LLMError:
+            pass
+
+    result = post_with_retry(client, url, headers, payload,
                              timeout=timeout, retries=retries)
     return extract_text(provider.protocol, result.body)
