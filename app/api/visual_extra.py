@@ -39,10 +39,77 @@ def _upload(req: Request, store, folder: str) -> Response:
     return Response(200, {"ok": True, "file": relative, "size": len(req.body)})
 
 
-def build(router: Router, service: VisualService, library) -> None:
+def build(router: Router, service: VisualService, library, *,
+          images=None, task_store=None, transport=None) -> None:
     store = library
     if store is None:
         return
+
+    import pathlib as _path
+    import threading
+
+    from infra.media.images import ImageConfig, ImageError, generate as gen_image
+
+    image_config = images or ImageConfig()
+
+    def _run_image(task_id: str, kind: str, project_id: str, prompt: str) -> None:
+        if task_store is not None:
+            try:
+                task_store.start(task_id)
+            except KeyError:
+                return
+        try:
+            if task_store is not None:
+                task_store.set_progress(task_id, 0.2, "正在生成图像…")
+            data = gen_image(image_config, prompt, transport=transport)
+            folder = "covers" if kind == "cover" else "assets"
+            relative = store.save_file(folder, "gen.png", data)
+            record = store.create(KIND_ASSET, prompt[:40] or "生成图",
+                                  {"file": relative, "type": "image",
+                                   "projectId": project_id, "kind": kind,
+                                   "prompt": prompt})
+            if kind == "cover" and project_id and service.store:
+                service.store.update(project_id, thumbnail=relative)
+            if task_store is not None:
+                task_store.succeed(task_id, {"file": relative, "assetId": record["id"]})
+        except ImageError as exc:
+            if task_store is not None:
+                task_store.fail(task_id, "network" if exc.code == "network" else "internal",
+                                exc.message)
+        except Exception as exc:  # noqa: BLE001
+            if task_store is not None:
+                task_store.fail(task_id, "internal", repr(exc))
+
+    def _start_generation(req: Request, kind: str) -> Response:
+        body = req.json()
+        prompt = str(body.get("prompt") or body.get("requirement") or "").strip()
+        project_id = str(body.get("projectId") or "")
+        if not prompt:
+            return Response.error(400, "invalid_input", "提示词不能为空。")
+        if not image_config.enabled:
+            return Response.error(503, "model_unconfigured",
+                                  "图像模型未配置：请在 data/model-config.json 填 "
+                                  "baseUrl/apiKey/model（参考 OpenAI 兼容协议）。")
+        if task_store is None:
+            return Response.error(503, "unsupported", "任务队列未就绪。")
+        task = task_store.create(f"visual.{kind}", "D2",
+                                 {"projectId": project_id, "prompt": prompt[:200]})
+        thread = threading.Thread(target=_run_image,
+                                  args=(task.id, kind, project_id, prompt), daemon=True)
+        thread.start()
+        if body.get("wait"):
+            thread.join(timeout=300)
+            done = task_store.get(task.id)
+            return Response(200, {"ok": True, "taskId": task.id,
+                                  "state": done.state if done else "unknown",
+                                  "error": done.error_detail if done else ""})
+        return Response(200, {"ok": True, "taskId": task.id})
+
+    def cover_generate(req: Request) -> Response:
+        return _start_generation(req, "cover")
+
+    def asset_generate(req: Request) -> Response:
+        return _start_generation(req, "asset")
 
     def owner_of(req: Request) -> str:
         return (req.headers.get("x-device-code") or "").strip()[:64]
@@ -301,11 +368,17 @@ def build(router: Router, service: VisualService, library) -> None:
     router.register("D2", "/api/visual/media", project_media)
     router.register("D2", "/api/visual/project-thumbnail", project_thumbnail, methods=("POST",))
 
+    # ---------- 注册：图像生成（已接入 OpenAI 兼容协议） ----------
+    router.register("D2", "/api/visual/cover/generate", cover_generate,
+                    methods=("GET", "POST"))
+    router.register("D2", "/api/visual/asset/generate", asset_generate,
+                    methods=("GET", "POST"))
+
     # ---------- 注册：需要模型（明确 501） ----------
     for path in ("/api/visual/project/source", "/api/visual/project/prepare",
-                 "/api/visual/project/scenes", "/api/visual/asset/generate",
+                 "/api/visual/project/scenes",
                  "/api/visual/assets/analyze", "/api/visual/assets/delete",
-                 "/api/visual/cover/generate", "/api/visual/cut-storyboard",
+                 "/api/visual/cut-storyboard",
                  "/api/visual/episode-cut", "/api/visual/script-storyboard",
                  "/api/visual/normalize", "/api/visual/plan",
                  "/api/visual/episode/frame", "/api/visual/episode/video",

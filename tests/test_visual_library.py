@@ -17,6 +17,8 @@ from app.api import visual_extra  # noqa: E402
 from domain.visual import VisualService  # noqa: E402
 from domain.visual.library import LibraryStore  # noqa: E402
 from domain.visual.store import VisualStore  # noqa: E402
+from infra.media.images import ImageConfig  # noqa: E402
+from infra.tasks import TaskStore  # noqa: E402
 
 
 class LibraryRoutesTest(unittest.TestCase):
@@ -131,7 +133,7 @@ class LibraryRoutesTest(unittest.TestCase):
 
     # ---------- 模型缺失 ----------
     def test_model_dependent_routes_are_explicit_501(self) -> None:
-        for path in ("/api/visual/project/scenes", "/api/visual/asset/generate",
+        for path in ("/api/visual/project/scenes",
                      "/api/visual/episode/video", "/api/visual/macro/state"):
             resp = self.call("POST", path, {})
             self.assertEqual(resp.status, 501, path)

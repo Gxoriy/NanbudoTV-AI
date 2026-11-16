@@ -16,3 +16,8 @@ __pycache__/
 # 服务端密钥/账号哈希（仅存在于部署机）
 server-config/
 
+
+# IDE
+.idea/
+.vscode/
+

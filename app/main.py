@@ -39,6 +39,7 @@ from domain.visual.store import VisualStore
 from domain.voice import VoiceService
 from domain.voice.store import VoiceJobStore
 from infra import llm
+from infra.media.images import ImageConfig
 from infra.obs import HealthRegistry, install as install_logging
 from infra.tasks import TaskStore
 
@@ -314,7 +315,9 @@ def main(argv: list[str] | None = None) -> int:
     license_api.build(router, license_service)
     voice_api.build(router, voice_service)
     visual_api.build(router, visual_service)
-    visual_extra.build(router, visual_service, visual_library)
+    visual_extra.build(router, visual_service, visual_library,
+                       images=ImageConfig.load(data_dir / "model-config.json"),
+                       task_store=store)
 
     server = bind_server(args.host, args.port, router, static_dir=Path(args.static_dir))
     port = server.server_address[1]
