@@ -344,7 +344,8 @@ def main(argv: list[str] | None = None) -> int:
                       assist=TextAssist(data_dir / "llm-profiles.json"))
     history_api.build(router, workspace, outputs_root=data_dir / "outputs")
     rewrite_api.build(router, workspace,
-                      assist=TextAssist(data_dir / "llm-profiles.json"))
+                      assist=TextAssist(data_dir / "llm-profiles.json"),
+                      task_store=store)
     commerce_api.build(router, workspace)
     hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
     storage_api.build(router, workspace, data_dir=data_dir, install_root=ROOT)

@@ -21,7 +21,7 @@ KIND_NOVEL = "novel"
 LLM_REQUIRED = "该功能需要 LLM 生成，当前渠道未接入或受限（429/断连），暂不可用。"
 
 
-def build(router: Router, store: DocStore, *, assist=None) -> None:
+def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> None:
     def _brief(record: dict) -> dict:
         return {"id": record["id"], "name": record["name"],
                 "createdAt": record["createdAt"], "updatedAt": record["updatedAt"]}
@@ -504,7 +504,80 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
     router.register("D1", "/api/breakdown/", breakdown_list, exact=True)
     router.register("D1", "/api/prompt-reverse/", reverse_list, exact=True)
 
+    # ---------- 小说转剧本（长文本分卷 + 后台任务） ----------
+    def novel_screenplay_start(req: Request) -> Response:
+        body = req.json()
+        text = str(body.get("text") or body.get("content") or "").strip()
+        if not text:
+            return Response.error(400, "invalid_input", "缺少小说正文。")
+        if assist is None:
+            return Response.error(503, "model_unconfigured",
+                                  "LLM 未配置：请在 data/llm-profiles.json 填 baseUrl/apiKey/model。")
+        if task_store is None:
+            return Response.error(503, "unsupported", "任务队列未就绪。")
+
+        title = str(body.get("title") or "未命名小说")[:60]
+        chunk_size = max(500, min(int(body.get("chunkSize") or 1200), 4000))
+        chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)][:12]
+        task = task_store.create("novel.screenplay", "D1",
+                                 {"title": title, "chunks": len(chunks),
+                                  "characters": len(text)})
+
+        def work(task_id: str) -> None:
+            try:
+                task_store.start(task_id)
+            except KeyError:
+                return
+            scenes: list[dict] = []
+            try:
+                for index, chunk in enumerate(chunks, start=1):
+                    task_store.set_progress(task_id, 0.05 + 0.9 * index / len(chunks),
+                                            f"正在改写第 {index}/{len(chunks)} 段")
+                    data = assist.json_call(
+                        "你是剧本改编助手，只输出 JSON。",
+                        f"原文片段：{chunk}\n"
+                        '输出 JSON：{"scenes":[{"index":1,"location":"","characters":[""],'
+                        '"action":"","dialogue":[{"speaker":"","line":""}]}]}')
+                    for scene in data.get("scenes") or []:
+                        scene["chunk"] = index
+                        scenes.append(scene)
+                record = store.create("novel_screenplay", title,
+                                      {"scenes": scenes, "chunks": len(chunks),
+                                       "characters": len(text)})
+                task_store.succeed(task_id, {"projectId": record["id"],
+                                             "scenes": len(scenes)})
+            except Exception as exc:  # noqa: BLE001
+                code = getattr(exc, "code", "internal")
+                task_store.fail(task_id, code if isinstance(code, str) else "internal",
+                                f"{exc}")
+
+        import threading
+
+        threading.Thread(target=work, args=(task.id,), daemon=True).start()
+        return Response(200, {"ok": True, "taskId": task.id, "chunks": len(chunks),
+                              "characters": len(text)})
+
+    def novel_screenplay_status(req: Request) -> Response:
+        task_id = req.q1("taskId") or ""
+        task = task_store.get(task_id) if (task_store and task_id) else None
+        if task is None:
+            return Response.error(404, "not_found", "任务不存在。")
+        public = task.public()
+        return Response(200, {"ok": True, "task": public,
+                              "scenes": (public.get("result") or {}).get("scenes", 0)})
+
+    router.register("D1", "/api/novel-screenplay/start", novel_screenplay_start,
+                    methods=("POST",))
+    def novel_screenplay_project(req: Request) -> Response:
+        record = store.get(req.q1("id") or "")
+        if record is None or record["kind"] != "novel_screenplay":
+            return Response.error(404, "not_found", "剧本项目不存在。")
+        return Response(200, {"ok": True, "project": record})
+
+    router.register("D1", "/api/novel-screenplay/status", novel_screenplay_status)
+    router.register("D1", "/api/novel-screenplay/project", novel_screenplay_project)
+
     for path in ("/api/breakdown/motion", "/api/breakdown/motion-cancel",
                  "/api/breakdown/motion-install", "/api/breakdown/motion-runtime",
-                 "/api/breakdown/reference-workflow", "/api/novel-screenplay/start"):
+                 "/api/breakdown/reference-workflow"):
         router.register("D1", path, unavailable, methods=("GET", "POST"))

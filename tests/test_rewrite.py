@@ -117,11 +117,16 @@ class RewriteRoutesTest(unittest.TestCase):
         self.assertEqual(canvas["payload"]["from"], "prompt_reverse")
 
     def test_still_migrating_routes_are_explicit_501(self) -> None:
-        # 这些要么依赖本地视频模型（motion），要么是长篇小说转剧本（未接入）
-        for path in ("/api/breakdown/motion", "/api/novel-screenplay/start"):
-            resp = self.call("POST", path, {})
-            self.assertEqual(resp.status, 501, path)
-            self.assertEqual(resp.payload["error"], "model_required")
+        # 只剩依赖本地视频模型（torch）的 motion 系列
+        resp = self.call("POST", "/api/breakdown/motion", {})
+        self.assertEqual(resp.status, 501)
+        self.assertEqual(resp.payload["error"], "model_required")
+
+    def test_novel_screenplay_validates_input_before_model(self) -> None:
+        self.assertEqual(self.call("POST", "/api/novel-screenplay/start", {}).status, 400)
+        resp = self.call("POST", "/api/novel-screenplay/start", {"text": "第一章…"})
+        self.assertEqual(resp.status, 503)          # 未注入 assist
+        self.assertEqual(resp.payload["error"], "model_unconfigured")
 
     def test_llm_routes_without_assist_report_unconfigured(self) -> None:
         resp = self.call("POST", "/api/source/analyze", {"text": "素材"})
