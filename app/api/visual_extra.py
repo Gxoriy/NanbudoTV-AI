@@ -53,7 +53,8 @@ def build(router: Router, service: VisualService, library, *,
 
     image_config = images or ImageConfig()
 
-    def _run_image(task_id: str, kind: str, project_id: str, prompt: str) -> None:
+    def _run_image(task_id: str, kind: str, project_id: str, prompt: str,
+                   extra: dict | None = None) -> None:
         if task_store is not None:
             try:
                 task_store.start(task_id)
@@ -68,7 +69,7 @@ def build(router: Router, service: VisualService, library, *,
             record = store.create(KIND_ASSET, prompt[:40] or "生成图",
                                   {"file": relative, "type": "image",
                                    "projectId": project_id, "kind": kind,
-                                   "prompt": prompt})
+                                   "prompt": prompt, **(extra or {})})
             if kind == "cover" and project_id and service.store:
                 service.store.update(project_id, thumbnail=relative)
             if task_store is not None:
@@ -85,6 +86,8 @@ def build(router: Router, service: VisualService, library, *,
         body = req.json()
         prompt = str(body.get("prompt") or body.get("requirement") or "").strip()
         project_id = str(body.get("projectId") or "")
+        extra = {key: body[key] for key in ("sceneIndex", "shotId", "episode")
+                 if key in body}
         if not prompt:
             return Response.error(400, "invalid_input", "提示词不能为空。")
         if not image_config.enabled:
@@ -96,7 +99,8 @@ def build(router: Router, service: VisualService, library, *,
         task = task_store.create(f"visual.{kind}", "D2",
                                  {"projectId": project_id, "prompt": prompt[:200]})
         thread = threading.Thread(target=_run_image,
-                                  args=(task.id, kind, project_id, prompt), daemon=True)
+                                  args=(task.id, kind, project_id, prompt, extra),
+                                  daemon=True)
         thread.start()
         if body.get("wait"):
             thread.join(timeout=300)
@@ -111,6 +115,10 @@ def build(router: Router, service: VisualService, library, *,
 
     def asset_generate(req: Request) -> Response:
         return _start_generation(req, "asset")
+
+    def episode_frame(req: Request) -> Response:
+        """分镜单帧出图：与封面同一条生成链路，额外带上场景序号。"""
+        return _start_generation(req, "frame")
 
     def owner_of(req: Request) -> str:
         return (req.headers.get("x-device-code") or "").strip()[:64]
@@ -183,8 +191,8 @@ def build(router: Router, service: VisualService, library, *,
         items = store.list(KIND_ASSET, limit=int(req.q1("limit", "200") or 200),
                            keyword=req.q1("q") or "")
         return Response(200, {"ok": True, "assets": [store.brief(
-            row, fields=("file", "type", "projectId", "tags")) for row in items],
-            "count": len(items)})
+            row, fields=("file", "type", "projectId", "tags", "kind", "sceneIndex"))
+            for row in items], "count": len(items)})
 
     def asset_add(req: Request) -> Response:
         body = req.json()
@@ -396,6 +404,8 @@ def build(router: Router, service: VisualService, library, *,
     # ---------- 注册：图像生成（已接入 OpenAI 兼容协议） ----------
     router.register("D2", "/api/visual/cover/generate", cover_generate,
                     methods=("GET", "POST"))
+    router.register("D2", "/api/visual/episode/frame", episode_frame,
+                    methods=("GET", "POST"))
     router.register("D2", "/api/visual/asset/generate", asset_generate,
                     methods=("GET", "POST"))
 
@@ -405,7 +415,7 @@ def build(router: Router, service: VisualService, library, *,
                  "/api/visual/assets/analyze", "/api/visual/assets/delete",
                  "/api/visual/cut-storyboard",
                  "/api/visual/episode-cut", "/api/visual/script-storyboard",
-                 "/api/visual/episode/frame", "/api/visual/episode/video",
+                 "/api/visual/episode/video",
                  "/api/visual/episode/video/observe", "/api/visual/episode/video/reset",
                  "/api/visual/episode/settings", "/api/visual/episode/state",
                  "/api/visual/episode/prompt", "/api/visual/episode/references",

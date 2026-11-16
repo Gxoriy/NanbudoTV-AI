@@ -87,6 +87,22 @@ class GenerateRouteTest(unittest.TestCase):
         self.assertTrue((self.root / "files" / file_rel).is_file())
         self.assertEqual(self.projects.get(project["id"])["thumbnail"], file_rel)
 
+    def test_episode_frame_keeps_scene_index(self) -> None:
+        """分镜单帧：与封面同链路，但必须把场景序号写进素材，否则前端对不上分镜。"""
+        project = self.service.create_project({"projectName": "剧集B"})["project"]
+        router = self._router(ImageConfig(base_url="https://api.example/v1",
+                                          model="gpt_image_2.5"))
+        resp = self._post(router, "/api/visual/episode/frame",
+                          {"projectId": project["id"], "sceneIndex": 3,
+                           "prompt": "雨夜街道", "wait": True})
+        self.assertEqual(resp.status, 200, resp.payload)
+        self.assertEqual(resp.payload["state"], "done")
+
+        asset = self.library.list("asset")[0]
+        self.assertEqual(asset["payload"]["kind"], "frame")
+        self.assertEqual(asset["payload"]["sceneIndex"], 3)
+        self.assertEqual(asset["payload"]["projectId"], project["id"])
+
     def test_empty_prompt_rejected(self) -> None:
         resp = self._post(self._router(ImageConfig(base_url="https://x/v1", model="m")),
                           "/api/visual/asset/generate", {"projectId": "p", "prompt": "  "})

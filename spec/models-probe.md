@@ -150,6 +150,18 @@ LLM 继续用 `mk-…`。等新 key 恢复后把 `data/llm-profiles.json` 的 `a
 已把 LLM 切到 `api.lk666.ai/v1` + **`deepseek-v4-pro`**（`data/llm-profiles.json`），
 `infra/llm` 真实调用返回"接通"。图像仍用 `18813 + google/nano-banana`（KIE 协议，已验证出图）。
 
+## 4.6 视频模型（18813 中转）：存在但不可直接调用
+
+| 模型名 | 结果 |
+|---|---|
+| `kling-2-6-t2v` | 200 + `{"code":500,"msg":"This field is required"}`（模型存在，缺必填参数；补 `duration/aspect_ratio/mode/callBackUrl` 均无变化） |
+| `kling/v2.6-t2v`、`kling/v2-6-t2v` | 404 `model not found`（**必须用不带斜杠的写法**） |
+| `bytedance/seedance-2` | 503 `no available account`（模型存在，账号池为空） |
+| `google/veo-3`、`minimax/hailuo-h3` | 404 |
+
+结论：视频链路暂不可用，`macro/media/submit`、`episode/video` 仍诚实返回 501。
+KIE 的 `createTask` 与图像共用同一套轮询，参数一旦明确可直接复用 `infra/media/images.py` 的 kie 分支。
+
 ## 5. 建议
 
 1. 日常对话/写作用 `gpt-5-6-sol`；长文与代码审阅用 `claude-opus-5-5`
