@@ -40,8 +40,11 @@ class FakeAssist:
                                            "characters": ["外卖员"],
                                            "conflict": requirement[:20]}}
 
-    def plan(self, requirement: str, *, shots: int = 6) -> dict:
+    def plan(self, requirement: str, *, shots: int = 6,
+             system: str | None = None) -> dict:
         self.plan_calls.append(shots)
+        self.systems = getattr(self, "systems", [])
+        self.systems.append(system or "")
         return {"ok": True, "count": shots,
                 "shots": [{"index": i, "seconds": 4,
                            "shot": f"镜头{i}",
@@ -93,6 +96,39 @@ class StageRoutesTest(unittest.TestCase):
         self.assertEqual(resp.status, 200, resp.payload)
         self.assertEqual(len(resp.payload["prepared"]["shots"]), 3)
         self.assertEqual(resp.payload["prepared"]["normalized"]["genre"], "都市")
+
+    def test_prepare_runs_staged_pipeline(self) -> None:
+        """对齐原包 core.pipeline：normalize → storyboard → assemble，且带回耗时。"""
+        resp = self.call("POST", "/api/visual/project/prepare",
+                         {"projectId": self.project_id, "requirement": "雨夜送餐",
+                          "shots": 2})
+        self.assertEqual(resp.status, 200, resp.payload)
+        names = [stage["name"] for stage in resp.payload["stages"]]
+        self.assertEqual(names, ["normalize", "storyboard", "assemble"])
+        self.assertTrue(all(stage["ok"] for stage in resp.payload["stages"]))
+        self.assertEqual(resp.payload["summary"]["count"], 2)
+        self.assertEqual(resp.payload["summary"]["totalSeconds"], 8.0)
+        # 分镜阶段必须带上原版规则摘录
+        self.assertIn("原版规则摘录", self.assist.systems[-1])
+
+    def test_prepare_reports_failed_stage(self) -> None:
+        class Boom(self.__class__ if False else object):
+            pass
+
+        class BadAssist(FakeAssist):
+            def normalize(self, requirement: str) -> dict:  # noqa: ARG002
+                raise RuntimeError("渠道 429")
+
+        router = Router()
+        visual_stage.build(router, self.service, self.library, assist=BadAssist())
+        resp = router.dispatch(Request(
+            method="POST", path="/api/visual/project/prepare", query={},
+            headers={"content-type": "application/json"},
+            body=json.dumps({"projectId": self.project_id,
+                             "requirement": "x"}).encode()))
+        self.assertEqual(resp.status, 502)
+        self.assertEqual(resp.payload["stages"][0]["name"], "normalize")
+        self.assertFalse(resp.payload["stages"][0]["ok"])
 
     def test_prepare_requires_requirement(self) -> None:
         self.assertEqual(self.call("POST", "/api/visual/project/prepare",

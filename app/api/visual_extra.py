@@ -41,7 +41,7 @@ def _upload(req: Request, store, folder: str) -> Response:
 
 def build(router: Router, service: VisualService, library, *,
           images=None, task_store=None, transport=None, assist=None,
-          videos=None, video_pipeline=None) -> None:
+          videos=None, video_pipeline=None, assets_store=None) -> None:
     store = library
     if store is None:
         return
@@ -223,14 +223,33 @@ def build(router: Router, service: VisualService, library, *,
 
     # ---------- 素材库 ----------
     def asset_list(req: Request) -> Response:
-        items = store.list(KIND_ASSET, limit=int(req.q1("limit", "200") or 200),
-                           keyword=req.q1("q") or "")
+        limit = int(req.q1("limit", "200") or 200)
+        keyword = req.q1("q") or ""
+        project_id = req.q1("projectId") or ""
+        if assets_store is not None:
+            rows = assets_store.list(project_id=project_id or None, q=keyword, limit=limit)
+            return Response(200, {"ok": True,
+                                  "assets": [assets_store.brief(row) for row in rows],
+                                  "count": len(rows), "store": "assets"})
+        items = store.list(KIND_ASSET, limit=limit, keyword=keyword)
         return Response(200, {"ok": True, "assets": [store.brief(
             row, fields=("file", "type", "projectId", "tags", "kind", "sceneIndex"))
             for row in items], "count": len(items)})
 
     def asset_add(req: Request) -> Response:
         body = req.json()
+        if assets_store is not None:
+            name = str(body.get("name") or "未命名素材")
+            row = assets_store.add(
+                name=name, file=str(body.get("file") or ""),
+                kind=str(body.get("type") or body.get("kind") or "image"),
+                project_id=str(body.get("projectId") or ""),
+                meta={"type": str(body.get("type") or "image"),
+                      "tags": body.get("tags") or []},
+                aliases=body.get("aliases") or [])
+            assets_store.ensure_project(str(body.get("projectId") or ""),
+                                        str(body.get("projectName") or ""))
+            return Response(200, {"ok": True, "asset": assets_store.brief(row)})
         record = store.create(KIND_ASSET, str(body.get("name") or "未命名素材"),
                               {"file": str(body.get("file") or ""),
                                "type": str(body.get("type") or "image"),
@@ -241,6 +260,11 @@ def build(router: Router, service: VisualService, library, *,
 
     def asset_delete(req: Request) -> Response:
         body = req.json()
+        if assets_store is not None:
+            removed = assets_store.delete(str(body.get("id") or body.get("assetId") or ""))
+            if not removed:
+                return Response.error(404, "not_found", "素材不存在。")
+            return Response(200, {"ok": True})
         removed = store.delete(str(body.get("id") or ""))
         if not removed:
             return Response.error(404, "not_found", "素材不存在。")

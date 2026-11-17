@@ -102,15 +102,17 @@ class VisualAssist:
             status = 503 if exc.code in ("auth", "quota") else 502
             raise AssistError(status, exc.code, f"模型调用失败（含降级重试）: {exc}") from exc
 
-    def _json_call(self, spec: str, user: str) -> dict[str, Any]:
-        text = self.complete(SHORT_SYSTEM, f"{user}\n\n{spec}")
+    def _json_call(self, spec: str, user: str,
+                   system: str | None = None) -> dict[str, Any]:
+        text = self.complete(system or SHORT_SYSTEM, f"{user}\n\n{spec}")
         try:
             return _extract_json(text)
         except (json.JSONDecodeError, ValueError) as exc:
             raise AssistError(502, "bad_model_output",
                               f"模型输出不是合法 JSON: {text[:200]}") from exc
 
-    def plan(self, requirement: str, *, shots: int = 6) -> dict[str, Any]:
+    def plan(self, requirement: str, *, shots: int = 6,
+             system: str | None = None) -> dict[str, Any]:
         """逐镜一次调用再合并。
 
         实测该中转站在"一次生成较长 JSON"时会直接断连（`RemoteDisconnected`），
@@ -123,7 +125,8 @@ class VisualAssist:
         for index in range(1, shots + 1):
             spec = (f'只输出 1 个镜头的 JSON，形如 {{"index":{index},"seconds":4,'
                     '"shot":"画面描述","prompt":"出图提示词"}，不要数组、不要解释。')
-            data = self._json_call(spec, f"需求：{requirement}\n这是第 {index} 个镜头。")
+            data = self._json_call(spec, f"需求：{requirement}\n这是第 {index} 个镜头。",
+                                   system=system)
             item = data if "shot" in data else (data.get("shots") or [{}])[0]
             item["index"] = index
             items.append(item)

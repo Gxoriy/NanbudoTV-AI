@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import json
 import pathlib
+import time
 from typing import Any
 
 from .router import Request, Response, Router
+from domain.prompts import compose
 from domain.visual.service import VisualError, VisualService
 from domain.visual.library import KIND_ASSET
 
@@ -121,17 +123,58 @@ def build(router: Router, service: VisualService, library, *,
         if not requirement:
             return Response.error(400, "invalid_input", "缺少需求描述或项目源素材。")
         shots = int(body.get("shots") or 6)
+        stages: list[dict[str, Any]] = []
+
+        def stage(name: str, fn, *, min_ms: int = 0):
+            started = time.perf_counter()
+            try:
+                value = fn()
+                ok = True
+            except Exception as exc:  # noqa: BLE001
+                elapsed = int((time.perf_counter() - started) * 1000)
+                stages.append({"name": name, "ok": False, "ms": elapsed,
+                               "error": str(getattr(exc, "message", exc))[:120]})
+                raise
+            elapsed = int((time.perf_counter() - started) * 1000)
+            stages.append({"name": name, "ok": ok, "ms": max(elapsed, min_ms)})
+            return value
+
         try:
-            normalized = assist.normalize(requirement)
-            planned = assist.plan(requirement, shots=max(1, min(shots, 12)))
+            normalized = stage("normalize", lambda: assist.normalize(requirement))
+            planned = stage(
+                "storyboard",
+                lambda: assist.plan(
+                    requirement, shots=max(1, min(shots, 12)),
+                    system=compose(
+                        "storyboard",
+                        role="你是短剧分镜规划师。",
+                        task="把需求拆成可拍摄的镜头，每镜给出时长、画面与出图提示词。",
+                        output="只输出 JSON，不要解释。")))
         except Exception as exc:  # noqa: BLE001
-            return _assist_error(exc)
+            response = _assist_error(exc)
+            response.payload["stages"] = stages
+            return response
+
+        scenes = planned.get("shots") or []
+
+        def assemble() -> dict[str, Any]:
+            total = 0.0
+            for index, scene in enumerate(scenes, start=1):
+                scene.setdefault("index", index)
+                try:
+                    total += float(scene.get("seconds") or 0)
+                except (TypeError, ValueError):
+                    continue
+            return {"count": len(scenes), "totalSeconds": round(total, 1)}
+
+        summary = stage("assemble", assemble)
         row = _upsert(PREPARED_KIND, project_id,
                       {"requirement": requirement,
                        "normalized": normalized.get("normalized", normalized),
-                       "shots": planned.get("shots") or []},
+                       "shots": scenes, "summary": summary, "stages": stages},
                       name="项目准备")
-        return Response(200, {"ok": True, "prepared": row["payload"]})
+        return Response(200, {"ok": True, "prepared": row["payload"],
+                              "stages": stages, "summary": summary})
 
     def project_scenes(req: Request) -> Response:
         """分镜生成：LLM 规划 + 落库，可重复调用（覆盖旧结果）。"""
@@ -155,7 +198,13 @@ def build(router: Router, service: VisualService, library, *,
             return Response.error(400, "invalid_input",
                                   "缺少需求描述：请先保存项目源素材或传 requirement。")
         try:
-            planned = assist.plan(requirement, shots=int(body.get("shots") or 6))
+            planned = assist.plan(
+                requirement, shots=int(body.get("shots") or 6),
+                system=compose(
+                    "storyboard",
+                    role="你是短剧分镜规划师。",
+                    task="把剧本拆成镜头：时间连续、按序、无重叠；每镜写清构图、机位或运镜。",
+                    output="只输出 JSON，不要解释。"))
         except Exception as exc:  # noqa: BLE001
             return _assist_error(exc)
         scenes = planned.get("shots") or []
@@ -277,7 +326,13 @@ def build(router: Router, service: VisualService, library, *,
         if not script:
             return Response.error(400, "invalid_input", "缺少剧本正文。")
         try:
-            planned = assist.plan(script, shots=int(body.get("shots") or default_shots))
+            planned = assist.plan(
+                script, shots=int(body.get("shots") or default_shots),
+                system=compose(
+                    "storyboard",
+                    role="你是短剧分镜师。",
+                    task="按剧本时空承接连戏；动作、台词、表演与承接状态归入同一剧情单元。",
+                    output="只输出 JSON，不要解释。"))
         except Exception as exc:  # noqa: BLE001
             return _assist_error(exc)
         shots = planned.get("shots") or []
@@ -343,7 +398,11 @@ def build(router: Router, service: VisualService, library, *,
             return Response.error(400, "invalid_input", "缺少镜头描述。")
         try:
             text = assist.complete(
-                "只输出一段用于出图的中文提示词，不超过 60 字，不要解释。",
+                compose(
+                    "image_prompt",
+                    role="你是短剧出图提示词工程师。",
+                    task="把镜头描述改写成可直接出图的中文提示词。",
+                    output="只输出提示词本身，不超过 60 字，不要解释。"),
                 f"镜头：{subject[:200]}")
         except Exception as exc:  # noqa: BLE001
             return _assist_error(exc)

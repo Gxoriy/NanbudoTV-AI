@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from domain.prompts import compose
+
 import json
 import time
 
@@ -615,7 +617,12 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                         user = (f"主题/设定：{topic or source_text[:400]}\n"
                                 f"只写第 {index}/{segments} 段，200 字左右，不要标题。")
                     part = assist.complete(
-                        "你是短剧编剧，只输出正文，不要解释与标题。", user)
+                        compose(
+                            "rewrite",
+                            role="你是短剧编剧。",
+                            task="保持原作可迁移的情绪与功能，人物身份与场景可按要求重设。",
+                            output="只输出正文，不要标题、不要解释。"),
+                        user)
                     parts.append(part.strip())
                 text = "\n\n".join(p for p in parts if p)
                 relative = store.save_file("scripts", "draft.txt", text.encode("utf-8"))

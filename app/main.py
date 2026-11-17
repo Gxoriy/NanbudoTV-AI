@@ -45,6 +45,7 @@ from domain.subtitle import SubtitleService, SubtitleStore
 from domain.ai import TextAssist
 from domain.visual import VisualService
 from domain.visual.assist import VisualAssist
+from domain.visual.assets import AssetStore
 from domain.visual.library import LibraryStore
 from domain.visual.video import VideoPipeline
 from domain.workspace import DocStore
@@ -310,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
     visual_service = VisualService(data_dir / "visual-styles.json",
                                    store=VisualStore(data_dir / "visual.db"),
                                    workspace=data_dir / "visual")
+    visual_assets = AssetStore(data_dir / "assets.db")
     visual_library = LibraryStore(data_dir / "visual-library.db",
                                   files_root=data_dir / "visual" / "files")
     voice_service = VoiceService(
@@ -359,7 +361,8 @@ def main(argv: list[str] | None = None) -> int:
     visual_stage.build(router, visual_service, visual_library,
                        assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
     visual_extra.build(router, visual_service, visual_library,
-                        video_pipeline=video_pipeline,
+                       assets_store=visual_assets,
+                       video_pipeline=video_pipeline,
                        images=ImageConfig.load(data_dir / "model-config.json"),
                        task_store=store,
                        assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
@@ -394,6 +397,7 @@ def main(argv: list[str] | None = None) -> int:
         server.shutdown()
         server.server_close()
         workspace.close()
+        visual_assets.close()
         visual_library.close()
         if visual_service.store is not None:
             visual_service.store.close()

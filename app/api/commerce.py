@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+from domain.prompts import compose
+
 import mimetypes
 from urllib.parse import unquote
 
@@ -223,7 +225,11 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
             return problem
         try:
             data = assist.json_call(
-                "你是电商文案分析助手，只输出 JSON。",
+                compose(
+                    "marketing",
+                    role="你是电商文案分析助手。",
+                    task="读者是投手：只保留可执行的卖点、受众与语气判断。",
+                    output="只输出 JSON，不要解释。"),
                 f"商品/素材：{text[:800]}\n"
                 '输出 JSON：{"audience":"","sellingPoints":[""],"tone":"",'
                 '"keywords":[""]}')
@@ -242,7 +248,11 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
         platform = str(body.get("platform") or "抖音")
         try:
             data = assist.json_call(
-                "你是电商营销文案写手，只输出 JSON。",
+                compose(
+                    "marketing",
+                    role="你是电商营销文案写手。",
+                    task="文案要能直接投放：标题抓前 3 秒，正文口播化，标签可搜索。",
+                    output="只输出 JSON，不要解释。"),
                 f"商品：{text[:600]}\n平台：{platform}\n"
                 '输出 JSON：{"title":"","copy":"","hashtags":[""]}')
         except Exception as exc:  # noqa: BLE001

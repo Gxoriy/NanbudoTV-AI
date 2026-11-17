@@ -63,7 +63,7 @@ ffmpeg -version
 ### 2.3 验收与门禁
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests   # 258 项
+.\.venv\Scripts\python.exe -m unittest discover -s tests   # 273 项
 .\.venv\Scripts\python.exe tools\check_rules.py            # 行长/命名/freeze/依赖方向
 .\.venv\Scripts\python.exe tests\smoke\check_contract.py   # 起真进程对比旧样本
 .\.venv\Scripts\python.exe tools\audit_coverage.py         # 覆盖率
