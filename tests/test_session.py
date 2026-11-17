@@ -67,7 +67,10 @@ class SessionRoutesTest(unittest.TestCase):
         resp = self.call("POST", "/api/session/login",
                          {"cardKey": "DW-AAAAA-BBBBB-CCCCC-DDDDD-EEEEE"})
         self.assertEqual(resp.status, 400)
-        self.assertEqual(resp.payload["error"], "invalid_card")
+        # 登录页把 error 直接当文案显示，所以 error 必须是中文，机器码在 code
+        self.assertEqual(resp.payload["code"], "invalid_card")
+        self.assertIn("卡密", resp.payload["error"])
+        self.assertEqual(resp.payload["error"], resp.payload["message"])
 
     def test_login_without_card_when_unlicensed(self) -> None:
         self.assertEqual(self.call("POST", "/api/session/login", {}).status, 400)

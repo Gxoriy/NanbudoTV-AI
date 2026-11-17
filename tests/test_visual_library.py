@@ -126,7 +126,11 @@ class LibraryRoutesTest(unittest.TestCase):
 
     def test_usage_and_models(self) -> None:
         usage = self.call("GET", "/api/visual/points").payload
-        self.assertEqual(usage["points"], 0.0)
+        # 免费模式：余额给足（旧前端用 <=0 判断积分不足，会把生成按钮锁死），
+        # 但计费口径仍是 free、已用 0。
+        self.assertEqual(usage["pricingMode"], "free")
+        self.assertEqual(usage["usedPoints"], 0.0)
+        self.assertGreater(usage["remainingPoints"], 0)
         models = self.call("GET", "/api/visual/models").payload
         self.assertEqual(models["models"], [])
         self.assertIn("尚未接入", models["message"])

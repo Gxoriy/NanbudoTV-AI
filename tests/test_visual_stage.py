@@ -90,6 +90,26 @@ class StageRoutesTest(unittest.TestCase):
         self.assertEqual(got.payload["text"], "第一场：雨夜")
         self.assertTrue(got.payload["hasSource"])
 
+    def test_source_post_saves_and_guards_conflict(self) -> None:
+        """前端就是 POST 到 /api/visual/project/source（不是 /source/save）。"""
+        resp = self.call("POST", "/api/visual/project/source",
+                         {"projectId": self.project_id, "sourceText": "第一场 图书馆",
+                          "expectedSource": "", "confirmed": True})
+        self.assertEqual(resp.status, 200, resp.payload)
+        self.assertTrue(resp.payload["saved"])
+        self.assertEqual(resp.payload["project"]["id"], self.project_id)
+
+        again = self.call("POST", "/api/visual/project/source",
+                          {"projectId": self.project_id, "sourceText": "第二版",
+                           "expectedSource": "第一场 图书馆"})
+        self.assertEqual(again.status, 200)
+
+        conflict = self.call("POST", "/api/visual/project/source",
+                             {"projectId": self.project_id, "sourceText": "第三版",
+                              "expectedSource": "第一场 图书馆"})
+        self.assertEqual(conflict.status, 409)
+        self.assertEqual(conflict.payload["error"], "conflict")
+
     def test_prepare_uses_llm_and_persists(self) -> None:
         resp = self.call("POST", "/api/visual/project/prepare",
                          {"projectId": self.project_id, "requirement": "雨夜送餐", "shots": 3})

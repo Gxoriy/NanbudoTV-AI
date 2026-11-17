@@ -82,6 +82,31 @@ def build(router: Router, service: VisualService, library, *,
 
     # ---------- 项目准备 / 源素材 ----------
     def project_source(req: Request) -> Response:
+        """GET 读原稿；POST 保存原稿（前端就是 POST 到同一个路径）。"""
+        if req.method == "POST":
+            body = req.json() if req.body else {}
+            project_id = str(body.get("projectId") or req.q1("projectId") or "")
+            problem = _require_project(project_id)
+            if problem:
+                return problem
+            text = str(body.get("sourceText") or body.get("text") or "")
+            current = _find("project_source", project_id)
+            previous = str((current or {}).get("payload", {}).get("text") or "")
+            expected = str(body.get("expectedSource") or "")
+            if expected and previous and expected != previous:
+                return Response.error(409, "conflict",
+                                      "原稿已被其他窗口修改，请刷新后再保存。")
+            _upsert("project_source", project_id, {"text": text}, name="项目源素材")
+            project = _project(project_id)
+            if project is not None and service.store is not None:
+                try:
+                    service.store.update(project_id, description=project["description"])
+                except (KeyError, TypeError):
+                    pass
+            return Response(200, {"ok": True, "projectId": project_id,
+                                  "project": project, "sourceText": text,
+                                  "saved": True})
+
         project_id = req.q1("projectId") or req.q1("id") or ""
         problem = _require_project(project_id)
         if problem:
@@ -492,7 +517,8 @@ def build(router: Router, service: VisualService, library, *,
         return Response.error(int(status), str(code or "llm_failed"), str(message))
 
     # ---------- 注册 ----------
-    router.register("D2", "/api/visual/project/source", project_source)
+    router.register("D2", "/api/visual/project/source", project_source,
+                    methods=("GET", "POST"))
     router.register("D2", "/api/visual/project/source/save", project_source_save,
                     methods=("POST",))
     router.register("D2", "/api/visual/project/prepare", project_prepare,

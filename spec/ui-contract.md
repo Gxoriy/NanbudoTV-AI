@@ -60,6 +60,35 @@
 未知动作 404 且带可用动作名、拆解上传/参考图/分析/查询、音色导入、
 小说项目列表、宏提交返回 `taskId`。
 
+## 5.1 登录门控 + 带状态的场景链（不再跳过卡密页）
+
+新增 `tools/ui_scenario.js` + `.local/deploy/run_ui_scenario.py`：
+从 `/login.html` 开始，**先故意用错误卡**验证被拒，再用正确卡登录，然后按真实顺序操作。
+
+```
+[OK] 打开登录页            hasCardInput=true
+[OK] 错误卡密被拒绝        message="卡密无效，请核对后重试。" stayedOnLogin=true
+[OK] 正确卡密登录成功      url="/"  loginCall200=true
+[OK] 导入视频              upload=200
+[OK] 自动识别字幕区域      detect=200
+[OK] 打开短剧项目中心      clicked=true
+[OK] 工作流 iframe 加载    /static/visual.html?embedded=1
+[OK] 视觉新建项目          project/create=200
+[OK] 原稿自动保存          project/source=200
+[OK] 电商页加载与创作视图  loaded=2 bad=[]
+[OK] 音色页加载            points/characters/tutorials/voices 全 200
+失败步骤 0
+```
+
+### 这一轮暴露的 4 个真实缺口
+
+| 现象 | 根因 | 修法 |
+|---|---|---|
+| 登录失败只显示 `invalid_card` | 旧前端把响应的 **`error` 字段当文案**显示（`login.js` / `activate.js`） | 新增 `Response.auth_error()`：`error` 放中文，机器码放 `code` |
+| 视觉页所有生成按钮灰掉 | 前端 `balance = remainingPoints <= 0` 就加 `points-locked`，而我们是免费模式返回 0 | 免费模式返回 `remainingPoints=1000000` 且 `pricingMode=free`、`usedPoints=0` |
+| 原稿保存 501 | 前端 POST 到 `/api/visual/project/source`（不带 `/save`），我们只注册了 GET | 同一路径支持 POST，并校验 `expectedSource`（不一致返回 409 conflict） |
+| 工作流"新建项目"点不到 | 页面把工作流嵌在 `#workflowFrame`（`visual.html?embedded=1`），可见的是项目中心的 `#newVisualProject`，不是顶部的 `#newWorkflowProject` | 场景脚本改成"首页 → 短剧项目中心 → iframe 内建项目 → 返回工作流" |
+
 ## 6. 还没被点击覆盖的部分
 
 审计只点"首屏可见按钮"。这些需要前置状态，暂未自动化：

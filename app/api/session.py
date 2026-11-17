@@ -51,7 +51,8 @@ def build(router: Router, license_service: LicenseService, store: DocStore, *,
         try:
             license_body = license_service.activate(device, key)
         except LicenseError as exc:
-            return Response.error(400, exc.code, exc.message)
+            # 登录页把 error 当文案显示，这里给中文；机器码放 code
+            return Response.auth_error(400, exc.code, exc.message)
         return Response(200, {"ok": True, "authenticated": True,
                               "cardMask": mask_card(key), "license": license_body})
 

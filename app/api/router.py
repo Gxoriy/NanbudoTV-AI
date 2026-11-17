@@ -71,6 +71,16 @@ class Response:
     def error(cls, status: int, code: str, message: str = "", **extra: Any) -> "Response":
         return cls(status, {"ok": False, "error": code, "message": message, **extra})
 
+    @classmethod
+    def auth_error(cls, status: int, code: str, message: str) -> "Response":
+        """登录/激活类错误：原前端把 `error` 当**文案**直接显示（login.js / activate.js）。
+
+        所以这几个接口的 `error` 必须是给人看的中文，机器码放到 `code` 里，
+        同时保留 `message` 让新代码仍可用。改前用户看到的是 `invalid_card` 这种字符串。
+        """
+        return cls(status, {"ok": False, "error": message, "code": code,
+                            "message": message})
+
 
 @dataclass
 class RouteEntry:

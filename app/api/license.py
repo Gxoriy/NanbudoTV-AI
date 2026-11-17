@@ -31,7 +31,7 @@ def build(router: Router, service: LicenseService) -> None:
         try:
             return Response(200, service.activate(device_of(req), key))
         except LicenseError as exc:
-            return Response.error(400, exc.code, exc.message)
+            return Response.auth_error(400, exc.code, exc.message)
 
     def refresh(req: Request) -> Response:
         return Response(200, service.status(device_of(req)))

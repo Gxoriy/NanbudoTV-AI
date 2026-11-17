@@ -19,6 +19,9 @@ from domain.visual.library import (
 )
 from domain.visual.service import VisualService
 
+# 旧前端用 remainingPoints<=0 判断积分不足，免费模式给一个足够大的余额
+FREE_BALANCE = 1000000.0
+
 MODEL_REQUIRED = "该功能需要图像/视频/LLM 模型，新内核尚未接入；文档与素材管理不受影响。"
 MAX_UPLOAD = 64 * 1024 * 1024
 
@@ -342,8 +345,11 @@ def build(router: Router, service: VisualService, library, *,
         return Response(200, {"ok": True, "profile": record["payload"]})
 
     def usage(_req: Request) -> Response:
-        return Response(200, {"ok": True, "points": 0.0, "usedPoints": 0.0,
-                              "remainingPoints": 0.0, "pricingMode": "free", "records": []})
+        """对外免费：余额给足，让前端解锁生成按钮；报价与实践扣费都是 0。"""
+        return Response(200, {"ok": True, "points": FREE_BALANCE, "usedPoints": 0.0,
+                              "remainingPoints": FREE_BALANCE, "pricingMode": "free",
+                              "free": True, "records": [],
+                              "message": "免费使用，不扣积分。"})
 
     def models(_req: Request) -> Response:
         return Response(200, {"ok": True, "models": [], "message": MODEL_REQUIRED})
