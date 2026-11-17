@@ -45,6 +45,43 @@ P0-5 是被"跑并发"意外发现的真凶：`bad_model_output` 一直是分镜
 而我们原来的实现是**解析失败直接抛 502**，等于把渠道的"答成散文"当成了终态错误。
 现在改成重问——同一问题重问一次多数能拿到合法 JSON，这也是原版 `validator` 存在的原因。
 
+### P0-2 切分指纹（`core.cut_state`）——已完成
+
+`visual_stage` 里对 `project/scenes`、`project/prepare`、三个 `storyboard` 入口加了指纹复用：
+
+```
+指纹 = sha256(用途 + 镜数 + 源文本)[:32]
+命中 → 直接返回上次结果（cached:true，不调模型）
+force:true → 跳过缓存强制重算
+```
+
+真机：
+
+```
+[1] 200 耗时=35.6s cached=False stages=['normalize','storyboard','assemble']
+[2] 200 耗时=0.0s  cached=True  stages=['cache']        ← 同一份稿子
+[force] 200 耗时=75.0s cached=False
+```
+
+为什么重要：上游按次计费，且同一稿子两次切分结果本应一致——缓存既省钱又消除漂移。
+
+### P0-3 提示词补齐 17 → 37 条——已完成
+
+新增三个此前完全没移植的桶：
+
+| 桶 | 条数 | 对应原版 |
+|---|---:|---|
+| `continuity` | 4 | `visual_continuity`：人物关系锁定、空间调度、左右/轴线 |
+| `video_prompt` | 3 | `tail_capability`：首帧/尾帧承接、时长与运镜 |
+| `asset_analysis` | 3 | `script_preparation203`：资产识别与标注 |
+
+同时修掉两个选择器缺陷：过滤正则/格式串这类"伪提示词"（`^(`、`\\d`、`%s`），
+以及**跨桶去重**（之前同一条 `tail_capability` 会同时填满 image_prompt / continuity / video_prompt）。
+校验：37 条、37 个唯一开头。
+
+`compose(..., also=("continuity",))` 让分镜提示同时带"镜头规则 + 人物关系规则"，
+两个桶在原版本来就是分开的模块。
+
 ## 2.1 剩余 P0
 
 | # | 原版模块 | 我们现状 | 差距 | 做法 |

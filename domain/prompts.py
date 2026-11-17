@@ -14,8 +14,13 @@ MAX_RULE_CHARS = 600
 
 
 def compose(bucket: str, *, role: str, task: str, output: str = "",
-            index: int = 0, limit: int = MAX_RULE_CHARS) -> str:
-    """拼装 system 提示：角色 + 任务 + 原版规则摘录 + 输出约束。"""
+            index: int = 0, limit: int = MAX_RULE_CHARS,
+            also: tuple[str, ...] = ()) -> str:
+    """拼装 system 提示：角色 + 任务 + 原版规则摘录（可多桶）+ 输出约束。
+
+    `also` 用于叠加第二组规则，例如分镜既需要"镜头规则"也需要"人物关系/空间调度"，
+    两组规则在原版是分开的模块（`store_plan262` 与 `visual_continuity`）。
+    """
     parts = [role.strip(), task.strip()]
     rule = original_system(bucket, index).strip()
     if rule:
@@ -23,6 +28,14 @@ def compose(bucket: str, *, role: str, task: str, output: str = "",
         if len(rule) > limit:
             clipped += "…"
         parts.append(f"【原版规则摘录】\n{clipped}")
+    for extra in also:
+        text = original_system(extra, 0).strip()
+        if not text:
+            continue
+        clipped = text[:limit].rstrip()
+        if len(text) > limit:
+            clipped += "…"
+        parts.append(f"【原版规则摘录·{extra}】\n{clipped}")
     if output:
         parts.append(output.strip())
     return "\n\n".join(part for part in parts if part)

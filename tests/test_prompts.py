@@ -16,9 +16,21 @@ from domain.prompts_original import PROMPTS, system  # noqa: E402
 class PromptsTest(unittest.TestCase):
     def test_all_buckets_have_original_text(self) -> None:
         for bucket in ("storyboard", "normalize", "rewrite", "marketing",
-                       "image_prompt", "hooks"):
+                       "image_prompt", "hooks", "continuity", "video_prompt",
+                       "asset_analysis"):
             self.assertGreater(bucket_size(bucket), 0, bucket)
             self.assertTrue(system(bucket), bucket)
+
+    def test_total_is_37_and_unique(self) -> None:
+        """P0-3：提示词从 17 条补到 37 条，且不允许跨桶重复。"""
+        heads = [item["text"][:40] for items in PROMPTS.values() for item in items]
+        self.assertEqual(len(heads), 37)
+        self.assertEqual(len(set(heads)), 37)
+
+    def test_compose_accepts_extra_bucket(self) -> None:
+        text = compose("storyboard", role="R", task="T", also=("continuity",))
+        self.assertIn("【原版规则摘录】", text)
+        self.assertIn("【原版规则摘录·continuity】", text)
 
     def test_every_entry_keeps_source_module(self) -> None:
         for bucket, items in PROMPTS.items():

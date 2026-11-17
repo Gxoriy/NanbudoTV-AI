@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import time
@@ -24,6 +25,7 @@ from domain.visual.library import KIND_ASSET
 
 SETTING_KIND = "episode_setting"
 STORYBOARD_KIND = "storyboard"
+CUT_CACHE_KIND = "cut_cache"
 PREPARED_KIND = "project_prepared"
 
 MAX_VIDEO_BYTES = 512 * 1024 * 1024
@@ -62,6 +64,28 @@ def build(router: Router, service: VisualService, library, *,
             return store.update(row["id"], payload=merged)
         return store.create(kind, name or f"{kind}-{project_id[:8]}",
                             {"projectId": project_id, **data})
+
+    def _cut_key(source: str, shots: int, purpose: str) -> str:
+        """切分指纹：源文本 + 镜数 + 用途。源文本一改，指纹立刻不同。"""
+        raw = f"{purpose}\x01{shots}\x01{source.strip()}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+
+    def _cut_lookup(key: str) -> dict | None:
+        for row in store.list(CUT_CACHE_KIND, limit=500):
+            if row["payload"].get("key") == key:
+                return row
+        return None
+
+    def _cut_store(key: str, purpose: str, source: str, shots: int,
+                   data: Any) -> dict:
+        existing = _cut_lookup(key)
+        payload = {"key": key, "purpose": purpose, "shots": shots,
+                   "data": data, "textLength": len(source),
+                   "createdAt": time.time()}
+        if existing is not None:
+            return store.update(existing["id"],
+                                payload={**existing["payload"], **payload})
+        return store.create(CUT_CACHE_KIND, f"{purpose}-{key[:8]}", payload)
 
     def _require_assist() -> Response | None:
         if assist is None:
@@ -148,6 +172,17 @@ def build(router: Router, service: VisualService, library, *,
         if not requirement:
             return Response.error(400, "invalid_input", "缺少需求描述或项目源素材。")
         shots = int(body.get("shots") or 6)
+        cut_key = _cut_key(requirement, shots, "prepare")
+        if not body.get("force"):
+            hit = _cut_lookup(cut_key)
+            if hit is not None:
+                cached = hit["payload"].get("data") or {}
+                return Response(200, {
+                    "ok": True, "prepared": cached,
+                    "stages": [{"name": "cache", "ok": True, "ms": 0}],
+                    "summary": cached.get("summary") or {},
+                    "cached": True, "fingerprint": cut_key,
+                    "message": "命中上次准备结果，未调用模型。"})
         stages: list[dict[str, Any]] = []
 
         def stage(name: str, fn, *, min_ms: int = 0):
@@ -199,8 +234,13 @@ def build(router: Router, service: VisualService, library, *,
                        "normalized": normalized.get("normalized", normalized),
                        "shots": scenes, "summary": summary, "stages": stages},
                       name="项目准备")
+        _cut_store(cut_key, "prepare", requirement, shots,
+                   {"requirement": requirement,
+                    "normalized": normalized.get("normalized", normalized),
+                    "shots": scenes, "summary": summary})
         return Response(200, {"ok": True, "prepared": row["payload"],
-                              "stages": stages, "summary": summary})
+                              "stages": stages, "summary": summary,
+                              "cached": False, "fingerprint": cut_key})
 
     def project_scenes(req: Request) -> Response:
         """分镜生成：LLM 规划 + 落库，可重复调用（覆盖旧结果）。"""
@@ -223,15 +263,27 @@ def build(router: Router, service: VisualService, library, *,
         if not requirement:
             return Response.error(400, "invalid_input",
                                   "缺少需求描述：请先保存项目源素材或传 requirement。")
+        shots_wanted = int(body.get("shots") or 6)
+        cut_key = _cut_key(requirement, shots_wanted, "scenes")
+        if not body.get("force"):
+            hit = _cut_lookup(cut_key)
+            if hit is not None:
+                cached = hit["payload"].get("data") or []
+                return Response(200, {"ok": True, "scenes": cached,
+                                      "count": len(cached), "cached": True,
+                                      "fingerprint": cut_key,
+                                      "storyboardId": hit["id"],
+                                      "message": "命中上次切分，未调用模型。"})
         try:
             planned = assist.plan(
-                requirement, shots=int(body.get("shots") or 6),
+                requirement, shots=shots_wanted,
                 concurrency=int(body.get("concurrency") or 2),
                 system=compose(
                     "storyboard",
                     role="你是短剧分镜规划师。",
                     task="把剧本拆成镜头：时间连续、按序、无重叠；每镜写清构图、机位或运镜。",
-                    output="只输出 JSON，不要解释。"))
+                    output="只输出 JSON，不要解释。",
+                    also=("continuity",)))
         except Exception as exc:  # noqa: BLE001
             return _assist_error(exc)
         scenes = planned.get("shots") or []
@@ -243,8 +295,10 @@ def build(router: Router, service: VisualService, library, *,
                 service.store.update(project_id, scenes=scenes)
             except (KeyError, TypeError):
                 pass
+        _cut_store(cut_key, "scenes", requirement, shots_wanted, scenes)
         return Response(200, {"ok": True, "scenes": scenes, "count": len(scenes),
-                              "storyboardId": row["id"]})
+                              "storyboardId": row["id"], "cached": False,
+                              "fingerprint": cut_key})
 
     # ---------- 素材分析与删除 ----------
     def assets_analyze(req: Request) -> Response:
@@ -352,23 +406,36 @@ def build(router: Router, service: VisualService, library, *,
             script = str((source or {}).get("payload", {}).get("text") or "").strip()
         if not script:
             return Response.error(400, "invalid_input", "缺少剧本正文。")
+        shots_wanted = int(body.get("shots") or default_shots)
+        cut_key = _cut_key(script, shots_wanted, "storyboard")
+        if not body.get("force"):
+            hit = _cut_lookup(cut_key)
+            if hit is not None:
+                cached = hit["payload"].get("data") or []
+                return Response(200, {"ok": True, "storyboard": {"shots": cached},
+                                      "scenes": cached, "count": len(cached),
+                                      "cached": True, "fingerprint": cut_key,
+                                      "message": "命中上次切分，未调用模型。"})
         try:
             planned = assist.plan(
-                script, shots=int(body.get("shots") or default_shots),
+                script, shots=shots_wanted,
                 concurrency=int(body.get("concurrency") or 2),
                 system=compose(
                     "storyboard",
                     role="你是短剧分镜师。",
                     task="按剧本时空承接连戏；动作、台词、表演与承接状态归入同一剧情单元。",
-                    output="只输出 JSON，不要解释。"))
+                    output="只输出 JSON，不要解释。",
+                    also=("continuity",)))
         except Exception as exc:  # noqa: BLE001
             return _assist_error(exc)
         shots = planned.get("shots") or []
         if project_id:
             _upsert(STORYBOARD_KIND, project_id,
                     {"scenes": shots, "requirement": script}, name="分镜")
+        _cut_store(cut_key, "storyboard", script, shots_wanted, shots)
         return Response(200, {"ok": True, "storyboard": {"shots": shots},
-                              "scenes": shots, "count": len(shots)})
+                              "scenes": shots, "count": len(shots),
+                              "cached": False, "fingerprint": cut_key})
 
     def cut_storyboard(req: Request) -> Response:
         return _storyboard(req)

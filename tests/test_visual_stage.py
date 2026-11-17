@@ -41,8 +41,10 @@ class FakeAssist:
                                            "conflict": requirement[:20]}}
 
     def plan(self, requirement: str, *, shots: int = 6,
-             system: str | None = None) -> dict:
+             system: str | None = None, concurrency: int = 3) -> dict:
         self.plan_calls.append(shots)
+        self.concurrency = getattr(self, "concurrency", [])
+        self.concurrency.append(concurrency)
         self.systems = getattr(self, "systems", [])
         self.systems.append(system or "")
         return {"ok": True, "count": shots,
@@ -109,6 +111,53 @@ class StageRoutesTest(unittest.TestCase):
                               "expectedSource": "第一场 图书馆"})
         self.assertEqual(conflict.status, 409)
         self.assertEqual(conflict.payload["error"], "conflict")
+
+    def test_cut_fingerprint_reuses_result(self) -> None:
+        """同一份稿子第二次切分不再调模型（对应原版 core.cut_state）。"""
+        first = self.call("POST", "/api/visual/project/scenes",
+                          {"projectId": self.project_id, "requirement": "雨夜送餐",
+                           "shots": 2})
+        self.assertEqual(first.status, 200, first.payload)
+        self.assertFalse(first.payload["cached"])
+        calls_after_first = len(self.assist.plan_calls)
+
+        second = self.call("POST", "/api/visual/project/scenes",
+                           {"projectId": self.project_id, "requirement": "雨夜送餐",
+                            "shots": 2})
+        self.assertEqual(second.payload["cached"], True)
+        self.assertEqual(second.payload["fingerprint"], first.payload["fingerprint"])
+        self.assertEqual(second.payload["count"], first.payload["count"])
+        self.assertEqual(len(self.assist.plan_calls), calls_after_first)  # 没再问模型
+
+    def test_cut_fingerprint_changes_with_source(self) -> None:
+        one = self.call("POST", "/api/visual/project/scenes",
+                        {"projectId": self.project_id, "requirement": "雨夜送餐",
+                         "shots": 2}).payload
+        two = self.call("POST", "/api/visual/project/scenes",
+                        {"projectId": self.project_id, "requirement": "雨夜送餐（改）",
+                         "shots": 2}).payload
+        self.assertNotEqual(one["fingerprint"], two["fingerprint"])
+        self.assertFalse(two["cached"])
+
+    def test_force_bypasses_cache(self) -> None:
+        self.call("POST", "/api/visual/project/scenes",
+                  {"projectId": self.project_id, "requirement": "雨夜送餐", "shots": 2})
+        forced = self.call("POST", "/api/visual/project/scenes",
+                           {"projectId": self.project_id, "requirement": "雨夜送餐",
+                            "shots": 2, "force": True})
+        self.assertFalse(forced.payload["cached"])
+
+    def test_prepare_cache_hit(self) -> None:
+        first = self.call("POST", "/api/visual/project/prepare",
+                          {"projectId": self.project_id, "requirement": "雨夜送餐",
+                           "shots": 2})
+        second = self.call("POST", "/api/visual/project/prepare",
+                           {"projectId": self.project_id, "requirement": "雨夜送餐",
+                            "shots": 2})
+        self.assertFalse(first.payload["cached"])
+        self.assertTrue(second.payload["cached"])
+        self.assertEqual([stage["name"] for stage in second.payload["stages"]], ["cache"])
+        self.assertEqual(second.payload["summary"]["count"], first.payload["summary"]["count"])
 
     def test_prepare_uses_llm_and_persists(self) -> None:
         resp = self.call("POST", "/api/visual/project/prepare",
