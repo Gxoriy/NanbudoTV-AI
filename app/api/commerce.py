@@ -23,7 +23,7 @@ LLM_REQUIRED = "该功能需要 LLM/图像模型，当前未接入对应渠道�
 MAX_UPLOAD = 64 * 1024 * 1024
 
 
-def build(router: Router, store: DocStore) -> None:
+def build(router: Router, store: DocStore, *, assist=None) -> None:
     def _brief(record: dict) -> dict:
         return {"id": record["id"], "name": record["name"],
                 "createdAt": record["createdAt"], "updatedAt": record["updatedAt"]}
@@ -184,5 +184,74 @@ def build(router: Router, store: DocStore) -> None:
     router.register("D5", "/api/store/quote", store_quote, methods=("POST",))
     router.register("D5", "/api/store/upload", store_upload, methods=("POST",))
 
-    for path in ("/api/marketing/analyze", "/api/marketing/generate"):
-        router.register("D5", path, unavailable, methods=("GET", "POST"))
+    # ---------- 营销文案（LLM，短输出） ----------
+    def _assist_error(exc: Exception) -> Response:
+        code = str(getattr(exc, "code", "") or "llm_failed")
+        message = str(getattr(exc, "message", str(exc)))
+        status = int(getattr(exc, "status", 502))
+        if code == "upstream_closed":
+            message = ("上游中断连接（该渠道对长输出会断连）；请缩短素材或改用更短的要求。")
+        return Response.error(status, code, message)
+
+    def _marketing_input(req: Request) -> tuple[str, Response | None]:
+        body = req.json() if req.body else {}
+        text = str(body.get("text") or body.get("requirement")
+                   or body.get("product") or "").strip()
+        if not text:
+            project_id = str(body.get("projectId") or req.q1("projectId") or "")
+            if project_id:
+                record = store.get(project_id)
+                if record is not None:
+                    payload = record["payload"]
+                    text = str(payload.get("description") or payload.get("name") or "")
+        if not text:
+            return "", Response.error(400, "invalid_input", "缺少商品描述或文案素材。")
+        return text, None
+
+    def _require_assist() -> Response | None:
+        if assist is None or not assist.ready():
+            return Response.error(503, "model_unconfigured",
+                                  "LLM 未就绪：请在 data/llm-profiles.json 配置渠道。")
+        return None
+
+    def marketing_analyze(req: Request) -> Response:
+        problem = _require_assist()
+        if problem:
+            return problem
+        text, problem = _marketing_input(req)
+        if problem:
+            return problem
+        try:
+            data = assist.json_call(
+                "你是电商文案分析助手，只输出 JSON。",
+                f"商品/素材：{text[:800]}\n"
+                '输出 JSON：{"audience":"","sellingPoints":[""],"tone":"",'
+                '"keywords":[""]}')
+        except Exception as exc:  # noqa: BLE001
+            return _assist_error(exc)
+        return Response(200, {"ok": True, "analysis": data})
+
+    def marketing_generate(req: Request) -> Response:
+        problem = _require_assist()
+        if problem:
+            return problem
+        text, problem = _marketing_input(req)
+        if problem:
+            return problem
+        body = req.json() if req.body else {}
+        platform = str(body.get("platform") or "抖音")
+        try:
+            data = assist.json_call(
+                "你是电商营销文案写手，只输出 JSON。",
+                f"商品：{text[:600]}\n平台：{platform}\n"
+                '输出 JSON：{"title":"","copy":"","hashtags":[""]}')
+        except Exception as exc:  # noqa: BLE001
+            return _assist_error(exc)
+        return Response(200, {"ok": True, "marketing": data,
+                              "title": data.get("title", ""),
+                              "copy": data.get("copy", "")})
+
+    router.register("D5", "/api/marketing/analyze", marketing_analyze,
+                    methods=("GET", "POST"))
+    router.register("D5", "/api/marketing/generate", marketing_generate,
+                    methods=("GET", "POST"))

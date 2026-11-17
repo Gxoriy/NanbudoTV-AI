@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import time
 
 from .router import Request, Response, Router
 from domain.workspace.store import DocStore
@@ -21,7 +22,8 @@ KIND_NOVEL = "novel"
 LLM_REQUIRED = "该功能需要 LLM 生成，当前渠道未接入或受限（429/断连），暂不可用。"
 
 
-def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> None:
+def build(router: Router, store: DocStore, *, assist=None, task_store=None,
+          video_pipeline=None) -> None:
     def _brief(record: dict) -> dict:
         return {"id": record["id"], "name": record["name"],
                 "createdAt": record["createdAt"], "updatedAt": record["updatedAt"]}
@@ -577,7 +579,122 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
     router.register("D1", "/api/novel-screenplay/status", novel_screenplay_status)
     router.register("D1", "/api/novel-screenplay/project", novel_screenplay_project)
 
-    for path in ("/api/breakdown/motion", "/api/breakdown/motion-cancel",
-                 "/api/breakdown/motion-install", "/api/breakdown/motion-runtime",
-                 "/api/breakdown/reference-workflow"):
-        router.register("D1", path, unavailable, methods=("GET", "POST"))
+    # ---------- 动效（图生视频）与参考工作流 ----------
+    def _frame_data_uri(body: dict) -> tuple[str, Response | None]:
+        """把首帧图转成 data URI：上游只接受公网直链或 base64 内联。"""
+        import base64
+        import mimetypes
+
+        relative = str(body.get("file") or "")
+        if not relative:
+            asset_id = str(body.get("assetId") or "")
+            for kind in ("breakdown", "prompt_reverse", "rewrite"):
+                record = store.get(asset_id) if asset_id else None
+                if record is not None:
+                    relative = str(record["payload"].get("imageFile")
+                                   or record["payload"].get("sourceFile") or "")
+                    break
+        if not relative:
+            project = store.get(str(body.get("projectId") or ""))
+            if project is not None:
+                relative = str(project["payload"].get("imageFile")
+                               or project["payload"].get("sourceFile") or "")
+        path = store.file_path(relative) if relative else None
+        if path is None:
+            return "", Response.error(
+                400, "invalid_input",
+                "缺少首帧图：请传 file（工作区相对路径）或 assetId。")
+        if path.stat().st_size > 10 * 1024 * 1024:
+            return "", Response.error(413, "too_large", "首帧图超过 10MB 上限。")
+        mime = mimetypes.guess_type(path.name)[0] or "image/png"
+        encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+        return f"data:{mime};base64,{encoded}", None
+
+    def motion_start(req: Request) -> Response:
+        """动效 = 首帧图 + 运镜提示词 → 视频（远端引擎，异步任务）。"""
+        if video_pipeline is None:
+            return Response.error(501, "model_required",
+                                  "视频模型未接入：请在 data/model-config.json 配置 videos 段。")
+        body = req.json()
+        prompt = str(body.get("prompt") or body.get("motion") or "").strip()
+        if not prompt:
+            return Response.error(400, "invalid_input", "缺少运镜提示词。")
+        data_uri, problem = _frame_data_uri(body)
+        if problem:
+            return problem
+        result = video_pipeline.start(
+            "motion", prompt=prompt, project_id=str(body.get("projectId") or ""),
+            duration=str(body.get("seconds") or "") or None,
+            aspect_ratio=str(body.get("aspectRatio") or "") or None,
+            images=[data_uri])
+        if not result.get("ok"):
+            return Response.error(int(result.get("status") or 400),
+                                  str(result.get("error") or "invalid_input"),
+                                  str(result.get("message") or ""))
+        return Response(200, {**result, "mode": "remote",
+                              "message": "已提交远端动效任务，用 /api/tasks/<id> 轮询进度。"})
+
+    def motion_runtime(_req: Request) -> Response:
+        config = getattr(video_pipeline, "config", None)
+        enabled = bool(config and config.enabled)
+        return Response(200, {
+            "ok": True, "mode": "remote", "enabled": enabled,
+            "model": getattr(config, "model", ""),
+            "baseUrl": getattr(config, "base_url", ""),
+            "message": "动效走远端视频模型（图生视频），无需本地安装 torch 权重。"
+                       if enabled else
+                       "视频模型未配置：data/model-config.json 的 videos 段为空。",
+        })
+
+    def motion_install(_req: Request) -> Response:
+        return Response(200, {"ok": True, "installed": True, "mode": "remote",
+                              "message": "远端引擎，无本地权重需要安装。"})
+
+    def motion_cancel(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        task_id = str(body.get("taskId") or body.get("id") or req.q1("taskId") or "")
+        if not task_id:
+            return Response.error(400, "invalid_input", "缺少 taskId。")
+        if task_store is None:
+            return Response.error(503, "unsupported", "任务队列未就绪。")
+        task = task_store.get(task_id)
+        if task is None:
+            return Response.error(404, "not_found", "任务不存在。")
+        try:
+            task_store.cancel(task_id)
+        except KeyError:
+            return Response.error(404, "not_found", "任务不存在。")
+        return Response(200, {"ok": True, "taskId": task_id, "canceled": True,
+                              "message": "已取消本地等待；上游任务可能仍会跑完。"})
+
+    WORKFLOW_STEPS = ("source", "analyze", "storyboard", "assets", "video", "finalize")
+
+    def reference_workflow(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        project_id = str(body.get("projectId") or req.q1("projectId") or "")
+        state = store.get_setting(f"reference_workflow:{project_id}", {}) or {}
+        if req.method == "POST" and body.get("stage"):
+            stage = str(body["stage"])
+            if stage not in WORKFLOW_STEPS:
+                return Response.error(400, "invalid_input",
+                                      f"stage 必须是 {', '.join(WORKFLOW_STEPS)} 之一。")
+            state = {**state, "stage": stage, "updatedAt": time.time(),
+                     **({"notes": body["notes"]} if "notes" in body else {})}
+            store.set_setting(f"reference_workflow:{project_id}", state)
+        stage = str(state.get("stage") or WORKFLOW_STEPS[0])
+        return Response(200, {
+            "ok": True, "projectId": project_id, "stage": stage,
+            "steps": [{"id": name, "index": index,
+                       "done": WORKFLOW_STEPS.index(stage) >= index}
+                      for index, name in enumerate(WORKFLOW_STEPS)],
+            "state": state,
+        })
+
+    router.register("D1", "/api/breakdown/motion", motion_start, methods=("POST",))
+    router.register("D1", "/api/breakdown/motion-cancel", motion_cancel, methods=("POST",))
+    router.register("D1", "/api/breakdown/motion-install", motion_install,
+                    methods=("GET", "POST"))
+    router.register("D1", "/api/breakdown/motion-runtime", motion_runtime,
+                    methods=("GET", "POST"))
+    router.register("D1", "/api/breakdown/reference-workflow", reference_workflow,
+                    methods=("GET", "POST"))

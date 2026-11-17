@@ -134,6 +134,103 @@ class RewriteRoutesTest(unittest.TestCase):
         self.assertEqual(resp.payload["error"], "model_unconfigured")
 
 
+class MotionRoutesTest(unittest.TestCase):
+    """动效（图生视频）与参考工作流：不联网，验证参数与状态机。"""
+
+    class FakePipeline:
+        config = type("Cfg", (), {"enabled": True, "model": "seedance-2.0-anci",
+                                  "base_url": "https://api.lk888.ai"})()
+
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        def start(self, kind, **kwargs):  # noqa: ANN001, ANN003
+            self.calls.append({"kind": kind, **kwargs})
+            return {"ok": True, "taskId": "task-9", "mode": "remote"}
+
+        def observe(self, task_id: str):  # noqa: ANN001
+            return {"id": task_id, "state": "running"}
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.store = DocStore(self.root / "workspace.db", files_root=self.root / "files")
+        self.pipeline = self.FakePipeline()
+        from infra.tasks import TaskStore
+
+        self.tasks = TaskStore(self.root / "tasks.db")
+        self.router = Router()
+        rewrite_api.build(self.router, self.store, task_store=self.tasks,
+                          video_pipeline=self.pipeline)
+
+    def tearDown(self) -> None:
+        self.tasks.close()
+        self.store.close()
+        self._tmp.cleanup()
+
+    def call(self, method: str, path: str, body: dict | None = None):
+        parsed = urlparse(path)
+        raw = json.dumps(body).encode() if body is not None else b""
+        return self.router.dispatch(Request(
+            method=method, path=path, query=parse_query(parsed.query),
+            headers={"content-type": "application/json"} if body is not None else {},
+            body=raw))
+
+    def test_runtime_reports_remote_engine(self) -> None:
+        body = self.call("GET", "/api/breakdown/motion-runtime").payload
+        self.assertTrue(body["enabled"])
+        self.assertEqual(body["mode"], "remote")
+        self.assertEqual(body["model"], "seedance-2.0-anci")
+
+    def test_install_is_noop_for_remote(self) -> None:
+        body = self.call("POST", "/api/breakdown/motion-install", {}).payload
+        self.assertTrue(body["installed"])
+        self.assertIn("远端", body["message"])
+
+    def test_motion_requires_prompt_and_frame(self) -> None:
+        self.assertEqual(self.call("POST", "/api/breakdown/motion", {}).status, 400)
+        self.assertEqual(self.call("POST", "/api/breakdown/motion",
+                                   {"prompt": "镜头推进"}).status, 400)
+
+    def test_motion_converts_frame_to_data_uri(self) -> None:
+        relative = self.store.save_file("frames", "f.png", b"\x89PNG\r\n")
+        resp = self.call("POST", "/api/breakdown/motion",
+                         {"projectId": "p1", "file": relative,
+                          "prompt": "镜头缓慢推进", "seconds": "5"})
+        self.assertEqual(resp.status, 200, resp.payload)
+        self.assertEqual(resp.payload["mode"], "remote")
+        call = self.pipeline.calls[0]
+        self.assertTrue(call["images"][0].startswith("data:image/png;base64,"))
+        self.assertEqual(call["duration"], "5")
+
+    def test_motion_cancel_unknown_task(self) -> None:
+        self.assertEqual(self.call("POST", "/api/breakdown/motion-cancel",
+                                   {"taskId": "nope"}).status, 404)
+        self.assertEqual(self.call("POST", "/api/breakdown/motion-cancel", {}).status, 400)
+
+    def test_motion_cancel_existing_task(self) -> None:
+        task = self.tasks.create("visual.motion", "D1", {"prompt": "x"})
+        resp = self.call("POST", "/api/breakdown/motion-cancel", {"taskId": task.id})
+        self.assertEqual(resp.status, 200)
+        self.assertTrue(resp.payload["canceled"])
+
+    def test_reference_workflow_state_machine(self) -> None:
+        body = self.call("GET", "/api/breakdown/reference-workflow?projectId=p1").payload
+        self.assertEqual(body["stage"], "source")
+        self.assertEqual(len(body["steps"]), 6)
+        self.assertFalse(body["steps"][1]["done"])
+
+        advanced = self.call("POST", "/api/breakdown/reference-workflow",
+                             {"projectId": "p1", "stage": "storyboard"}).payload
+        self.assertEqual(advanced["stage"], "storyboard")
+        self.assertTrue(advanced["steps"][0]["done"])
+        self.assertTrue(advanced["steps"][2]["done"])
+        self.assertFalse(advanced["steps"][3]["done"])
+
+        self.assertEqual(self.call("POST", "/api/breakdown/reference-workflow",
+                                   {"projectId": "p1", "stage": "bogus"}).status, 400)
+
+
 class FakeAssist:
     def __init__(self, payload: dict | None = None, text: str = "改写后的正文") -> None:
         self.payload = payload or {}

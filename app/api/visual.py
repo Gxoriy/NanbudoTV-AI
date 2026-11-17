@@ -40,8 +40,8 @@ def build(router: Router, service: VisualService) -> None:
     def project_delete(req: Request) -> Response:
         return Response(200, service.delete_project(req.json()))
 
-    def project_scenes(req: Request) -> Response:
-        return Response(200, service.scenes(req.json()))
+    # 分镜生成已移至 visual_stage.py（需要 LLM），这里不再注册，
+    # 否则同路径的兜底实现会抢在真实实现之前命中。
 
     router.register("D2", "/api/visual/styles", styles)
     router.register("D2", "/api/visual/style", style_item)
@@ -51,4 +51,4 @@ def build(router: Router, service: VisualService) -> None:
     router.register("D2", "/api/visual/project/create", project_create, methods=("POST",))
     router.register("D2", "/api/visual/settings", project_settings, methods=("POST",))
     router.register("D2", "/api/visual/project/delete", project_delete, methods=("POST",))
-    router.register("D2", "/api/visual/project/scenes", project_scenes, methods=("POST",))
+    # project/scenes 由 visual_stage.py 注册（需要 LLM 规划）

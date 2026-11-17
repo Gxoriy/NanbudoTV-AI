@@ -448,15 +448,5 @@ def build(router: Router, service: VisualService, library, *,
     router.register("D2", "/api/visual/asset/generate", asset_generate,
                     methods=("GET", "POST"))
 
-    # ---------- 注册：需要模型（明确 501） ----------
-    for path in ("/api/visual/project/source", "/api/visual/project/prepare",
-                 "/api/visual/project/scenes",
-                 "/api/visual/assets/analyze", "/api/visual/assets/delete",
-                 "/api/visual/cut-storyboard",
-                 "/api/visual/episode-cut", "/api/visual/script-storyboard", "/api/visual/episode/video/reset",
-                 "/api/visual/episode/settings", "/api/visual/episode/state",
-                 "/api/visual/episode/prompt", "/api/visual/episode/references",
-                 "/api/visual/video-preview", "/api/visual/archive",
-                 "/api/visual/download", "/api/visual/macro/state",
-                 "/api/visual/macro/quote", "/api/visual/macro/submit"):
-        router.register("D2", path, unavailable, methods=("GET", "POST"))
+    # 分镜/剧集/成片这 16 条已由 visual_stage.py 真实实现；
+    # macro 系列由 visual_tail.py 实现。这里不再注册兜底，避免同路径被 501 抢先命中。

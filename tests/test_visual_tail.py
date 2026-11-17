@@ -77,7 +77,8 @@ class TailRoutesTest(unittest.TestCase):
         self.assertEqual(body["kept"], 1)
 
     def test_macro_state_roundtrip_and_video_gate(self) -> None:
-        saved = self.call("POST", "/api/visual/macro/submit",
+        # 卡片草稿沿用 macro_save：写状态、读得回来
+        saved = self.call("POST", "/api/visual/macro/card/draft",
                           {"projectId": "p1", "stage": "cards"}).payload
         self.assertEqual(saved["state"]["stage"], "cards")
         state = self.call("GET", "/api/visual/macro/state?projectId=p1").payload
@@ -86,9 +87,37 @@ class TailRoutesTest(unittest.TestCase):
         quote = self.call("POST", "/api/visual/macro/quote", {})
         self.assertEqual(quote.payload["estimatedPoints"], 0.0)
 
+        # 未注入视频管线时，提交必须明确 501，而不是假装排了任务
         submit = self.call("POST", "/api/visual/macro/media/submit", {})
         self.assertEqual(submit.status, 501)
         self.assertEqual(submit.payload["error"], "model_required")
+
+    def test_macro_submit_uses_video_pipeline(self) -> None:
+        class FakePipeline:
+            config = None
+
+            def __init__(self) -> None:
+                self.calls: list[dict] = []
+
+            def start(self, kind, **kwargs):  # noqa: ANN001, ANN003
+                self.calls.append({"kind": kind, **kwargs})
+                return {"ok": True, "taskId": "task-1", "duration": kwargs.get("duration")}
+
+            def observe(self, task_id: str):  # noqa: ANN001
+                return {"id": task_id, "state": "running"}
+
+        pipeline = FakePipeline()
+        router = Router()
+        visual_tail.build(router, self.service, self.library, store=self.workspace,
+                          assist=None, video_pipeline=pipeline)
+        resp = router.dispatch(Request(
+            method="POST", path="/api/visual/macro/media/submit", query={},
+            headers={"content-type": "application/json"},
+            body=json.dumps({"projectId": "p1", "prompt": "海边日落"}).encode()))
+        self.assertEqual(resp.status, 200, resp.payload)
+        self.assertEqual(resp.payload["taskId"], "task-1")
+        self.assertEqual(pipeline.calls[0]["kind"], "macro")
+        self.assertEqual(pipeline.calls[0]["prompt"], "海边日落")
 
     def test_canvas_assistant_without_llm(self) -> None:
         resp = self.call("POST", "/api/canvas/assistant/start", {"prompt": "做一段"})

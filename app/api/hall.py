@@ -11,6 +11,9 @@ import mimetypes
 import pathlib
 import re
 
+import urllib.error
+import urllib.request
+
 from .router import Request, Response, Router
 from domain.workspace.store import DocStore
 from infra.browser import probe as browser_probe
@@ -134,6 +137,9 @@ def build(router: Router, store: DocStore, *, downloads_root: pathlib.Path,
     def watch_status(_req: Request) -> Response:
         return Response(200, watcher.status())
 
+    def _runner():
+        return analyze_runner or analyze
+
     def _browse_call(fn, *args, **kwargs):
         """返回 (成功?, 结果)；失败时结果是 Response。"""
         try:
@@ -178,7 +184,7 @@ def build(router: Router, store: DocStore, *, downloads_root: pathlib.Path,
         limit = max(1, min(int(body.get("limit") or 1), 5))
         if not url:
             return Response.error(400, "invalid_input", "缺少 url。")
-        analyzed = _browse_call(analyze, url)
+        analyzed = _browse_call(_runner(), url)
         if not analyzed[0]:
             return analyzed[1]
         saved = []
@@ -237,5 +243,55 @@ def build(router: Router, store: DocStore, *, downloads_root: pathlib.Path,
                     methods=("GET", "POST"))
     router.register("D6", "/api/hall/series/transcribe", series_transcribe,
                     methods=("GET", "POST"))
-    for path in ("/api/link/cover", "/api/link/stream"):
-        router.register("D6", path, browser_required, methods=("GET", "POST"))
+
+    def link_cover(req: Request) -> Response:
+        """取封面：用浏览器解析出 og:image/首图，再由后端下载转发（绕开防盗链）。"""
+        url = str(req.q1("url") or "").strip()
+        if not url:
+            return Response.error(400, "invalid_input", "缺少 url。")
+        analyzed = _browse_call(_runner(), url)
+        if not analyzed[0]:
+            return analyzed[1]
+        info = analyzed[1]
+        cover = info.cover or (info.images[0] if info.images else "")
+        if not cover:
+            return Response.error(404, "not_found", "页面里没有找到封面图。")
+        try:
+            data = download_bytes(cover, referer=url, timeout=120)
+        except Exception as exc:  # noqa: BLE001
+            return Response.error(502, "download_failed", f"封面下载失败: {exc}")
+        suffix = cover.split("?")[0].rsplit(".", 1)[-1].lower()
+        content_type = {"png": "image/png", "webp": "image/webp",
+                        "gif": "image/gif"}.get(suffix, "image/jpeg")
+        return Response(200, None, {}, raw=data, content_type=content_type)
+
+    def link_stream(req: Request) -> Response:
+        """转发流：带 Range 透传，前端拖动进度条不会整段重下。"""
+        url = str(req.q1("url") or "").strip()
+        if not url:
+            return Response.error(400, "invalid_input", "缺少 url。")
+        if not url.startswith(("http://", "https://")):
+            return Response.error(400, "invalid_input", "只支持 http/https 直链。")
+        range_header = req.headers.get("range") or ""
+        headers = {"User-Agent": "Mozilla/5.0", "Accept": "*/*"}
+        if range_header:
+            headers["Range"] = range_header
+        try:
+            upstream = urllib.request.urlopen(
+                urllib.request.Request(url, headers=headers), timeout=120)
+        except urllib.error.HTTPError as exc:
+            return Response.error(502, "upstream_error", f"上游返回 {exc.code}")
+        except Exception as exc:  # noqa: BLE001
+            return Response.error(502, "network", f"连接失败: {exc}")
+        with upstream:
+            data = upstream.read()
+            status = upstream.status
+            content_type = upstream.headers.get("Content-Type") or "video/mp4"
+            out_headers = {"Accept-Ranges": "bytes"}
+            content_range = upstream.headers.get("Content-Range")
+            if content_range:
+                out_headers["Content-Range"] = content_range
+        return Response(status, None, out_headers, raw=data, content_type=content_type)
+
+    router.register("D6", "/api/link/cover", link_cover, methods=("GET", "POST"))
+    router.register("D6", "/api/link/stream", link_stream, methods=("GET", "POST"))

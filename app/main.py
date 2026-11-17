@@ -37,6 +37,7 @@ from app.api import subtitle as subtitle_api
 from app.api import system as system_api
 from app.api import visual as visual_api
 from app.api import visual_extra
+from app.api import visual_stage
 from app.api import visual_tail
 from app.api import voice as voice_api
 from domain.license import LicenseService, LicenseStore
@@ -348,12 +349,15 @@ def main(argv: list[str] | None = None) -> int:
                       assist=TextAssist(data_dir / "llm-profiles.json"),
                       video_pipeline=video_pipeline)
     history_api.build(router, workspace, outputs_root=data_dir / "outputs")
-    rewrite_api.build(router, workspace,
+    rewrite_api.build(router, workspace, video_pipeline=video_pipeline,
                       assist=TextAssist(data_dir / "llm-profiles.json"),
                       task_store=store)
-    commerce_api.build(router, workspace)
+    commerce_api.build(router, workspace,
+                       assist=TextAssist(data_dir / "llm-profiles.json"))
     hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
     storage_api.build(router, workspace, data_dir=data_dir, install_root=ROOT)
+    visual_stage.build(router, visual_service, visual_library,
+                       assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
     visual_extra.build(router, visual_service, visual_library,
                         video_pipeline=video_pipeline,
                        images=ImageConfig.load(data_dir / "model-config.json"),

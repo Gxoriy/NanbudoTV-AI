@@ -353,7 +353,7 @@ def build(router: Router, service: VisualService, library, *,
                     episode_settings_apply_all, methods=("POST",))
 
     router.register("D2", "/api/visual/macro/state", macro_state)
-    for path in ("/api/visual/macro/submit", "/api/visual/macro/card/draft",
+    for path in ("/api/visual/macro/card/draft",
                  "/api/visual/macro/card/reference", "/api/visual/macro/card/source",
                  "/api/visual/macro/regroup/apply", "/api/visual/macro/regroup/preview",
                  "/api/visual/macro/return-draft", "/api/visual/macro/pipeline-return",

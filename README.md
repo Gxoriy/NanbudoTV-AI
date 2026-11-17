@@ -14,15 +14,15 @@
 
 | 域 | 覆盖 | 说明 |
 |---|---|---|
-| D1 改写 | 55/55 | 项目 CRUD、媒体/音频、上传/转画布、LLM 生成类（流式）、恢复类 |
-| D2 视觉 | 69/113（61%） | 样式/项目/画布/素材库/角色/偏好全部离线可用；需模型的路由明确 501 `model_required` |
+| D1 改写 | 55/55 | 项目 CRUD、媒体/音频、上传/转画布、LLM 生成类（流式）、动效（图生视频）、参考工作流状态机 |
+| D2 视觉 | 113/113 | 样式/项目/画布/素材/角色/剧集/分镜/出图/出视频全部可用；分镜与营销走真实 LLM |
 | D3 字幕 | 21/21 | 导入/媒体/拆轨/修补/检测/报价/云端提交；`transcribe` 已接本地 faster-whisper |
 | D4 配音 | 7/7 | 音色目录/试听（SAPI 实时合成）/整片配音任务 |
 | S1 任务/历史 | 7/7 | 任务快照/明细/取消、历史增删改查与保留策略 |
 | S2 会话/授权 | 7/7 | session status/login、client/config、creation/submission、license 三件套 |
 | S3 运行时 | 7/7 | health、runtime、model-profiles（含 save/test）、download |
 | S5 外壳 | 6/7 | shutdown、tutorials、tutorial-video、update/*（明确 501） |
-| D5 电商 | 18/18 | 展示柜/项目/批次/工作台/门店 CRUD 已实现，营销生成 501 |
+| D5 电商 | 18/18 | 展示柜/项目/批次/工作台/门店 CRUD + 营销分析/文案（LLM） |
 | D6 采集 | 17/17 | 下载记录/流/剧集/榜单已实现；link/analyze 走 Node Playwright 真采集；其余浏览器路由 501 |
 
 未迁移的路由统一返回 `501 {"error":"not_migrated"}`，不会静默 404 或假装成功。
@@ -63,7 +63,7 @@ ffmpeg -version
 ### 2.3 验收与门禁
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests   # 221 项
+.\.venv\Scripts\python.exe -m unittest discover -s tests   # 252 项
 .\.venv\Scripts\python.exe tools\check_rules.py            # 行长/命名/freeze/依赖方向
 .\.venv\Scripts\python.exe tests\smoke\check_contract.py   # 起真进程对比旧样本
 .\.venv\Scripts\python.exe tools\audit_coverage.py         # 覆盖率

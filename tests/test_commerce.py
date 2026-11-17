@@ -97,11 +97,48 @@ class CommerceRoutesTest(unittest.TestCase):
         self.assertEqual(resp.raw, b"IMG")
         self.assertEqual(resp.content_type, "image/png")
 
-    def test_marketing_routes_are_explicit_501(self) -> None:
+    def test_marketing_without_llm_is_503(self) -> None:
         for path in ("/api/marketing/analyze", "/api/marketing/generate"):
-            resp = self.call("POST", path, {})
-            self.assertEqual(resp.status, 501, path)
-            self.assertEqual(resp.payload["error"], "model_required")
+            resp = self.call("POST", path, {"text": "保温杯"})
+            self.assertEqual(resp.status, 503, path)
+            self.assertEqual(resp.payload["error"], "model_unconfigured")
+
+    def test_marketing_with_llm_returns_copy(self) -> None:
+        class FakeAssist:
+            def ready(self) -> bool:
+                return True
+
+            def json_call(self, system: str, user: str) -> dict:  # noqa: ARG002
+                if "分析" in system:
+                    return {"audience": "上班族", "sellingPoints": ["保温12小时"],
+                            "tone": "利落", "keywords": ["保温杯"]}
+                return {"title": "12小时不凉", "copy": "早上灌的热水，下班还烫",
+                        "hashtags": ["#保温杯"]}
+
+        router = Router()
+        commerce_api.build(router, self.store, assist=FakeAssist())
+        resp = router.dispatch(Request(
+            method="POST", path="/api/marketing/generate", query={},
+            headers={"content-type": "application/json"},
+            body=json.dumps({"text": "保温杯", "platform": "抖音"}).encode()))
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.payload["title"], "12小时不凉")
+        self.assertEqual(resp.payload["marketing"]["hashtags"], ["#保温杯"])
+
+    def test_marketing_requires_material(self) -> None:
+        class FakeAssist:
+            def ready(self) -> bool:
+                return True
+
+            def json_call(self, system: str, user: str) -> dict:  # noqa: ARG002
+                return {}
+
+        router = Router()
+        commerce_api.build(router, self.store, assist=FakeAssist())
+        resp = router.dispatch(Request(
+            method="POST", path="/api/marketing/analyze", query={},
+            headers={"content-type": "application/json"}, body=b"{}"))
+        self.assertEqual(resp.status, 400)
 
 
 if __name__ == "__main__":

@@ -143,6 +143,90 @@ class ProbeTest(unittest.TestCase):
         self.assertTrue(status.problems)
         self.assertIn(str(tmp_missing), status.public()["root"])
 
+class LinkMediaTest(unittest.TestCase):
+    """封面转发与 Range 透传：不联网，靠假 analyze / 假 urlopen 验证协议细节。"""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.store = DocStore(self.root / "workspace.db", files_root=self.root / "files")
+
+    def tearDown(self) -> None:
+        self.store.close()
+        self._tmp.cleanup()
+    def _router_with(self, runner) -> Router:
+        router = Router()
+        hall_api.build(router, self.store, downloads_root=self.root / "downloads",
+                       analyze_runner=runner)
+        return router
+
+    def _dispatch(self, router: Router, method: str, path: str,
+                  headers: dict[str, str] | None = None):
+        parsed = urlparse(path)
+        return router.dispatch(Request(method=method, path=path,
+                                       query=parse_query(parsed.query),
+                                       headers={k.lower(): v for k, v in
+                                                (headers or {}).items()},
+                                       body=b""))
+
+    def test_link_cover_proxies_first_image(self) -> None:
+        from unittest import mock
+
+        from infra.browser.runner import AnalyzeResult
+        router = self._router_with(lambda url: AnalyzeResult(
+            url=url, title="页", cover="https://cdn.example/a.png"))
+        with mock.patch("app.api.hall.download_bytes", return_value=b"\x89PNG\r\n") as dl:
+            resp = self._dispatch(router, "GET",
+                                  "/api/link/cover?url=https://example.com/p")
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.content_type, "image/png")
+        self.assertEqual(resp.raw, b"\x89PNG\r\n")
+        self.assertEqual(dl.call_args.kwargs["referer"], "https://example.com/p")
+
+    def test_link_cover_without_image_is_404(self) -> None:
+        from infra.browser.runner import AnalyzeResult
+        router = self._router_with(lambda url: AnalyzeResult(url=url, title="空页"))
+        resp = self._dispatch(router, "GET", "/api/link/cover?url=https://example.com")
+        self.assertEqual(resp.status, 404)
+        self.assertEqual(resp.payload["error"], "not_found")
+
+    def test_link_stream_rejects_non_http(self) -> None:
+        router = self._router_with(lambda url: None)
+        resp = self._dispatch(router, "GET", "/api/link/stream?url=ftp%3A%2F%2Fx")
+        self.assertEqual(resp.status, 400)
+
+    def test_link_stream_passes_range_through(self) -> None:
+        from unittest import mock
+
+        class FakeHeaders(dict):
+            def get(self, key, default=None):  # noqa: ANN001
+                return dict.get(self, key, default)
+
+        class FakeUpstream:
+            status = 206
+            headers = FakeHeaders({"Content-Type": "video/mp4",
+                                   "Content-Range": "bytes 0-3/100"})
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):  # noqa: ANN002
+                return False
+
+            def read(self):
+                return b"DATA"
+
+        router = self._router_with(lambda url: None)
+        with mock.patch("urllib.request.urlopen", return_value=FakeUpstream()) as opener:
+            resp = self._dispatch(router, "GET", "/api/link/stream?url=https://cdn/v.mp4",
+                                  {"range": "bytes=0-3"})
+        self.assertEqual(resp.status, 206)
+        self.assertEqual(resp.raw, b"DATA")
+        self.assertEqual(resp.headers["Content-Range"], "bytes 0-3/100")
+        sent = opener.call_args.args[0]
+        self.assertEqual(sent.get_header("Range"), "bytes=0-3")
+
+
 
 if __name__ == "__main__":
     unittest.main()
