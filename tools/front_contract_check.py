@@ -1,6 +1,7 @@
 """前端调用面 vs 内核路由表：找出"页面会调、内核没有"的接口。
 
-前端 JS 里的路径是从页面上扒的（写死 + 模板拼接），比 route-spec 更贴近真实使用。
+扫描 static/ 下**所有** html 与 js（页面可能各自加载不同脚本），
+再和内核 /api/_routes 比对：精确路由要求全等，只有"非 exact 且以 / 结尾"才算前缀。
 """
 
 from __future__ import annotations
@@ -13,21 +14,26 @@ import sys
 import tempfile
 import time
 import urllib.request
+from collections import defaultdict
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-PAGES = ("visual_page.js", "app.js", "subtitle_removal245.js", "video_voice.js",
-         "ecommerce259.js", "login.js", "user_guide247.js")
+STATIC = ROOT / "static"
 
 
 def front_paths() -> dict[str, set[str]]:
+    """逐文件收集 /api/... 字面量（去掉 query 与结尾斜杠）。"""
     found: dict[str, set[str]] = {}
-    for name in PAGES:
-        path = ROOT / "static" / name
-        if not path.exists():
+    for path in sorted(STATIC.glob("*")):
+        if path.suffix.lower() not in (".js", ".html"):
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
-        items = set(re.findall(r"/api/[A-Za-z0-9_\-/]+", text))
-        found[name] = {item.rstrip("/") for item in items}
+        items = set()
+        for raw in re.findall(r"/api/[A-Za-z0-9_\-/]*", text):
+            clean = raw.split("?")[0].rstrip("/")
+            if clean and clean != "/api":
+                items.add(clean)
+        if items:
+            found[path.name] = items
     return found
 
 
@@ -50,7 +56,6 @@ def main() -> int:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/_routes", timeout=15) as resp:
             rows = json.loads(resp.read())["routes"]
         exact = {row["path"].rstrip("/") for row in rows}
-        # 只有"以 / 结尾且不是 exact"的注册才是前缀匹配；exact 路由必须完全相等
         prefixes = [row["path"] for row in rows
                     if row["path"].endswith("/") and not row.get("exact")]
 
@@ -59,25 +64,26 @@ def main() -> int:
                 return True
             if any(path.startswith(item) for item in prefixes):
                 return True
-            # 前端常见写法：'/api/local-storage/' + ('settings'|'retry')
-            # 正则只能抓到基路径，只要内核有以它开头的精确路由就算覆盖
+            # 前端常见写法：'/api/voices/' + 'import'
             return any(item.startswith(path + "/") for item in exact)
 
-        total_missing = 0
-        ignore = {"/api/v1", "/api/v2", "/api/v3"}      # 模型渠道的 baseUrl，不是内核路由
-        for page, paths in front_paths().items():
-            # 去掉"只是别的前缀"的伪路径（如 /api/original 来自 /api/original/recommend）
+        ignore = {"/api/v1", "/api/v2", "/api/v3"}
+        missing: dict[str, set[str]] = defaultdict(set)
+        for name, paths in front_paths().items():
             pseudo = {p for p in paths if p not in ignore
                       and any(other != p and other.startswith(p + "/") for other in paths)}
-            missing = sorted(p for p in paths
-                             if p.startswith("/api/") and p not in ignore
-                             and p not in pseudo and not covered(p))
-            if missing:
-                total_missing += len(missing)
-                print(f"\n{page} 缺失 {len(missing)}:")
-                for item in missing:
-                    print("  ", item)
-        print(f"\n合计缺失 {total_missing} 条")
+            for item in paths:
+                if item in ignore or item in pseudo:
+                    continue
+                if not covered(item):
+                    missing[item].add(name)
+
+        if not missing:
+            print("\n合计缺失 0 条")
+        else:
+            print(f"\n合计缺失 {len(missing)} 条：")
+            for path in sorted(missing):
+                print(f"  {path:<46} 出现在 {', '.join(sorted(missing[path]))[:70]}")
         urllib.request.urlopen(urllib.request.Request(
             f"http://127.0.0.1:{port}/api/shutdown", data=b"{}", method="POST"), timeout=10)
         return 0

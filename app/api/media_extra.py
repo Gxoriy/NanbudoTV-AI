@@ -42,6 +42,21 @@ def build(router: Router, store: DocStore, *, data_dir: pathlib.Path,
         return Response(200, {"ok": True, "file": store.save_file(folder, name, req.body),
                               "size": len(req.body)})
 
+    def voices_import(req: Request) -> Response:
+        """把已有音色保存成"我的音色"：只做登记，不复制音频文件。"""
+        body = req.json() if req.body else {}
+        voice_id = str(body.get("voiceId") or body.get("id") or "").strip()
+        if not voice_id:
+            return Response.error(400, "invalid_input", "缺少 voiceId。")
+        name = str(body.get("name") or "").strip() or voice_id.split(":")[-1]
+        record = store.create("voice_profile", name,
+                              {"voiceId": voice_id, "source": "import"})
+        return Response(200, {"ok": True, "voice": {"id": record["id"], "name": name,
+                                                    "voiceId": voice_id,
+                                                    "createdAt": record["createdAt"]}})
+
+    router.register("D4", "/api/voices/import", voices_import, methods=("POST",))
+
     # ---------- D3：ASR / 图片水印 / 通用转写 ----------
     def asr_status(_req: Request) -> Response:
         from infra.asr import DEFAULT_MODEL, available  # noqa: PLC0415

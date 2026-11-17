@@ -13,6 +13,7 @@ from domain.prompts import compose
 import json
 import time
 
+from . import rewrite_extra
 from .router import Request, Response, Router
 from domain.workspace.store import DocStore
 
@@ -251,14 +252,15 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     router.register("D1", "/api/breakdown/records", breakdown_records)
     router.register("D1", "/api/breakdown/reference-crop", breakdown_reference,
                     methods=("POST",))
-    router.register("D1", "/api/breakdown/quote", _free_quote, methods=("POST",))
+    router.register("D1", "/api/breakdown/quote", _free_quote, methods=("GET", "POST"))
     router.register("D1", "/api/prompt-reverse/upload", reverse_upload, methods=("POST",))
     router.register("D1", "/api/prompt-reverse/media", reverse_media)
     router.register("D1", "/api/prompt-reverse/to-canvas", reverse_to_canvas,
                     methods=("POST",))
-    router.register("D1", "/api/prompt-reverse/quote", _free_quote, methods=("POST",))
-    router.register("D1", "/api/script-alignment/quote", _free_quote, methods=("POST",))
-    router.register("D1", "/api/novel-screenplay/quote", _free_quote, methods=("POST",))
+    router.register("D1", "/api/prompt-reverse/quote", _free_quote,
+                    methods=("GET", "POST"))
+    router.register("D1", "/api/script-alignment/quote", _free_quote, methods=("GET", "POST"))
+    router.register("D1", "/api/novel-screenplay/quote", _free_quote, methods=("GET", "POST"))
     router.register("D1", "/api/story-workflow/", story_list)
     router.register("D1", "/api/source/profile", source_profile)
     router.register("D1", "/api/source/profile/save", source_profile_save,
@@ -508,6 +510,8 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     router.register("D1", "/api/breakdown/", breakdown_list, exact=True)
     router.register("D1", "/api/prompt-reverse/", reverse_list, exact=True)
 
+    rewrite_extra.build(router, store, assist=assist, task_store=task_store)
+
     # ---------- 小说转剧本（长文本分卷 + 后台任务） ----------
     def novel_screenplay_start(req: Request) -> Response:
         body = req.json()
@@ -580,6 +584,20 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
 
     router.register("D1", "/api/novel-screenplay/status", novel_screenplay_status)
     router.register("D1", "/api/novel-screenplay/project", novel_screenplay_project)
+
+    def novel_projects_root(req: Request) -> Response:
+        """前端把列表基址写成 /api/novel-projects250（不带斜杠）。"""
+        if req.method == "POST":
+            body = req.json() if req.body else {}
+            name = str(body.get("name") or "未命名小说")
+            record = store.create("novel_project", name,
+                                  {"text": str(body.get("text") or "")})
+            return Response(200, {"ok": True, "project": record})
+        items = [_brief(row) for row in store.list("novel_project", limit=100)]
+        return Response(200, {"ok": True, "projects": items, "count": len(items)})
+
+    router.register("D1", "/api/novel-projects250", novel_projects_root,
+                    methods=("GET", "POST"), exact=True)
 
     # ---------- 成稿生成（前端主链路：/api/rewrite/generate 与 /api/original/generate） ----------
     def _generate(req: Request, mode: str) -> Response:

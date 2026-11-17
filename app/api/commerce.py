@@ -167,12 +167,14 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
 
     router.register("D5", "/api/ecommerce-showcase", showcase)
     router.register("D5", "/api/ecommerce-showcase-media", showcase_media)
-    router.register("D5", "/api/ecommerce/", ecom_list)
+    # 这三个只做"根路径"列表；子动作（create/catalog/quote/…）由 compat.py 的动作分派器处理，
+    # 所以必须 exact，否则会把 /api/ecommerce/create 这类请求全吞成列表。
+    router.register("D5", "/api/ecommerce/", ecom_list, exact=True)
+    router.register("D5", "/api/ecommerce/batch/", batch_list, exact=True)
+    router.register("D5", "/api/ecommerce/workbench/", workbench, exact=True)
     router.register("D5", "/api/ecommerce/save", ecom_save, methods=("POST",))
     router.register("D5", "/api/ecommerce/upload", ecom_upload, methods=("POST",))
-    router.register("D5", "/api/ecommerce/batch/", batch_list)
     router.register("D5", "/api/ecommerce/batch/archive", batch_archive, methods=("POST",))
-    router.register("D5", "/api/ecommerce/workbench/", workbench)
     router.register("D5", "/api/ecommerce/workbench/save", workbench_save,
                     methods=("POST",))
     router.register("D5", "/api/ecommerce/workbench/media", workbench_media)

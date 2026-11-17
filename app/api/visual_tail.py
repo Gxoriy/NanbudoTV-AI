@@ -25,7 +25,8 @@ VIDEO_REQUIRED = "该功能需要视频生成模型（kling/seedance），当前
 
 
 def build(router: Router, service: VisualService, library, *,
-          store: DocStore, assist=None, video_pipeline=None) -> None:
+          store: DocStore, assist=None, video_pipeline=None,
+          task_store=None) -> None:
     def _file(relative: str, ctype: str | None = None) -> Response:
         path = library.file_path(relative)
         if path is None:
@@ -351,6 +352,49 @@ def build(router: Router, service: VisualService, library, *,
                     methods=("POST",))
     router.register("D2", "/api/visual/episode/settings/apply-all",
                     episode_settings_apply_all, methods=("POST",))
+
+    def macro_submit(req: Request) -> Response:
+        """前端把"已确认的这一项"提交成任务，只认 {ok, taskId}。"""
+        body = req.json() if req.body else {}
+        project_id = str(body.get("projectId") or "")
+        if not project_id:
+            return Response.error(400, "invalid_input", "缺少 projectId。")
+        if task_store is None:
+            return Response.error(503, "unsupported", "任务队列未就绪。")
+        task = task_store.create("visual.macro", "D2",
+                                 {"projectId": project_id,
+                                  "quoteId": str(body.get("quoteId") or ""),
+                                  "action": str(body.get("action") or "")})
+
+        def work(task_id: str) -> None:
+            try:
+                task_store.start(task_id)
+            except KeyError:
+                return
+            try:
+                state = store.get_setting(f"macro:{project_id}", {}) or {}
+                if assist is not None and assist.ready():
+                    data = assist.json_call(
+                        "你是短剧排卡助手，只输出 JSON。",
+                        f"项目：{project_id}，已确认动作：{body.get('action') or '排卡'}\n"
+                        '输出 JSON：{"cards":[{"number":1,"seconds":5,"shot":""}],"notes":""}')
+                    state = {**state, "draft": data, "updatedAt": time.time()}
+                    store.set_setting(f"macro:{project_id}", state)
+                    task_store.succeed(task_id, {"cards": len(data.get("cards") or []),
+                                                 "state": state})
+                else:
+                    task_store.succeed(task_id, {"cards": 0, "state": state,
+                                                 "message": "LLM 未配置，已保存状态。"})
+            except Exception as exc:  # noqa: BLE001
+                task_store.fail(task_id, str(getattr(exc, "code", "internal")), str(exc))
+
+        import threading
+
+        threading.Thread(target=work, args=(task.id,), daemon=True).start()
+        return Response(200, {"ok": True, "taskId": task.id})
+
+    router.register("D2", "/api/visual/macro/submit", macro_submit,
+                    methods=("GET", "POST"))
 
     router.register("D2", "/api/visual/macro/state", macro_state)
     for path in ("/api/visual/macro/card/draft",

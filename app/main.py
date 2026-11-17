@@ -27,6 +27,7 @@ from app import APP_NAME, __version__
 from app.api import Request, Response, Router, parse_query
 from app.api import license as license_api
 from app.api import commerce as commerce_api
+from app.api import compat as compat_api
 from app.api import hall as hall_api
 from app.api import media_extra
 from app.api import history as history_api
@@ -349,11 +350,13 @@ def main(argv: list[str] | None = None) -> int:
                                    VideoConfig.load(data_dir / "model-config.json"))
     visual_tail.build(router, visual_service, visual_library, store=workspace,
                       assist=TextAssist(data_dir / "llm-profiles.json"),
-                      video_pipeline=video_pipeline)
+                      video_pipeline=video_pipeline, task_store=store)
     history_api.build(router, workspace, outputs_root=data_dir / "outputs")
     rewrite_api.build(router, workspace, video_pipeline=video_pipeline,
                       assist=TextAssist(data_dir / "llm-profiles.json"),
                       task_store=store)
+    compat_api.build(router, workspace, assist=TextAssist(data_dir / "llm-profiles.json"),
+                     task_store=store, files_root=data_dir / "workspace")
     commerce_api.build(router, workspace,
                        assist=TextAssist(data_dir / "llm-profiles.json"))
     hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
