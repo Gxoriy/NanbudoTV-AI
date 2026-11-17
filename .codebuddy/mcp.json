@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "ida-pro-mcp": {
+      "type": "stdio",
+      "command": "E:\\AdvancedTool\\python\\python.exe",
+      "args": [
+        "E:\\AdvancedTool\\python\\Lib\\site-packages\\ida_pro_mcp\\server.py"
+      ],
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      },
+      "description": "IDA Pro 9.5 逆向工具集（反编译/交叉引用/重命名/注释）。需先在 IDA 中打开目标并让 ida_mcp 插件运行（默认 http://127.0.0.1:13337）。"
+    }
+  }
+}
