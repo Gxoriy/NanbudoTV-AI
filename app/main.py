@@ -345,9 +345,14 @@ def main(argv: list[str] | None = None) -> int:
     voice_api.build(router, voice_service)
     media_extra.build(router, workspace, data_dir=data_dir,
                       voice_service=voice_service)
-    visual_api.build(router, visual_service)
+    pipeline_services: dict = {}
+    visual_api.build(router, visual_service, pipeline_services=pipeline_services)
     video_pipeline = VideoPipeline(visual_library, store,
                                    VideoConfig.load(data_dir / "model-config.json"))
+    # 节点流水线的能力来源：缺哪个，对应节点就报"缺少能力：xxx"
+    pipeline_services.update({"llm": VisualAssist(data_dir / "llm-profiles.json"),
+                              "video": video_pipeline,
+                              "assets": visual_library})
     visual_tail.build(router, visual_service, visual_library, store=workspace,
                       assist=TextAssist(data_dir / "llm-profiles.json"),
                       video_pipeline=video_pipeline, task_store=store)

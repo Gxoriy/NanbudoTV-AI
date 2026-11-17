@@ -63,7 +63,7 @@ ffmpeg -version
 ### 2.3 验收与门禁
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests   # 289 项
+.\.venv\Scripts\python.exe -m unittest discover -s tests   # 300 项
 .\.venv\Scripts\python.exe tools\check_rules.py            # 行长/命名/freeze/依赖方向
 .\.venv\Scripts\python.exe tests\smoke\check_contract.py   # 起真进程对比旧样本
 .\.venv\Scripts\python.exe tools\audit_coverage.py         # 覆盖率
@@ -109,7 +109,7 @@ data/               运行时数据（gitignore；任务库、卡密库、上传
 | 语音识别 | `/api/transcribe`（音频→文本+SRT）、`/api/asr/{status,download}` |
 | 授权 | `/api/license/{status,activate,refresh}` |
 | 配音 | `/api/voices/{catalog,quote,media}`、`/api/video-voice/{status,source,quote,generate,observe}` |
-| 视觉 | `/api/visual/{styles,style,_nodes,projects,project,settings,profile,usage,points,models,media,style/create,style/delete}` |
+| 视觉 | `/api/visual/{styles,style,_nodes,_pipeline/run,projects,project,settings,profile,usage,points,models,media,style/create,style/delete}` |
 | 画布 | `/api/canvas/{list,document,save,create,styles,upload,media,run-status,quote,saved,assets/,location,reveal,disconnect}` |
 | 电商 | /api/ecommerce-showcase、/api/ecommerce{,/save,/upload,/batch/,/workbench/*}、/api/store/{projects,create,project,save,prepare,result,quote,upload} |
 | 采集 | /api/hall/{downloads,downloads/cover,downloads/stream,episodes,rank} |

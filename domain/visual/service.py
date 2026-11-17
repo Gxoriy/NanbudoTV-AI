@@ -13,7 +13,7 @@ import pathlib
 import uuid
 from typing import Any
 
-from .nodes import Executor, NodeRegistry, default_registry
+from .nodes import Executor, NodeError, NodeRegistry, default_registry
 from .store import VisualStore
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -72,8 +72,32 @@ class VisualService:
         raise KeyError(f"样式不存在: {style_id}")
 
     def nodes(self) -> dict[str, Any]:
-        return {"ok": True,
-                "nodes": [spec.describe() for spec in self.registry.all()]}
+        """节点自省：分阶段列出节点与可用流水线（前端画进度条用）。"""
+        return self.registry.describe()
+
+    def run_pipeline(self, name: str, ctx: dict[str, Any],
+                     services: dict[str, Any] | None = None) -> dict[str, Any]:
+        """按预设流水线执行，返回 trace 与"白名单"上下文（避免把大对象回给前端）。"""
+        pipelines = self.registry.pipelines()
+        if name not in pipelines:
+            raise VisualError(400, "invalid_input",
+                              f"未知流水线: {name}（可用: {sorted(pipelines)}）")
+        context = dict(ctx)
+        if services:
+            context["_services"] = services
+        executor = Executor(self.registry)
+        try:
+            result = executor.run(pipelines[name], context)
+        except NodeError as exc:
+            # 失败时把已完成步骤一起回给前端，便于只重试失败那一段
+            return {"ok": False, "error": "node_failed", "message": str(exc),
+                    "pipeline": name, "trace": executor.summary()}
+        keys = ("sourceText", "characters", "shots", "assetsMatched", "assetsCount",
+                "cards", "cardCount", "quote", "drafts", "mediaTasks", "submitted",
+                "mediaStates", "export")
+        return {"ok": True, "pipeline": name, "steps": pipelines[name],
+                "trace": executor.summary(),
+                "context": {key: result[key] for key in keys if key in result}}
 
     def execute(self, pipeline: list[str], ctx: dict[str, Any]) -> dict[str, Any]:
         executor = Executor(self.registry)

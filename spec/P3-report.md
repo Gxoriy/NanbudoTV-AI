@@ -114,7 +114,7 @@ episode_video=501 model_required
 | 任务 | 剩余内容 |
 |---|---|
 | P3-01 收尾 | ✅ 整片配音任务已通（quote→generate→tasks→status→observe）；仅 `/api/voices/media` 试听未做 |
-| P3-02 视觉域（180 处调用） | `macro/*` 收敛为「执行器 + 节点注册表」 |
+| P3-02 视觉域（180 处调用） | ✅ 执行器 + 节点注册表已落地（9 节点 / 4 阶段 / 3 预设，见 `spec/p3-02-nodes.md`）；`macro/*` 路由逐步迁入预设 |
 | P3-03 改写域 | 提示词模板配置化，新旧输出 diff 在容差内 |
 | P3-04~07 | 电商/大厅/计费收口 |
 | P4 | 前端只加不改：免费文案、`localRepair`、detect、配音入口 |

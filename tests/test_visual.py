@@ -40,7 +40,16 @@ class RegistryTest(unittest.TestCase):
     def test_default_nodes_are_listed(self) -> None:
         body = VisualService(styles_path=ROOT / "data" / "__missing__.json").nodes()
         names = {item["name"] for item in body["nodes"]}
-        self.assertEqual(names, {"normalize", "plan"})
+        self.assertEqual(names, {
+            "source.normalize", "storyboard.plan", "assets.match", "cards.build",
+            "cards.quote", "card.draft", "media.submit", "media.observe",
+            "export.assemble"})
+        self.assertIn("macro", body["pipelines"])
+        self.assertEqual(body["total"], len(names))
+        # 每个节点都要能报出自己的阶段与依赖能力
+        for item in body["nodes"]:
+            self.assertIn(item["stage"], ("prepare", "generate", "compose", "export"))
+            self.assertIsInstance(item["requires"], list)
 
     def test_add_node_without_touching_executor(self) -> None:
         registry = NodeRegistry()
@@ -62,11 +71,69 @@ class RegistryTest(unittest.TestCase):
         with self.assertRaises(NodeError):
             Executor(default_registry()).run(["nope"], {})
 
+    def test_retry_then_succeed(self) -> None:
+        attempts = {"count": 0}
+
+        def flaky(ctx):
+            attempts["count"] += 1
+            if attempts["count"] < 3:
+                raise RuntimeError("上游抖动")
+            return {**ctx, "ok": True}
+
+        registry = NodeRegistry()
+        registry.register(NodeSpec("flaky", "prepare", flaky, retries=2))
+        ctx = Executor(registry).run(["flaky"], {})
+        self.assertTrue(ctx["ok"])
+        self.assertEqual(attempts["count"], 3)
+
+    def test_failure_keeps_trace_and_reports_node(self) -> None:
+        registry = NodeRegistry()
+        registry.register(NodeSpec("boom", "prepare",
+                                   lambda ctx: (_ for _ in ()).throw(RuntimeError("坏"))))
+        executor = Executor(registry)
+        with self.assertRaises(NodeError) as ctx_err:
+            executor.run(["boom"], {})
+        self.assertIn("boom", str(ctx_err.exception))
+        self.assertEqual(executor.summary()[0]["ok"], False)
+
+    def test_node_requires_capability(self) -> None:
+        """没有 LLM 时，storyboard 必须报"缺少能力"，而不是编一份分镜。"""
+        service = VisualService(styles_path=ROOT / "data" / "__missing__.json")
+        result = service.run_pipeline("storyboard", {"sourceText": "第一场"})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "node_failed")
+        self.assertIn("缺少能力", result["message"])
+        # 失败也要带 trace：前面的 source.normalize 已完成
+        self.assertEqual(result["trace"][0]["name"], "source.normalize")
+        self.assertTrue(result["trace"][0]["ok"])
+        self.assertFalse(result["trace"][-1]["ok"])
+
+    def test_preset_runs_without_models_for_local_part(self) -> None:
+        service = VisualService(styles_path=ROOT / "data" / "__missing__.json")
+        result = service.run_pipeline("inspect", {
+            "sourceText": "第一场 图书馆 雨夜",
+            "shots": [{"index": 1, "seconds": 4}, {"index": 2, "seconds": 3},
+                      {"index": 3, "seconds": 5}],
+        })
+        self.assertEqual(result["pipeline"], "inspect")
+        self.assertEqual([step["name"] for step in result["trace"]],
+                         ["source.normalize", "assets.match", "cards.build"])
+        self.assertEqual(result["context"]["cardCount"], 3)
+        self.assertTrue(all(step["ok"] for step in result["trace"]))
+
+    def test_unknown_pipeline_rejected(self) -> None:
+        service = VisualService(styles_path=ROOT / "data" / "__missing__.json")
+        with self.assertRaises(Exception) as ctx_err:
+            service.run_pipeline("nope", {})
+        self.assertIn("未知流水线", str(ctx_err.exception))
+
     def test_execute_through_service(self) -> None:
         service = VisualService(styles_path=ROOT / "data" / "__missing__.json")
-        result = service.execute(["normalize", "plan"], {"shots": [1, 2, 3]})
-        self.assertEqual(result["context"]["planned"], 3)
+        result = service.execute(["source.normalize", "cards.build"],
+                                 {"shots": [{"seconds": 4}, {"seconds": 3}]})
+        self.assertIn("fps", result["context"])
         self.assertEqual(len(result["trace"]), 2)
+        self.assertTrue(all(step["ok"] for step in result["trace"]))
 
 
 class ProjectTest(unittest.TestCase):
