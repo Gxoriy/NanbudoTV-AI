@@ -103,34 +103,90 @@ class VisualAssist:
             raise AssistError(status, exc.code, f"模型调用失败（含降级重试）: {exc}") from exc
 
     def _json_call(self, spec: str, user: str,
-                   system: str | None = None) -> dict[str, Any]:
-        text = self.complete(system or SHORT_SYSTEM, f"{user}\n\n{spec}")
-        try:
-            return _extract_json(text)
-        except (json.JSONDecodeError, ValueError) as exc:
-            raise AssistError(502, "bad_model_output",
-                              f"模型输出不是合法 JSON: {text[:200]}") from exc
+                   system: str | None = None,
+                   attempts: int = 3) -> dict[str, Any]:
+        """要 JSON 的调用：解析失败**重问**，不是直接 502。
+
+        实测这个渠道经常"答得像散文"（`bad_model_output` 一度是最高频错误），
+        但同一问题重问一次多数能拿到合法 JSON——原版 `core.validator` 的
+        `_accept_*` 系列就是干这件事。这里做三件递进的事：
+          1. 原样重问（温度低，措辞不变）
+          2. 第二次把 spec 压到最短，并明确"只返回 {...}，不要任何解释"
+          3. 仍失败才抛 502，并把最后一次输出带出来便于排查
+        """
+        last_text = ""
+        last_error: Exception | None = None
+        for attempt in range(1, max(1, attempts) + 1):
+            suffix = "" if attempt == 1 else (
+                "\n\n上一次输出不是合法 JSON。这次只返回一个 JSON 对象，"
+                "第一个字符必须是 {，不要解释、不要 markdown 代码块。")
+            last_text = self.complete(system or SHORT_SYSTEM, f"{user}\n\n{spec}{suffix}")
+            try:
+                return _extract_json(last_text)
+            except (json.JSONDecodeError, ValueError) as exc:
+                last_error = exc
+                continue
+        raise AssistError(502, "bad_model_output",
+                          f"模型连续 {attempts} 次没有返回合法 JSON: {last_text[:200]}"
+                          ) from last_error
+
+    def _one_shot(self, requirement: str, index: int,
+                  system: str | None) -> dict[str, Any]:
+        spec = (f'只输出 1 个镜头的 JSON，形如 {{"index":{index},"seconds":4,'
+                '"shot":"画面描述","prompt":"出图提示词"}，不要数组、不要解释。')
+        data = self._json_call(spec, f"需求：{requirement}\n这是第 {index} 个镜头。",
+                               system=system)
+        item = data if "shot" in data else (data.get("shots") or [{}])[0]
+        item["index"] = index
+        return item
 
     def plan(self, requirement: str, *, shots: int = 6,
-             system: str | None = None) -> dict[str, Any]:
-        """逐镜一次调用再合并。
+             system: str | None = None,
+             concurrency: int = 2) -> dict[str, Any]:
+        """逐镜一次调用再合并（默认 3 路并发，保序）。
 
-        实测该中转站在"一次生成较长 JSON"时会直接断连（`RemoteDisconnected`），
-        但"短输出"稳定。所以按镜头拆成多次短请求——慢一点，但可用。
+        为什么要并发：中转站在"一次生成较长 JSON"时会断连（`RemoteDisconnected`），
+        短输出才稳定，所以只能拆成多次短请求；串行时镜数一多就线性变慢
+        （实测 2 镜 13s、6 镜 ≈ 40s）。原版 `core.parallel_shots209` 就是干这件事。
+
+        为什么要限流：并发太高会撞渠道限速，失败率反而上升；默认 3，
+        失败时把该镜降级为串行重试一次，再失败才抛错——不因为一个镜头拖垮整批。
         """
         if not requirement.strip():
             raise AssistError(400, "invalid_input", "需求描述不能为空。")
         shots = max(1, min(shots, 12))
-        items: list[dict[str, Any]] = []
-        for index in range(1, shots + 1):
-            spec = (f'只输出 1 个镜头的 JSON，形如 {{"index":{index},"seconds":4,'
-                    '"shot":"画面描述","prompt":"出图提示词"}，不要数组、不要解释。')
-            data = self._json_call(spec, f"需求：{requirement}\n这是第 {index} 个镜头。",
-                                   system=system)
-            item = data if "shot" in data else (data.get("shots") or [{}])[0]
-            item["index"] = index
-            items.append(item)
-        return {"ok": True, "shots": items, "count": len(items)}
+        workers = max(1, min(concurrency, 4))
+        if shots == 1 or workers == 1:
+            items = [self._one_shot(requirement, index, system)
+                     for index in range(1, shots + 1)]
+            return {"ok": True, "shots": items, "count": len(items),
+                    "concurrency": 1}
+
+        from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+        results: dict[int, dict[str, Any]] = {}
+        failures: dict[int, Exception] = {}
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {
+                pool.submit(self._one_shot, requirement, index, system): index
+                for index in range(1, shots + 1)
+            }
+            for future, index in futures.items():
+                try:
+                    results[index] = future.result()
+                except Exception as exc:  # noqa: BLE001
+                    failures[index] = exc
+
+        # 失败镜头串行重试一次：并发失败常常只是撞限速，串行基本能过
+        for index, error in sorted(failures.items()):
+            try:
+                results[index] = self._one_shot(requirement, index, system)
+            except Exception:  # noqa: BLE001
+                raise error
+
+        items = [results[index] for index in sorted(results)]
+        return {"ok": True, "shots": items, "count": len(items),
+                "concurrency": workers, "retried": sorted(failures)}
 
     def normalize(self, requirement: str) -> dict[str, Any]:
         if not requirement.strip():

@@ -170,6 +170,7 @@ def build(router: Router, service: VisualService, library, *,
                 "storyboard",
                 lambda: assist.plan(
                     requirement, shots=max(1, min(shots, 12)),
+                    concurrency=int(body.get("concurrency") or 2),
                     system=compose(
                         "storyboard",
                         role="你是短剧分镜规划师。",
@@ -225,6 +226,7 @@ def build(router: Router, service: VisualService, library, *,
         try:
             planned = assist.plan(
                 requirement, shots=int(body.get("shots") or 6),
+                concurrency=int(body.get("concurrency") or 2),
                 system=compose(
                     "storyboard",
                     role="你是短剧分镜规划师。",
@@ -353,6 +355,7 @@ def build(router: Router, service: VisualService, library, *,
         try:
             planned = assist.plan(
                 script, shots=int(body.get("shots") or default_shots),
+                concurrency=int(body.get("concurrency") or 2),
                 system=compose(
                     "storyboard",
                     role="你是短剧分镜师。",
