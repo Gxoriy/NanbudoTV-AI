@@ -579,6 +579,72 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     router.register("D1", "/api/novel-screenplay/status", novel_screenplay_status)
     router.register("D1", "/api/novel-screenplay/project", novel_screenplay_project)
 
+    # ---------- 成稿生成（前端主链路：/api/rewrite/generate 与 /api/original/generate） ----------
+    def _generate(req: Request, mode: str) -> Response:
+        """分段生成：该渠道一次性输出长文本会断连，所以按段落多次短请求再拼。"""
+        if assist is None or not task_store:
+            return Response.error(503, "unsupported", "LLM 或任务队列未就绪。")
+        body = req.json()
+        settings = body.get("settings") or {}
+        source_text = str(body.get("sourceText") or "").strip()
+        topic = str(settings.get("topic") or settings.get("projectName") or "").strip()
+        if mode == "rewrite" and not source_text:
+            return Response.error(400, "invalid_input", "改写需要提供原文。")
+        if mode == "original" and not topic and not source_text:
+            return Response.error(400, "invalid_input", "原创需要提供主题或设定。")
+        segments = max(1, min(int(settings.get("segments") or 3), 6))
+        task = task_store.create(f"{mode}.generate", "D1",
+                                 {"segments": segments, "chars": len(source_text),
+                                  "topic": topic[:60]})
+
+        def work(task_id: str) -> None:
+            try:
+                task_store.start(task_id)
+            except KeyError:
+                return
+            parts: list[str] = []
+            try:
+                for index in range(1, segments + 1):
+                    task_store.set_progress(task_id, 0.05 + 0.9 * index / segments,
+                                            f"正在写第 {index}/{segments} 段")
+                    if mode == "rewrite":
+                        user = (f"原文：{source_text[:1200]}\n"
+                                f"要求：{json.dumps(settings, ensure_ascii=False)[:300]}\n"
+                                f"只写第 {index}/{segments} 段，200 字左右，不要标题。")
+                    else:
+                        user = (f"主题/设定：{topic or source_text[:400]}\n"
+                                f"只写第 {index}/{segments} 段，200 字左右，不要标题。")
+                    part = assist.complete(
+                        "你是短剧编剧，只输出正文，不要解释与标题。", user)
+                    parts.append(part.strip())
+                text = "\n\n".join(p for p in parts if p)
+                relative = store.save_file("scripts", "draft.txt", text.encode("utf-8"))
+                record = store.create(f"{mode}_script",
+                                      str(settings.get("projectName") or "成稿"),
+                                      {"text": text, "segments": len(parts),
+                                       "settings": settings, "file": relative})
+                task_store.succeed(task_id, {
+                    "text": text, "metaFile": relative, "scriptId": record["id"],
+                    "segments": len(parts), "settings": settings, "mode": mode})
+            except Exception as exc:  # noqa: BLE001
+                task_store.fail(task_id, str(getattr(exc, "code", "internal")),
+                                str(getattr(exc, "message", exc)))
+
+        import threading
+
+        threading.Thread(target=work, args=(task.id,), daemon=True).start()
+        return Response(200, {"ok": True, "taskId": task.id, "segments": segments,
+                              "mode": mode})
+
+    def rewrite_generate(req: Request) -> Response:
+        return _generate(req, "rewrite")
+
+    def original_generate(req: Request) -> Response:
+        return _generate(req, "original")
+
+    router.register("D1", "/api/rewrite/generate", rewrite_generate, methods=("POST",))
+    router.register("D1", "/api/original/generate", original_generate, methods=("POST",))
+
     # ---------- 动效（图生视频）与参考工作流 ----------
     def _frame_data_uri(body: dict) -> tuple[str, Response | None]:
         """把首帧图转成 data URI：上游只接受公网直链或 base64 内联。"""

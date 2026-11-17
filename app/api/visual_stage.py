@@ -239,6 +239,26 @@ def build(router: Router, service: VisualService, library, *,
             removed += 1
         return Response(200, {"ok": True, "removed": removed, "missing": missing})
 
+    def asset_delete_one(req: Request) -> Response:
+        """前端用的是单数路径：{projectId, kind, assetId} → 返回项目最新状态。"""
+        body = req.json()
+        asset_id = str(body.get("assetId") or body.get("id") or "")
+        project_id = str(body.get("projectId") or "")
+        record = store.get(asset_id) if asset_id else None
+        if record is None:
+            return Response.error(404, "not_found", "素材不存在或已删除。")
+        relative = str(record["payload"].get("file") or "")
+        path = store.file_path(relative) if relative else None
+        if path is not None:
+            path.unlink(missing_ok=True)
+        store.delete(asset_id)
+        project = None
+        if project_id and service.store is not None:
+            project = service.store.get(project_id)
+        return Response(200, {"ok": True, "assetId": asset_id,
+                              "project": project,
+                              "message": "已移除素材与关联引用；图片文件已删除。"})
+
     # ---------- 剧本转分镜（三个入口同一实现） ----------
     def _storyboard(req: Request, *, default_shots: int = 8) -> Response:
         body = req.json()
@@ -423,6 +443,7 @@ def build(router: Router, service: VisualService, library, *,
     router.register("D2", "/api/visual/assets/analyze", assets_analyze,
                     methods=("POST",))
     router.register("D2", "/api/visual/assets/delete", assets_delete, methods=("POST",))
+    router.register("D2", "/api/visual/asset/delete", asset_delete_one, methods=("POST",))
     router.register("D2", "/api/visual/cut-storyboard", cut_storyboard, methods=("POST",))
     router.register("D2", "/api/visual/episode-cut", episode_cut, methods=("POST",))
     router.register("D2", "/api/visual/script-storyboard", script_storyboard,

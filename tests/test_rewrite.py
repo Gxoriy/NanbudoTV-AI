@@ -134,6 +134,91 @@ class RewriteRoutesTest(unittest.TestCase):
         self.assertEqual(resp.payload["error"], "model_unconfigured")
 
 
+class GenerateTest(unittest.TestCase):
+    """成稿生成：分段多次短请求（规避渠道长输出断连），任务结果带 metaFile。"""
+
+    class FakeAssist:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def complete(self, system: str, user: str) -> str:  # noqa: ARG002
+            self.calls.append(user)
+            return f"第{len(self.calls)}段正文：林晚推门进来，雨声被关在门外。"
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.store = DocStore(self.root / "workspace.db", files_root=self.root / "files")
+        from infra.tasks import TaskStore
+
+        self.tasks = TaskStore(self.root / "tasks.db")
+        self.assist = self.FakeAssist()
+        self.router = Router()
+        rewrite_api.build(self.router, self.store, assist=self.assist,
+                          task_store=self.tasks)
+
+    def tearDown(self) -> None:
+        self.tasks.close()
+        self.store.close()
+        self._tmp.cleanup()
+
+    def post(self, path: str, body: dict):
+        return self.router.dispatch(Request(
+            method="POST", path=path, query={},
+            headers={"content-type": "application/json"},
+            body=json.dumps(body).encode()))
+
+    def _wait(self, task_id: str, timeout: float = 5.0):
+        import time
+
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            task = self.tasks.get(task_id)
+            if task is not None and task.state in ("done", "error"):
+                return task
+            time.sleep(0.05)
+        return self.tasks.get(task_id)
+
+    def test_rewrite_requires_source_text(self) -> None:
+        resp = self.post("/api/rewrite/generate", {"settings": {"projectName": "A"}})
+        self.assertEqual(resp.status, 400)
+
+    def test_original_requires_topic(self) -> None:
+        resp = self.post("/api/original/generate", {"settings": {}})
+        self.assertEqual(resp.status, 400)
+
+    def test_rewrite_generate_segments_and_meta_file(self) -> None:
+        resp = self.post("/api/rewrite/generate",
+                         {"sourceText": "林晚推门进来。",
+                          "settings": {"projectName": "雨夜", "segments": 2}})
+        self.assertEqual(resp.status, 200, resp.payload)
+        task = self._wait(resp.payload["taskId"])
+        self.assertEqual(task.state, "done", task.error_detail)
+        self.assertEqual(len(self.assist.calls), 2)
+        result = task.result or {}
+        self.assertEqual(result["segments"], 2)
+        self.assertIn("第2段正文", result["text"])
+        relative = result["metaFile"]
+        self.assertTrue((self.root / "files" / relative).is_file())
+        self.assertEqual(self.store.get(result["scriptId"])["kind"], "rewrite_script")
+
+    def test_original_generate_uses_topic(self) -> None:
+        resp = self.post("/api/original/generate",
+                         {"settings": {"topic": "外卖员的雨夜", "segments": 1}})
+        task = self._wait(resp.payload["taskId"])
+        self.assertEqual(task.state, "done", task.error_detail)
+        self.assertIn("外卖员的雨夜", self.assist.calls[0])
+
+    def test_without_assist_is_503(self) -> None:
+        router = Router()
+        rewrite_api.build(router, self.store)
+        resp = router.dispatch(Request(
+            method="POST", path="/api/rewrite/generate", query={},
+            headers={"content-type": "application/json"},
+            body=json.dumps({"sourceText": "x"}).encode()))
+        self.assertEqual(resp.status, 503)
+
+
 class MotionRoutesTest(unittest.TestCase):
     """动效（图生视频）与参考工作流：不联网，验证参数与状态机。"""
 

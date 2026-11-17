@@ -143,7 +143,7 @@ class Router:
             "byDomain": dict(sorted(by_domain.items())),
             "routes": [
                 {"domain": e.domain, "path": e.path, "methods": list(e.methods),
-                 "name": e.name, "migrated": e.migrated}
+                 "name": e.name, "migrated": e.migrated, "exact": e.exact}
                 for e in sorted(self._routes, key=lambda x: (x.domain, x.path))
             ],
         }

@@ -158,6 +158,19 @@ class StageRoutesTest(unittest.TestCase):
         self.assertIsNone(self.library.get(record["id"]))
         self.assertFalse((self.root / "files" / relative).exists())
 
+    def test_singular_asset_delete_returns_project(self) -> None:
+        """前端用的是 /api/visual/asset/delete（单数），并要求返回最新项目。"""
+        relative = self.library.save_file("assets", "one.png", b"IMG")
+        record = self.library.create("asset", "单张", {"file": relative, "type": "image",
+                                                       "projectId": self.project_id})
+        resp = self.call("POST", "/api/visual/asset/delete",
+                         {"projectId": self.project_id, "kind": "image",
+                          "assetId": record["id"]})
+        self.assertEqual(resp.status, 200, resp.payload)
+        self.assertEqual(resp.payload["assetId"], record["id"])
+        self.assertEqual(resp.payload["project"]["id"], self.project_id)
+        self.assertIsNone(self.library.get(record["id"]))
+
     # ---------- 剧集设置与状态 ----------
     def test_episode_settings_and_state(self) -> None:
         saved = self.call("POST", "/api/visual/episode/settings",
