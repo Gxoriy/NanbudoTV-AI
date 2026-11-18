@@ -39,6 +39,13 @@ function record(name, detail, ok = true) {
   const bad = () => bucket.filter((c) => c.status >= 400);
 
   try {
+    // ---------- 0. 未登录直接开首页，应被服务端 302 到登录页 ----------
+    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(800);
+    const landed = page.url().replace(BASE, '');
+    record('未登录访问首页自动跳登录页', { url: landed.slice(0, 32) },
+           landed.includes('login.html'));
+
     // ---------- 1. 登录门控（故意用错卡，再换正确的） ----------
     await page.goto(BASE + '/login.html', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1200);

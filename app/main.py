@@ -41,7 +41,8 @@ from app.api import visual_extra
 from app.api import visual_stage
 from app.api import visual_tail
 from app.api import voice as voice_api
-from domain.license import LicenseService, LicenseStore
+from domain.license import LicenseService
+from domain.license.service import device_from, LicenseStore
 from domain.subtitle import SubtitleService, SubtitleStore
 from domain.ai import TextAssist
 from domain.visual import VisualService
@@ -88,6 +89,8 @@ class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     router: Router
     static_dir: Path = ROOT / "static"
+    # 入口页门控：返回 False 时 302 到 /login.html（由 bind_server 注入）
+    license_gate = None
 
     def _serve_static(self, url_path: str) -> bool:
         """非 /api 请求交给 static/（桌面壳与浏览器直接用同一套前端）。
@@ -101,6 +104,18 @@ class Handler(BaseHTTPRequestHandler):
         rel = path.lstrip("/") or "index.html"
         if rel.endswith("/"):
             rel += "index.html"
+        # 只拦入口页：深链页面（如 /visual.html）保持可直达，
+        # 否则自动化审计会被统一跳到登录页，看不到真实按钮。
+        gate = getattr(self, "license_gate", None)
+        if gate is not None and rel.lower() in ("index.html", "index.htm"):
+            headers = {key.lower(): value for key, value in self.headers.items()}
+            if not gate(headers):
+                self.send_response(302)
+                self.send_header("Location", "/login.html")
+                self.send_header("Content-Length", "0")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                return True
         target = (self.static_dir / rel).resolve()
         try:
             target.relative_to(self.static_dir.resolve())
@@ -182,10 +197,15 @@ class Server(ThreadingHTTPServer):
 
 
 def bind_server(host: str, port: int, router: Router,
-                static_dir: Path | None = None) -> Server:
+                static_dir: Path | None = None,
+                license_gate=None) -> Server:
     """绑定端口。port=0 时由系统分配，彻底消除多开冲突。"""
+    # license_gate 必须包成 staticmethod：直接当类属性会被绑定成方法，
+    # 调用时多传一个 self（实测报 "takes 1 positional argument but 2 were given"）。
     handler = type("BoundHandler", (Handler,),
-                   {"router": router, "static_dir": static_dir or ROOT / "static"})
+                   {"router": router, "static_dir": static_dir or ROOT / "static",
+                    "license_gate": (staticmethod(license_gate)
+                                     if license_gate is not None else None)})
     return Server((host, port), handler)
 
 
@@ -375,7 +395,22 @@ def main(argv: list[str] | None = None) -> int:
                        task_store=store,
                        assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
 
-    server = bind_server(args.host, args.port, router, static_dir=Path(args.static_dir))
+    def _licensed_gate(headers: dict[str, str]) -> bool:
+        """设备是否已激活。UA 与 API 侧同一套派生，登录后同一浏览器即可放行。"""
+        device = (headers.get("x-device-code") or "").strip()[:64]
+        if not device:
+            ip = (headers.get("x-real-ip") or headers.get("x-forwarded-for")
+                  or "127.0.0.1").split(",")[0].strip()
+            device = device_from(f"{ip}|{headers.get('user-agent', '')}")
+        try:
+            return bool(license_service.status(device).get("licensed"))
+        except Exception:  # noqa: BLE001
+            # 授权库异常时放行：宁可让人进去手动激活，也不要一启动就白屏
+            return True
+
+    server = bind_server(args.host, args.port, router,
+                         static_dir=Path(args.static_dir),
+                         license_gate=_licensed_gate)
     port = server.server_address[1]
     _port_ref["port"] = port
     runtime_file = write_runtime_file(data_dir, port, args.host)

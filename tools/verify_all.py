@@ -73,6 +73,7 @@ def main() -> int:
     run("前端契约（页面会调的内核接口）", [PY, "tools/front_contract_check.py"])
     run("旧路由覆盖", [PY, "tools/audit_coverage.py"])
     run("300 路由实盘审计", [PY, "tools/route_audit.py"])
+    run("启动门控（未登录跳登录页）", [PY, "tools/gate_check.py"])
 
     lane_cmd = [PY, "tools/lane_smoke.py"]
     if WITH_MEDIA:
@@ -86,9 +87,9 @@ def main() -> int:
                             "tail": "缺 Playwright：设置 NANBUDO_PLAYWRIGHT_DIR"})
             print("\n[SKIP] 18 页点击审计：未找到 Playwright")
         else:
-            run("18 页点击审计", [PY, ".local/deploy/run_click_audit.py"], timeout=1800)
+            run("18 页点击审计", [PY, "tools/run_click_audit.py"], timeout=1800)
             if has_ffmpeg():
-                run("登录→视觉链路场景", [PY, ".local/deploy/run_ui_scenario.py"],
+                run("登录→视觉链路场景", [PY, "tools/run_ui_scenario.py"],
                     timeout=1200)
 
     total = time.perf_counter() - started

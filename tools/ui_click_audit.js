@@ -7,6 +7,7 @@ const { chromium } = require(path.join(PW_DIR, 'node_modules', 'playwright'));
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8765';
 const MAX_CLICKS = Number(process.argv[3] || 14);
+const CARD = process.argv[4] || '';          // 启动门控上线后，审计前需要先登录
 const PROFILE = process.env.NANBUDO_UI_PROFILE || path.join(PW_DIR, 'profile-ui-audit');
 
 const PAGES = [
@@ -112,6 +113,22 @@ async function auditPage(page, url) {
   const context = await chromium.launchPersistentContext(PROFILE, { headless: true });
   const page = context.pages()[0] || (await context.newPage());
   page.setDefaultTimeout(8000);
+  // 启动门控上线后，未登录访问 index.html 会被 302 到登录页；先在同一浏览器里登录，
+  // 后面各页面才是真实已授权状态（否则"点了 0 个按钮"是假绿灯）。
+  if (CARD) {
+    await page.goto(BASE + '/login.html', { waitUntil: 'domcontentloaded' });
+    const signed = await page.evaluate(async ([base, card]) => {
+      const resp = await fetch(base + '/api/session/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardKey: card }),
+      });
+      const body = await resp.json().catch(() => ({}));
+      return Boolean(body.authenticated);
+    }, [BASE, CARD]);
+    // 走 stderr：stdout 必须是纯 JSON 报告，驱动脚本才能 json.loads
+    console.error(JSON.stringify({ step: '登录', signed }));
+  }
   const report = [];
   for (const url of PAGES) {
     try {

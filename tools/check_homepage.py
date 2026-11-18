@@ -16,6 +16,22 @@ import urllib.error
 import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+CARD = "DW-PWMB-AXYU-ASP8-C8H8-5X4P-ZSZW-RQ7G-QGTJ"
+CHECK_DEVICE = "homepage-check-device"
+
+
+def _seed_license(data: pathlib.Path) -> None:
+    """首页检查跑在"已登录"状态：导入卡并激活固定设备。"""
+    sys.path.insert(0, str(ROOT))
+    from domain.license import LicenseStore
+    from domain.license.service import LicenseService, DEFAULT_FEATURES
+
+    store = LicenseStore(data / "license.db")
+    try:
+        store.import_card(CARD, days=0, features=DEFAULT_FEATURES, note="homepage gate")
+        LicenseService(store).activate(CHECK_DEVICE, CARD)
+    finally:
+        store.close()
 CHECKS = [
     ("GET", "/"), ("GET", "/api/health"), ("GET", "/api/runtime/status"),
     ("GET", "/api/session/status"), ("GET", "/api/license/status"),
@@ -34,7 +50,9 @@ CHECKS = [
 
 
 def call(port: int, method: str, path: str):
-    req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", method=method)
+    req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", method=method,
+                                 headers={"X-Device-Code": CHECK_DEVICE,
+                                          "User-Agent": "homepage-check"})
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return resp.status, resp.headers.get("content-type", ""), len(resp.read())
@@ -52,6 +70,7 @@ def main() -> int:
             source = ROOT / "data" / name
             if source.exists():
                 (data / name).write_bytes(source.read_bytes())
+        _seed_license(data)
         proc = subprocess.Popen([sys.executable, "-m", "app.main", "--no-gui", "--port", "0",
                                  "--data-dir", str(data)], cwd=str(ROOT),
                                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
