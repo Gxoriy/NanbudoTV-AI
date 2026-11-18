@@ -19,7 +19,7 @@ from domain.visual.store import VisualStore  # noqa: E402
 
 
 class FakeAssist:
-    def plan(self, text: str, *, shots: int = 6) -> dict:  # noqa: ARG002
+    def plan(self, text: str, *, shots: int = 6, concurrency: int = 3) -> dict:  # noqa: ARG002
         return {"shots": [{"index": i, "seconds": 4, "shot": f"镜头{i}"}
                           for i in range(1, shots + 1)]}
 

@@ -63,13 +63,22 @@ ffmpeg -version
 ### 2.3 验收与门禁
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests   # 300 项
+# 一条命令跑完 9 项门禁（含真浏览器），最后打印 PASS/FAIL 汇总
+.\.venv\Scripts\python.exe tools\verify_all.py --with-ui
+
+# 只要核心 7 项（约 1.6 分钟，不需要 Playwright）
+.\.venv\Scripts\python.exe tools\verify_all.py
+
+# 单项复跑
+.\.venv\Scripts\python.exe -m unittest discover -s tests   # 322 项
+.\.venv\Scripts\python.exe tools\route_audit.py            # 300 条路由实盘，0 个 5xx
+.\.venv\Scripts\python.exe tools\lane_smoke.py --with-media # 8 个域通道
 .\.venv\Scripts\python.exe tools\check_rules.py            # 行长/命名/freeze/依赖方向
-.\.venv\Scripts\python.exe tests\smoke\check_contract.py   # 起真进程对比旧样本
-.\.venv\Scripts\python.exe tools\audit_coverage.py         # 覆盖率
-.\.venv\Scripts\python.exe tools\front_contract_check.py     # 前端会调但内核没有的接口
-.\.venv\Scripts\python.exe tools\check_homepage.py           # 首页 28 项可用性
+.\.venv\Scripts\python.exe tools\check_homepage.py         # 首页 28 项可用性
+.\.venv\Scripts\python.exe tools\front_contract_check.py   # 前端会调但内核没有的接口
 ```
+
+交付口径、首次配置、演示脚本与已知边界见 **`spec/delivery.md`**。
 
 ---
 
@@ -202,8 +211,12 @@ python -m server --port 8787
 | `spec/erase-feasibility.md` | 本地擦除的实测数据（PSNR/耗时） |
 | `spec/server-deploy.md` | 云端服务部署记录 |
 | `spec/license-ops.md` | 卡密签发与运维 |
+| `spec/delivery.md` | **交付说明**：环境、首次配置、启动、9 项验收判据、已知边界 |
+| `spec/audit-report.md` | 三层实盘审计：300 路由 / 8 域通道 / 18 页点击 |
+| `spec/deep-probe.md` | 深度探测：原包 220 模块 vs 现有实现、缺口与执行顺序 |
 
 ---
+
 
 ## 8. 下一步
 
