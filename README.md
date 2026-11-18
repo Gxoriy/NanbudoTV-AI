@@ -224,3 +224,4 @@ python -m server --port 8787
 2. **P3-03 改写域**：提示词模板配置化（技能包 22 个 md 已归档）
 3. **P4 前端**：免费文案、`localRepair`、detect 按钮、配音入口
 4. **P5 打包**：PyInstaller onedir + 运行时外置（ffmpeg/权重按需下载）
+| spec/demo-runbook.md | **课题演示 Runbook**：真实 data/ 的体检、彩排、四幕脚本、失败预案、三条红线 |
