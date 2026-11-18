@@ -39,8 +39,26 @@ def build(router: Router, store: DocStore, *, data_dir: pathlib.Path,
         if not req.body:
             return Response.error(400, "invalid_input", "上传内容为空。")
         name = unquote(req.headers.get("x-filename", "")) or "upload.bin"
-        return Response(200, {"ok": True, "file": store.save_file(folder, name, req.body),
-                              "size": len(req.body)})
+        relative = store.save_file(folder, name, req.body)
+        # 前端要用：state.videoId = data.videoId（空则"识别视频对白"永远禁用）、
+        # originalName（否则显示 "undefined"）、durationSeconds（否则 00:00）。
+        duration = 0.0
+        try:
+            from infra.media import avio  # noqa: PLC0415
+
+            path = store.file_path(relative)
+            if path is not None:
+                info = avio.probe(path)
+                duration = float(info.get("duration") or 0)
+        except Exception:  # noqa: BLE001
+            duration = 0.0
+        return Response(200, {
+            "ok": True, "file": relative, "size": len(req.body),
+            "videoId": pathlib.PurePath(relative).stem,
+            "originalName": name,
+            "durationSeconds": round(duration, 3),
+            "mediaUrl": f"/api/media?file={relative}",
+        })
 
     def voices_import(req: Request) -> Response:
         """把已有音色保存成"我的音色"：只做登记，不复制音频文件。"""

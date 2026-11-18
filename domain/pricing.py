@@ -47,6 +47,18 @@ TEXT_MODEL_PRICING: list[dict[str, Any]] = [
      "pricePerGeneration": 0.2},
     {"model": "gt-6-sol", "resolution": "rewrite", "billingMode": "flat",
      "pricePerGeneration": 0.1},
+    {"model": "qwen3.8-flash", "resolution": "assets", "billingMode": "flat",
+     "pricePerGeneration": 0.2},
+    {"model": "deepseek-v4.1-flash", "resolution": "assets", "billingMode": "flat",
+     "pricePerGeneration": 0.2},
+    {"model": "gt-6-sol", "resolution": "assets", "billingMode": "flat",
+     "pricePerGeneration": 0.1},
+    {"model": "qwen3.8-flash", "resolution": "storyboard", "billingMode": "flat",
+     "pricePerGeneration": 0.4},
+    {"model": "deepseek-v4.1-flash", "resolution": "storyboard", "billingMode": "flat",
+     "pricePerGeneration": 0.4},
+    {"model": "gt-6-sol", "resolution": "storyboard", "billingMode": "flat",
+     "pricePerGeneration": 0.3},
 ]
 
 # 视频：按秒计价（前端 quote() 会乘时长）
@@ -109,12 +121,27 @@ def visual_profile_defaults() -> dict[str, Any]:
     }
 
 
+# 文本类模型目录：前端按 media === "text" 过滤后填 #visualRecognitionModel /
+# #visualCutModel / #visualStoryboardModel 等下拉。为空时这些按钮一律不可用。
+TEXT_MODELS: list[dict[str, Any]] = [
+    {"model": "qwen3.8-flash", "media": "text", "displayName": "Qwen3.8 Flash",
+     "enabled": True, "gatewayReady": True, "default": True},
+    {"model": "deepseek-v4.1-flash", "media": "text",
+     "displayName": "DeepSeek V4.1 Flash", "enabled": True, "gatewayReady": True},
+    {"model": "gt-6-sol", "media": "text", "displayName": "GT-6 Sol",
+     "enabled": True, "gatewayReady": True},
+]
+
+
 def client_config_pricing() -> dict[str, Any]:
     return {
         "pointsPerCny": POINTS_PER_CNY,
         "textButtonBindings": {key: dict(value)
                                for key, value in TEXT_BUTTON_BINDINGS.items()},
         "textModelPricing": [dict(row) for row in TEXT_MODEL_PRICING],
+        # 图像/视频/文本三类模型目录都放这里（前端按 media 过滤取用）
+        "visualModels": ([dict(row) for row in TEXT_MODELS]
+                         + [dict(row) for row in visual_profile_defaults()["visualModels"]]),
         "breakdownModels": dict(BREAKDOWN_MODELS),
         "textTaskCapabilities": {
             "workflow-outline-203": {"buttonId": "workflow-cut",

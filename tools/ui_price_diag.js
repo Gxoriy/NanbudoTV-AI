@@ -71,6 +71,8 @@ const PROFILE = process.env.NANBUDO_UI_PROFILE || path.join(PW_DIR, 'profile-pri
         imageResolution: read('visualImageResolution'),
         videoTier: read('visualVideoTier'),
         videoResolution: read('visualResolution'),
+        recognition: read('visualRecognitionModel'),
+        cut: read('visualCutModel'),
       };
     });
 

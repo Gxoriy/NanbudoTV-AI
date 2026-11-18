@@ -134,8 +134,10 @@ LLM 渠道放 `data/llm-profiles.json`（`custom` / `doubao` / `qwen` 三家，�
 | 入口页门控 | 登录/激活下发 `nanbudo_session` Cookie | 会话只在内存里，**进程重启即失效** → 再次打开必然回登录页 |
 | `/api/visual/project/source` | 返回的 `project.confirmedScript` 必须等于刚保存的正文 | 前端逐字比对，缺字段/不等 → 顶部报**自动保存未完成：正文不一致** |
 | 项目 DTO | 必须带 `assets.people/scenes/props` 与 `episodes` | 前端多处直接读 `project.assets.people`，缺了抛 TypeError → 同样兜成自动保存失败 |
+| `/api/client/config` | 必须给 `visualModels` 且含 `media: "text"` 条目 | 前端据此填「识别模型/分镜模型」下拉，空了下拉无值 → **当前识别模型尚未配置按次价格** |
+| `/api/upload` | 必须返回 `videoId` / `originalName` / `durationSeconds` | `videoId` 为空则「识别视频对白」永久禁用；`originalName` 缺失显示 **视频已上传: undefined · 00:00** |
 
-示例价格在 `domain/pricing.py`（0.1/0.3 每次文本、图像 0.5/张、视频 1~4 积分/秒），
+示例价格在 `domain/pricing.py`（文本 3 个模型 × rewrite/original/assets/storyboard/refine；图像 2 个模型 × 1k/2k/4k/auto；视频 × 480p/720p/1080p），
 口径仍是"对外免费"：余额 1,000,000、实际扣费恒 0，价格只用于让前端按钮可用。
 
 ## 7. 已知边界（写清楚，不含糊）
