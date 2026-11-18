@@ -74,6 +74,27 @@ def request_shutdown() -> None:
     _shutdown.set()
 
 
+# 会话表：只在内存里，进程重启即清空 → 再次打开必然回到登录页
+_SESSIONS: dict[str, float] = {}
+SESSION_COOKIE = "nanbudo_session"
+
+
+def issue_session() -> str:
+    import secrets  # noqa: PLC0415
+
+    token = secrets.token_urlsafe(24)
+    _SESSIONS[token] = time.time()
+    return token
+
+
+def session_from_cookie(cookie_header: str) -> str:
+    for part in (cookie_header or "").split(";"):
+        key, _, value = part.strip().partition("=")
+        if key == SESSION_COOKIE:
+            return value
+    return ""
+
+
 MIME_TYPES = {
     ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
     ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8",
@@ -167,6 +188,15 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as exc:  # noqa: BLE001
                 LOG.exception("未捕获异常")
                 resp = Response.error(500, "internal", repr(exc))
+
+        # 登录/激活成功时下发会话 Cookie（浏览器关闭即失效，进程重启即失效）
+        path_only = parsed.path.rstrip("/") or "/"
+        if resp.status == 200 and path_only in ("/api/session/login",
+                                                "/api/license/activate"):
+            data = resp.payload if isinstance(resp.payload, dict) else {}
+            if data.get("authenticated") or data.get("licensed"):
+                resp.headers["Set-Cookie"] = (
+                    f"{SESSION_COOKIE}={issue_session()}; Path=/; HttpOnly; SameSite=Lax")
 
         payload = resp.body_bytes()
         self.send_response(resp.status)
@@ -396,7 +426,14 @@ def main(argv: list[str] | None = None) -> int:
                        assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
 
     def _licensed_gate(headers: dict[str, str]) -> bool:
-        """设备是否已激活。UA 与 API 侧同一套派生，登录后同一浏览器即可放行。"""
+        """入口页放行条件：**本次进程内登录过**（会话 Cookie）且卡密有效。
+
+        会话只在内存里，所以关掉软件再打开必然回登录页——这正是需求③。
+        """
+        if not session_from_cookie(headers.get("cookie", "")):
+            return False
+        if session_from_cookie(headers.get("cookie", "")) not in _SESSIONS:
+            return False
         device = (headers.get("x-device-code") or "").strip()[:64]
         if not device:
             ip = (headers.get("x-real-ip") or headers.get("x-forwarded-for")

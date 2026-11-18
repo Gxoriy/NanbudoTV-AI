@@ -335,8 +335,13 @@ def build(router: Router, service: VisualService, library, *,
 
     # ---------- 偏好 / 用量 / 模型 ----------
     def profile_get(_req: Request) -> Response:
+        """默认档案必须带示例价格，否则前端 quote() 返回 null → 按钮"尚无有效价格"。"""
+        from domain.pricing import visual_profile_defaults  # noqa: PLC0415
+
         record = store.get("profile:default")
-        return Response(200, {"ok": True, "profile": record["payload"] if record else {}})
+        saved = dict(record["payload"]) if record else {}
+        merged = {**visual_profile_defaults(), **saved}
+        return Response(200, {"ok": True, "profile": merged})
 
     def profile_save(req: Request) -> Response:
         body = req.json()
@@ -346,10 +351,16 @@ def build(router: Router, service: VisualService, library, *,
 
     def usage(_req: Request) -> Response:
         """对外免费：余额给足，让前端解锁生成按钮；报价与实践扣费都是 0。"""
-        return Response(200, {"ok": True, "points": FREE_BALANCE, "usedPoints": 0.0,
-                              "remainingPoints": FREE_BALANCE, "pricingMode": "free",
-                              "free": True, "records": [],
-                              "message": "免费使用，不扣积分。"})
+        return Response(200, {
+            "ok": True, "points": FREE_BALANCE, "usedPoints": 0.0,
+            "remainingPoints": FREE_BALANCE, "pricingMode": "free",
+            "free": True, "records": [],
+            "message": "免费使用，不扣积分。",
+            # 前端 renderPointsUsage(data.usage) 从嵌套对象取余额；
+            # 少了它余额会被算成 0.00，任何正价格都会显示"积分不足"。
+            "usage": {"points": FREE_BALANCE, "usedPoints": 0.0,
+                      "remainingPoints": FREE_BALANCE, "records": [], "orders": []},
+        })
 
     def models(_req: Request) -> Response:
         return Response(200, {"ok": True, "models": [], "message": MODEL_REQUIRED})

@@ -1,6 +1,7 @@
-"""验证启动门控：未激活访问 / 必须 302 到 /login.html，登录后同一 UA 放行。
+"""启动门控验证：未登录必须回登录页；登录后放行；进程重启后再次要求登录。
 
-用 http.client 而不是 urllib：需要看到 302 本身（urllib 会自动跟随）。
+会话只在内存里（`_SESSIONS`），所以"关掉软件再打开"等价于丢掉 Cookie——
+这里用"同一设备已激活但不带 Cookie"来模拟这一刻。
 """
 
 from __future__ import annotations
@@ -16,15 +17,17 @@ import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CARD = "DW-PWMB-AXYU-ASP8-C8H8-5X4P-ZSZW-RQ7G-QGTJ"
-UA_A = "Mozilla/5.0 gate-check-A"
-UA_B = "Mozilla/5.0 gate-check-B"
+UA = "Mozilla/5.0 gate-check"
+steps: list[bool] = []
 
 
-def request(port: int, method: str, path: str, ua: str,
+def request(port: int, method: str, path: str, *, cookie: str = "",
             body: dict | None = None):
     conn = http.client.HTTPConnection("127.0.0.1", port, timeout=20)
     payload = json.dumps(body).encode() if body is not None else None
-    headers = {"User-Agent": ua}
+    headers = {"User-Agent": UA}
+    if cookie:
+        headers["Cookie"] = cookie
     if payload is not None:
         headers["Content-Type"] = "application/json"
         headers["Content-Length"] = str(len(payload))
@@ -33,6 +36,12 @@ def request(port: int, method: str, path: str, ua: str,
     data = resp.read()
     conn.close()
     return resp.status, dict(resp.getheaders()), data
+
+
+def check(name: str, expected: int, status: int, detail: str = "") -> None:
+    ok = status == expected
+    steps.append(ok)
+    print(f"[{'OK  ' if ok else 'FAIL'}] {name:<38}{status:<4}期望 {expected}  {detail}")
 
 
 def main() -> int:
@@ -65,36 +74,33 @@ def main() -> int:
             return 1
         print(f"[*] 端口 {port}\n")
 
-        steps = []
+        status, headers, _ = request(port, "GET", "/")
+        check("未登录 GET /", 302, status, headers.get("Location", ""))
+        status, headers, _ = request(port, "GET", "/index.html")
+        check("未登录 GET /index.html", 302, status, headers.get("Location", ""))
 
-        def check(name: str, expected: int, status: int, detail: str = "") -> None:
-            ok = status == expected
-            steps.append(ok)
-            print(f"[{'OK  ' if ok else 'FAIL'}] {name:<34}{status:<4}期望 {expected}  {detail}")
+        status, headers, body = request(port, "POST", "/api/session/login",
+                                        body={"cardKey": CARD})
+        cookie = ""
+        raw_cookie = headers.get("Set-Cookie") or headers.get("set-cookie") or ""
+        if raw_cookie:
+            cookie = raw_cookie.split(";")[0]
+        check("POST session/login", 200, status, f"cookie={'有' if cookie else '无'}")
+        check("登录应下发会话 Cookie", 200, 200 if cookie else 500, cookie[:24])
 
-        status, headers, _ = request(port, "GET", "/", UA_A)
-        check("未激活 GET /", 302, status, headers.get("Location", ""))
-        status, headers, _ = request(port, "GET", "/index.html", UA_A)
-        check("未激活 GET /index.html", 302, status, headers.get("Location", ""))
+        status, _, body = request(port, "GET", "/", cookie=cookie)
+        check("已登录 GET /", 200, status, f"{len(body)}B")
 
-        status, _, body = request(port, "POST", "/api/session/login", UA_A,
-                                  {"cardKey": CARD})
-        check("POST session/login（UA-A）", 200, status,
-              str(json.loads(body or b"{}").get("authenticated")))
+        # 模拟"关掉软件再打开"：同一台已激活设备，但内存会话已清空（无 Cookie）
+        status, headers, _ = request(port, "GET", "/")
+        check("重启后（无 Cookie）GET /", 302, status, headers.get("Location", ""))
 
-        status, _, body = request(port, "GET", "/", UA_A)
-        check("已激活 GET /（同一 UA）", 200, status, f"{len(body)}B")
-
-        status, headers, _ = request(port, "GET", "/", UA_B)
-        check("未登录 UA-B GET /", 302, status, "设备码不同仍拦")
-
-        status, _, _ = request(port, "GET", "/visual.html", UA_B)
-        check("深链 /visual.html 不拦", 200, status, "自动化审计需要直达")
-
-        status, _, _ = request(port, "GET", "/login.html", UA_A)
+        status, _, _ = request(port, "GET", "/visual.html")
+        check("深链 /visual.html 不拦", 200, status)
+        status, _, _ = request(port, "GET", "/login.html")
         check("登录页自身可达", 200, status)
 
-        request(port, "POST", "/api/shutdown", UA_A, {})
+        request(port, "POST", "/api/shutdown", cookie=cookie, body={})
         failed = steps.count(False)
         print(f"\n合计 {len(steps)} 步，失败 {failed}")
         return 0 if not failed else 3

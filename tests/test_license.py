@@ -75,7 +75,10 @@ class LicenseTest(unittest.TestCase):
         key, _ = self.store.issue(days=0)
         body = self.service.activate(self.device, key)
         self.assertTrue(body["permanent"])
-        self.assertIsNone(body["expiresAt"])
+        # 永久卡对外给 2100-01-01 哨兵：前端按 `expiresAt >= 4102444800` 显示"长期有效"，
+        # 返回 None 会显示成"有效期未知"（用户反馈过）。
+        self.assertEqual(body["expiresAt"], 4102444800.0)
+        self.assertIsNone(body["offlineUntil"])
         self.assertIn("永久授权", body["message"])
 
     def test_expired_activation_locks_features(self) -> None:

@@ -106,7 +106,7 @@ LLM 渠道放 `data/llm-profiles.json`（`custom` / `doubao` / `qwen` 三家，�
 | 前端契约 | 页面 JS 里的 `/api/...` 全部有对应注册（0 缺口） |
 | 旧路由覆盖 | `spec/route-spec.json` 265 条全覆盖 |
 | 路由实盘 | 300 条真打：**0 个 5xx**（4xx 是"缺参数"，算通） |
-| 启动门控 | 未激活访问 `/` → **302 到 `/login.html`**；同 UA 登录后放行，深链不拦 |
+| 启动门控 | 未激活访问 `/` → **302 到 `/login.html`**；登录后放行；**关掉软件再开需重新登录** |
 | 通道巡检 | 8 个域 27~29 步主链路全通 |
 | 点击审计 | 18 页 99+ 次点击，0 个 4xx/5xx |
 | 登录场景 | 错误卡被拒 → 正确卡登录 → 建项目 → 存原稿 0 失败 |
@@ -122,6 +122,19 @@ LLM 渠道放 `data/llm-profiles.json`（`custom` / `doubao` / `qwen` 三家，�
 | D5 电商 | 项目/批次/工作台/门店 CRUD、25 个动作分派、营销文案（LLM） | 可用 |
 | D6 采集 | 有头窗口、链接解析、浏览器上下文下载、封面转发、Range 流 | 可用 |
 | S1-S5 | 会话/授权/任务/历史/运行时/存储/更新 | 可用（`update/*` 501） |
+
+## 6.5 示例价格与会话（容易踩的三个前端契约）
+
+| 位置 | 契约 | 不做会怎样 |
+|---|---|---|
+| `/api/client/config` | `textButtonBindings[stage].price > 0`、`textModelPricing` | 前端把 `cost===0` 判成"没有价格"→「提取大纲/资产提取」按钮灰掉并显示**尚无有效价格** |
+| `/api/visual/profile` | `videoPricing`/`imagePricing`/`visualModels` | 同上：报价算不出来，出图/出视频按钮灰掉 |
+| `/api/visual/points` | 必须带嵌套 `usage.remainingPoints` | 前端 `renderPointsUsage(data.usage)` 取余额，缺了余额算成 0.00 →「积分不足」 |
+| `/api/license/status` | 永久卡 `expiresAt = 4102444800`（2100-01-01） | 前端按 `>= 4102444800` 显示"长期有效"，`null` 会显示**有效期未知** |
+| 入口页门控 | 登录/激活下发 `nanbudo_session` Cookie | 会话只在内存里，**进程重启即失效** → 再次打开必然回登录页 |
+
+示例价格在 `domain/pricing.py`（0.1/0.3 每次文本、图像 0.5/张、视频 1~4 积分/秒），
+口径仍是"对外免费"：余额 1,000,000、实际扣费恒 0，价格只用于让前端按钮可用。
 
 ## 7. 已知边界（写清楚，不含糊）
 

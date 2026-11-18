@@ -57,6 +57,13 @@ def build(router: Router, license_service: LicenseService, store: DocStore, *,
                               "cardMask": mask_card(key), "license": license_body})
 
     def client_config(_req: Request) -> Response:
+        """客户端配置 + **示例价格**。
+
+        价格不是装饰：前端 credit_gate 把 cost===0 判为"没有价格"，
+        缺了 textButtonBindings/textModelPricing，「提取大纲/资产提取」等按钮会直接置灰。
+        """
+        from domain.pricing import client_config_pricing  # noqa: PLC0415
+
         return Response(200, {
             "ok": True,
             "currentVersion": version,
@@ -66,6 +73,11 @@ def build(router: Router, license_service: LicenseService, store: DocStore, *,
             "sha256": "",
             "updateNotes": "本地重建版不提供在线更新；升级请更新代码后重启。",
             "installPath": str(install_root),
+            "subtitleRegionSchema": "outward_integer_percent166",
+            "announcement": "",
+            "announcements": [],
+            "announcementCount": 0,
+            **client_config_pricing(),
         })
 
     def submissions(_req: Request) -> Response:

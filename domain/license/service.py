@@ -25,6 +25,9 @@ ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"      # 去掉 I/O，避免手抄
 DEFAULT_FEATURES = ("rewrite", "original", "workflow")
 LOCKED_FEATURES = ("ecommerce", "store", "advertising")
 
+# 2100-01-01：前端约定的"长期有效"哨兵值
+PERMANENT_EXPIRES_AT = 4102444800.0
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cards (
     card_hash   TEXT PRIMARY KEY,
@@ -240,6 +243,10 @@ class LicenseService:
         body["expiresAt"] = activation.expires_at
         body["offlineUntil"] = activation.expires_at
         body["permanent"] = activation.expires_at is None
+        if activation.expires_at is None:
+            # 前端按 `expiresAt >= 4102444800` 显示"长期有效"，null 会显示"有效期未知"。
+            # 用 2100-01-01 这个约定哨兵，既保留 permanent 语义，又让文案正确。
+            body["expiresAt"] = PERMANENT_EXPIRES_AT
         if activation.expires_at is None:
             body["message"] = "永久授权（学习研究用途，全部功能免费）。"
         else:

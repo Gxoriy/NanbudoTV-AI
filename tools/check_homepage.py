@@ -49,10 +49,15 @@ CHECKS = [
 ]
 
 
+COOKIE: dict[str, str] = {}
+
+
 def call(port: int, method: str, path: str):
+    headers = {"X-Device-Code": CHECK_DEVICE, "User-Agent": "homepage-check"}
+    if COOKIE.get("value"):
+        headers["Cookie"] = COOKIE["value"]
     req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", method=method,
-                                 headers={"X-Device-Code": CHECK_DEVICE,
-                                          "User-Agent": "homepage-check"})
+                                 headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return resp.status, resp.headers.get("content-type", ""), len(resp.read())
@@ -86,6 +91,21 @@ def main() -> int:
                 print("内核未启动", (proc.stderr.read() or b"")[-400:])
                 return 1
             print(f"[*] 内核端口 {port}")
+            # 启动门控要求会话 Cookie：先登录，否则 GET / 会是 302
+            login = urllib.request.Request(
+                f"http://127.0.0.1:{port}/api/session/login",
+                data=json.dumps({"cardKey": CARD}).encode(), method="POST",
+                headers={"Content-Type": "application/json",
+                         "X-Device-Code": CHECK_DEVICE,
+                         "User-Agent": "homepage-check"})
+            try:
+                with urllib.request.urlopen(login, timeout=30) as resp:
+                    raw = resp.headers.get("Set-Cookie") or ""
+                    if raw:
+                        COOKIE["value"] = raw.split(";")[0]
+            except urllib.error.HTTPError:
+                pass
+            print(f"[*] 会话 Cookie {'已获取' if COOKIE.get('value') else '缺失'}")
             bad = []
             for method, path in CHECKS:
                 status, ctype, size = call(port, method, path)
