@@ -51,6 +51,13 @@ class ImageConfig:
     poll_interval: float = 3.0      # kie 轮询间隔
     poll_timeout: float = 600.0     # kie 整体等待上限（对齐"最多等 600s"）
 
+    # 备用网关（aihub 风格：/v1/media/generate + /v1/media/status）
+    fallback_base_url: str = ""
+    fallback_api_key: str = ""
+    fallback_model: str = ""
+    fallback_resolution: str = "1K"
+    aspect_ratio: str = "9:16"
+
     @property
     def enabled(self) -> bool:
         return bool(self.base_url.strip() and self.model.strip())
@@ -71,6 +78,13 @@ class ImageConfig:
                     timeout=float(data.get("timeout") or config.timeout),
                     poll_interval=float(data.get("pollInterval") or config.poll_interval),
                     poll_timeout=float(data.get("pollTimeout") or config.poll_timeout),
+                    aspect_ratio=str(data.get("aspectRatio") or data.get("aspect_ratio")
+                                     or config.aspect_ratio),
+                    fallback_base_url=str((data.get("fallback") or {}).get("baseUrl") or ""),
+                    fallback_api_key=str((data.get("fallback") or {}).get("apiKey") or ""),
+                    fallback_model=str((data.get("fallback") or {}).get("model") or ""),
+                    fallback_resolution=str((data.get("fallback") or {}).get("resolution")
+                                            or config.fallback_resolution),
                 )
             except (json.JSONDecodeError, TypeError, ValueError):
                 pass
@@ -209,6 +223,58 @@ def _kie_generate(config: ImageConfig, prompt: str, transport: Transport) -> byt
     raise ImageError("timeout", f"等待生成超时（{int(config.poll_timeout)}s）。")
 
 
+def _aihub_get(url: str, headers: dict[str, str], timeout: float) -> dict:
+    request = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as exc:
+        raise ImageError("upstream_error", f"备用网关查询返回 {exc.code}") from exc
+    except Exception as exc:  # noqa: BLE001
+        raise ImageError("network", f"备用网关查询失败: {exc}") from exc
+
+
+def _aihub_generate(config: ImageConfig, prompt: str, client: Transport, *,
+                    base_url: str | None = None, api_key: str | None = None,
+                    model: str | None = None, resolution: str | None = None) -> bytes:
+    """aihub 风格图像生成：POST /v1/media/generate → 轮询 → 下载。"""
+    root = str(base_url if base_url is not None else config.base_url).rstrip("/")
+    key = api_key if api_key is not None else config.api_key
+    name = model if model is not None else config.model
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    payload = {"model": name, "prompt": prompt,
+               "params": {"aspect_ratio": config.aspect_ratio,
+                          "resolution": resolution or config.fallback_resolution}}
+    _, body = client.post_json(f"{root}/v1/media/generate", headers, payload,
+                               config.timeout)
+    data = body.get("data") if isinstance(body, dict) else None
+    task_id = (data or {}).get("task_id") if isinstance(data, dict) else None
+    if not task_id:
+        detail = str((body or {}).get("msg") or (body or {}).get("error") or "")[:160]
+        raise ImageError("upstream_error", f"备用网关建任务失败: {detail}")
+
+    # 传输层若实现了 get_json 就走它（测试与自建 transport 可拦截），否则用 urllib
+    getter = getattr(client, "get_json", None)
+    deadline = time.time() + config.poll_timeout
+    while time.time() < deadline:
+        time.sleep(config.poll_interval)
+        url = f"{root}/v1/media/status?task_id={task_id}"
+        if getter is not None:
+            _, body = getter(url, headers, config.timeout)
+        else:
+            body = _aihub_get(url, headers, config.timeout)
+        inner = body.get("data") if isinstance(body.get("data"), dict) else body
+        state = str((inner or {}).get("state") or "").lower()
+        if state in FAIL_STATES:
+            raise ImageError("internal", f"备用网关生成失败: {(inner or {}).get('error') or ''}")
+        if (inner or {}).get("is_final") or state in DONE_STATES:
+            url = str((inner or {}).get("result_url") or "")
+            if not url:
+                raise ImageError("internal", "备用网关成功但没有返回图片地址。")
+            return _download(url, config.timeout)
+    raise ImageError("timeout", f"备用网关等待超时（{int(config.poll_timeout)}s）。")
+
+
 def generate(config: ImageConfig, prompt: str, *,
              transport: Transport | None = None, size: str | None = None) -> bytes:
     if not config.enabled:
@@ -218,6 +284,23 @@ def generate(config: ImageConfig, prompt: str, *,
     if not prompt.strip():
         raise ImageError("invalid_input", "提示词不能为空。")
     client = transport or UrllibTransport()
-    if config.protocol == "kie":
-        return _kie_generate(config, prompt, client)
-    return _openai_generate(config, prompt, client, size)
+    fallback = bool(config.fallback_base_url.strip() and config.fallback_model.strip())
+    try:
+        if config.protocol == "aihub":
+            return _aihub_generate(config, prompt, client)
+        if config.protocol == "kie":
+            return _kie_generate(config, prompt, client)
+        return _openai_generate(config, prompt, client, size)
+    except ImageError as exc:
+        # 账号池空/上游超时才切备用；参数错误不重试，避免掩盖真正的问题。
+        # 注意 KIE 把 "503 no available account" 归到 internal，所以还要看文案。
+        text = f"{exc.code} {exc.message}".lower()
+        retriable = (exc.code in ("upstream_error", "timeout", "network")) or any(
+            key in text for key in ("no available account", "503", "upstream",
+                                    "network", "timeout", "账号", "账户"))
+        if not (fallback and retriable):
+            raise
+        return _aihub_generate(config, prompt, client,
+                               base_url=config.fallback_base_url,
+                               api_key=config.fallback_api_key or config.api_key,
+                               model=config.fallback_model)
