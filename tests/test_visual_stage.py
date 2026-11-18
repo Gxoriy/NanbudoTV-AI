@@ -112,6 +112,28 @@ class StageRoutesTest(unittest.TestCase):
         self.assertEqual(conflict.status, 409)
         self.assertEqual(conflict.payload["error"], "conflict")
 
+    def test_source_save_echoes_confirmed_script(self) -> None:
+        """前端保存后要比对 project.confirmedScript 与输入正文，缺了就报"不一致"。"""
+        text = "第一场 图书馆 日 内\n林晚把剧本推到周野面前：这段冲突太软。"
+        resp = self.call("POST", "/api/visual/project/source",
+                         {"projectId": self.project_id, "sourceText": text})
+        self.assertEqual(resp.status, 200, resp.payload)
+        project = resp.payload["project"]
+        self.assertEqual(project["confirmedScript"], text)
+        self.assertEqual(project["sourceStructure"], text)
+        # 前端有多处直接读 project.assets.people，缺了会抛 TypeError
+        self.assertEqual(project["assets"]["people"], [])
+        self.assertIn("scenes", project["assets"])
+
+    def test_project_reread_keeps_source(self) -> None:
+        """刷新页面后编辑器要从 project.confirmedScript 恢复原稿。"""
+        text = "第二场 图书馆 夜 内\n灯管坏了一根。"
+        self.call("POST", "/api/visual/project/source",
+                  {"projectId": self.project_id, "sourceText": text})
+        stored = self.service.store.get(self.project_id)
+        self.assertEqual(stored["confirmedScript"], text)
+        self.assertEqual(stored["episodes"], [])
+
     def test_cut_fingerprint_reuses_result(self) -> None:
         """同一份稿子第二次切分不再调模型（对应原版 core.cut_state）。"""
         first = self.call("POST", "/api/visual/project/scenes",

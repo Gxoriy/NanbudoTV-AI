@@ -31,6 +31,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_visual_request
 """
 
 
+def _asset_buckets(settings: dict) -> dict:
+    """项目资产分组默认值：people/scenes/props 三类，前端按此渲染。"""
+    raw = settings.get("assets") if isinstance(settings.get("assets"), dict) else {}
+    buckets = {key: list(raw.get(key) or []) for key in ("people", "scenes", "props")}
+    return buckets
+
+
 class VisualStore:
     def __init__(self, db_path: str | pathlib.Path) -> None:
         self.path = pathlib.Path(db_path)
@@ -110,14 +117,23 @@ class VisualStore:
 
     @staticmethod
     def _to_dict(row: sqlite3.Row) -> dict[str, Any]:
+        settings = json.loads(row["settings"]) or {}
         return {
             "id": row["id"],
             "name": row["name"],
             "description": row["description"],
             "style": row["style"],
-            "settings": json.loads(row["settings"]),
+            "settings": settings,
             "scenes": json.loads(row["scenes"]),
             "thumbnail": row["thumbnail"],
             "createdAt": row["created_at"],
             "updatedAt": row["updated_at"],
+            # 前端保存后用它回读正文做一致性校验：
+            # storedProjectSource = project.confirmedScript || project.sourceStructure
+            "confirmedScript": str(settings.get("confirmedScript") or ""),
+            "sourceStructure": str(settings.get("sourceStructure") or ""),
+            # 前端有多处直接读 project.assets.people（不判空），缺了 assets 会在
+            # 保存回调里抛 TypeError，被兜成"自动保存未完成"。
+            "assets": _asset_buckets(settings),
+            "episodes": settings.get("episodes") or [],
         }

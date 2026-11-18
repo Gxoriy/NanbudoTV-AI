@@ -122,10 +122,15 @@ def build(router: Router, service: VisualService, library, *,
                                       "原稿已被其他窗口修改，请刷新后再保存。")
             _upsert("project_source", project_id, {"text": text}, name="项目源素材")
             project = _project(project_id)
-            if project is not None and service.store is not None:
+            if service.store is not None:
                 try:
-                    service.store.update(project_id, description=project["description"])
-                except (KeyError, TypeError):
+                    current = service.store.get(project_id) or {}
+                    settings = dict(current.get("settings") or {})
+                    settings["confirmedScript"] = text
+                    settings["sourceStructure"] = text
+                    service.store.update(project_id, settings=settings)
+                    project = service.store.get(project_id)
+                except (KeyError, TypeError, ValueError):
                     pass
             return Response(200, {"ok": True, "projectId": project_id,
                                   "project": project, "sourceText": text,

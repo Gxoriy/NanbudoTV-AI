@@ -132,6 +132,8 @@ LLM 渠道放 `data/llm-profiles.json`（`custom` / `doubao` / `qwen` 三家，�
 | `/api/visual/points` | 必须带嵌套 `usage.remainingPoints` | 前端 `renderPointsUsage(data.usage)` 取余额，缺了余额算成 0.00 →「积分不足」 |
 | `/api/license/status` | 永久卡 `expiresAt = 4102444800`（2100-01-01） | 前端按 `>= 4102444800` 显示"长期有效"，`null` 会显示**有效期未知** |
 | 入口页门控 | 登录/激活下发 `nanbudo_session` Cookie | 会话只在内存里，**进程重启即失效** → 再次打开必然回登录页 |
+| `/api/visual/project/source` | 返回的 `project.confirmedScript` 必须等于刚保存的正文 | 前端逐字比对，缺字段/不等 → 顶部报**自动保存未完成：正文不一致** |
+| 项目 DTO | 必须带 `assets.people/scenes/props` 与 `episodes` | 前端多处直接读 `project.assets.people`，缺了抛 TypeError → 同样兜成自动保存失败 |
 
 示例价格在 `domain/pricing.py`（0.1/0.3 每次文本、图像 0.5/张、视频 1~4 积分/秒），
 口径仍是"对外免费"：余额 1,000,000、实际扣费恒 0，价格只用于让前端按钮可用。
