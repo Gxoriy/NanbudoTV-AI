@@ -15,6 +15,8 @@ import pathlib
 import subprocess
 from typing import Any
 
+from infra.media import avio
+
 from . import repair
 from . import region as region_rules
 
@@ -23,7 +25,25 @@ MIN_WIDTH_RATIO = 0.12         # 候选最小横向跨度
 MIN_AREA_RATIO = 0.0002        # 候选最小面积（占画面）
 
 
+def _probe_media(src: pathlib.Path) -> dict[str, Any]:
+    """优先 PyAV（无需 ffprobe），失败再回退 ffprobe。"""
+    try:
+        info = avio.probe(src)
+        if info.get("width") and info.get("height"):
+            return {"width": info["width"], "height": info["height"],
+                    "duration": info["duration"], "fps": info.get("fps") or 0}
+    except Exception:  # noqa: BLE001
+        pass
+    return repair.probe_video(src)
+
+
 def _grab_frame(cv2, np, src: pathlib.Path, at_second: float):
+    """优先 PyAV 解码（不依赖 ffmpeg），失败回退 ffmpeg 管道。"""
+    try:
+        rgb = avio.grab_frame_rgb(src, at_second)
+        return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    except Exception:  # noqa: BLE001
+        pass
     proc = subprocess.run(
         ["ffmpeg", "-v", "error", "-ss", f"{at_second:.3f}", "-i", str(src),
          "-frames:v", "1", "-f", "image2pipe", "-vcodec", "png", "-"],
@@ -34,12 +54,23 @@ def _grab_frame(cv2, np, src: pathlib.Path, at_second: float):
     return cv2.imdecode(buffer, cv2.IMREAD_COLOR)
 
 
+def _require_cv():
+    """只要 cv2/numpy：取帧与探测都走 PyAV，ffmpeg 不再是硬依赖。"""
+    try:
+        import cv2  # noqa: PLC0415
+        import numpy as np  # noqa: PLC0415
+    except ImportError as exc:  # noqa: BLE001
+        raise repair.RepairUnavailable(
+            "缺少 numpy/cv2，本地字幕检测不可用。") from exc
+    return cv2, np
+
+
 def detect_region(src: str | pathlib.Path, *, samples: int = 6,
                   threshold: int = 200) -> dict[str, Any]:
     """返回 {region, frames, hits, coverage}；检测不到时 region 为 None。"""
-    cv2, np = repair._require_tools()
+    cv2, np = _require_cv()
     src_path = pathlib.Path(src)
-    meta = repair.probe_video(src_path)
+    meta = _probe_media(src_path)
     width, height = meta["width"], meta["height"]
     duration = meta["duration"] or 0
     if not width or not height:

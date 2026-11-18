@@ -71,6 +71,14 @@ def _decode_to_array(path: pathlib.Path):
     这里先用 ffmpeg 统一转 16k 单声道 wav，再用标准库 wave + numpy 读，
     依赖面更小、也不受 av 版本影响。
     """
+    # 优先 PyAV：原版就是这么干的（_internal 里带的是 libav，不是 ffmpeg.exe）
+    try:
+        from infra.media import avio  # noqa: PLC0415
+
+        return avio.decode_audio_16k(path)
+    except Exception:  # noqa: BLE001
+        pass
+
     import shutil  # noqa: PLC0415
     import subprocess  # noqa: PLC0415
     import tempfile  # noqa: PLC0415

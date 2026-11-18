@@ -82,6 +82,32 @@ force:true → 跳过缓存强制重算
 `compose(..., also=("continuity",))` 让分镜提示同时带"镜头规则 + 人物关系规则"，
 两个桶在原版本来就是分开的模块。
 
+### P0-4 去 ffmpeg.exe 依赖（PyAV）——已完成（范围有裁剪）
+
+新增 `infra/media/avio.py`：`probe` / `grab_frame_rgb` / `decode_audio_16k`，全部基于 PyAV。
+
+| 路径 | 之前 | 现在 |
+|---|---|---|
+| 字幕候选检测 `domain/subtitle/detect.py` | `ffmpeg -ss ... -f image2pipe` 取帧 + `ffprobe` 探测 | **PyAV 取帧 + PyAV 探测**，ffmpeg 仅回退 |
+| 语音识别 `infra/asr/whisper.py` | ffmpeg 转 16k wav → wave 读 | **PyAV 直接解 16k 单声道**，ffmpeg 仅回退 |
+| 像素修补 `domain/subtitle/repair.py` | ffmpeg rawvideo 管道 → cv2 inpaint → ffmpeg 编码 | **保持不变**（见下） |
+
+验收方式：把 `ffmpeg` 从子进程 PATH 里摘掉再跑（不是"改配置"，是真的不给它）：
+
+```
+[*] 子进程 PATH 已去掉 ffmpeg: 无
+[*] 上传 200  record=aef8cb41
+[*] 检测 200  region={x:9, y:83, width:82, height:11}   ← 6/6 帧命中，与有 ffmpeg 时一致
+[*] ASR 解码 samples=(31984,) 2.0s                       ← PyAV 直接吃视频里的音轨
+```
+
+**为什么像素修补不迁**：它是"ffmpeg 解 rawvideo → cv2 逐帧 inpaint → ffmpeg 编码"的流式管道，
+改成 PyAV 等于重写整条编解码链（帧序、时间戳、音轨 copy、faststart 都要重做），
+风险远大于收益。原版的 `_internal` 里其实也同时带 `av` 与外部工具，
+说明它同样没有把这条链路完全放在 Python 侧。
+
+依赖：`requirements.txt` 改为 `av>=18.1,<20`（原版 18.1.0，本机实测 19.0.2）。
+
 ## 2.1 剩余 P0
 
 | # | 原版模块 | 我们现状 | 差距 | 做法 |
