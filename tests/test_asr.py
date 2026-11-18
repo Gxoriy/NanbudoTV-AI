@@ -19,6 +19,9 @@ from domain.workspace import DocStore  # noqa: E402
 from infra.asr.whisper import Transcript  # noqa: E402
 
 
+AUDIO = b"RIFF" + bytes(600)      # 大于校验下限的假 WAV
+
+
 class AsrRoutesTest(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
@@ -51,7 +54,7 @@ class AsrRoutesTest(unittest.TestCase):
                                     {"start": 1.2, "end": 2.4, "text": "不错"}])
         with mock.patch("infra.asr.transcribe", return_value=fake), \
                 mock.patch("infra.asr.available", return_value=(True, "ok")):
-            resp = self.call("POST", "/api/transcribe", b"RIFF0000",
+            resp = self.call("POST", "/api/transcribe", AUDIO,
                              {"x-filename": "a.wav"})
         self.assertEqual(resp.status, 200, resp.payload)
         body = resp.payload
@@ -72,7 +75,7 @@ class AsrRoutesTest(unittest.TestCase):
 
     def test_unavailable_engine_returns_501(self) -> None:
         with mock.patch("infra.asr.available", return_value=(False, "未安装 faster-whisper")):
-            resp = self.call("POST", "/api/transcribe", b"x", {"x-filename": "a.wav"})
+            resp = self.call("POST", "/api/transcribe", AUDIO, {"x-filename": "a.wav"})
         self.assertEqual(resp.status, 501)
         self.assertEqual(resp.payload["error"], "model_required")
 
@@ -80,7 +83,7 @@ class AsrRoutesTest(unittest.TestCase):
         empty = Transcript(text="", language="", duration=1.0, segments=[])
         with mock.patch("infra.asr.transcribe", return_value=empty), \
                 mock.patch("infra.asr.available", return_value=(True, "ok")):
-            resp = self.call("POST", "/api/transcribe", b"RIFF", {"x-filename": "s.wav"})
+            resp = self.call("POST", "/api/transcribe", AUDIO, {"x-filename": "s.wav"})
         self.assertEqual(resp.status, 200)
         self.assertEqual(resp.payload["count"], 0)
         self.assertIn("未识别到语音", resp.payload["message"])

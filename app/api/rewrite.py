@@ -415,6 +415,10 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
 
     def settings_suggest(req: Request) -> Response:
         body = req.json()
+        # 空对象没有可建议的内容；先拒绝，别把垃圾输入丢给模型（审计发现的 502）
+        if not any(key for key in body if key not in ("projectId", "submissionId")):
+            return Response.error(400, "invalid_input",
+                                  "缺少设置内容：请先填写至少一项再请求建议。")
 
         def run() -> Response:
             data = _llm_json(

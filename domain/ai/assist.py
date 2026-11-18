@@ -85,10 +85,24 @@ class TextAssist:
             status = 503 if exc.code in ("auth", "quota") else 502
             raise AssistError(status, exc.code, f"模型调用失败: {exc}") from exc
 
-    def json_call(self, system: str, user: str) -> dict[str, Any]:
-        text = self.complete(system, user)
-        try:
-            return extract_json(text)
-        except (json.JSONDecodeError, ValueError) as exc:
-            raise AssistError(502, "bad_model_output",
-                              f"模型输出不是合法 JSON: {text[:200]}") from exc
+    def json_call(self, system: str, user: str,
+                  attempts: int = 3) -> dict[str, Any]:
+        """要 JSON 的调用：解析失败就重问，而不是直接 502。
+
+        与视觉域同一套取舍（见 spec/deep-probe.md P0-5）：中转站经常"答成散文"，
+        同一问题重问一次多数能拿到合法 JSON；直接报错等于把抖动当终态。
+        """
+        last_text = ""
+        last_error: Exception | None = None
+        for attempt in range(1, max(1, attempts) + 1):
+            suffix = "" if attempt == 1 else (
+                "\n\n上一次输出不是合法 JSON。这次只返回一个 JSON 对象，"
+                "第一个字符必须是 {，不要解释、不要 markdown。")
+            last_text = self.complete(system, f"{user}{suffix}")
+            try:
+                return extract_json(last_text)
+            except (json.JSONDecodeError, ValueError) as exc:
+                last_error = exc
+        raise AssistError(502, "bad_model_output",
+                          f"模型连续 {attempts} 次没有返回合法 JSON: "
+                          f"{last_text[:200]}") from last_error

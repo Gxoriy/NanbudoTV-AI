@@ -76,6 +76,10 @@ def build(router: Router, store: DocStore, *, data_dir: pathlib.Path,
         """音频 → 文本 + SRT。写盘后落一条 transcript 记录，供下载与后续对齐。"""
         if not req.body:
             return Response.error(400, "invalid_input", "缺少音频数据。")
+        # 几百字节以下不可能是有效音频，交给 ASR 只会得到 asr_failed（审计发现的 502）
+        if len(req.body) < 512:
+            return Response.error(400, "invalid_input",
+                                  f"音频过小（{len(req.body)} 字节），请上传完整文件。")
         from infra.asr import available, to_srt, transcribe as run_asr  # noqa: PLC0415
 
         ready, message = available()
