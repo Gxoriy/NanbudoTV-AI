@@ -41,10 +41,19 @@ def _model(size: str):
 
         started = time.perf_counter()
         try:
-            model = WhisperModel(size, device="cpu", compute_type="int8")
+            # 先只用本地缓存：任务线程里同步联网会阻塞到连接超时（实测 WinError 10060
+            # 要等数分钟），前端只看到"点了没反应"。
+            model = WhisperModel(size, device="cpu", compute_type="int8",
+                                 local_files_only=True)
         except Exception as exc:  # noqa: BLE001
-            _LAST_ERROR = f"模型加载失败: {exc}"
-            raise
+            if size != DEFAULT_MODEL:
+                _LAST_ERROR = f"weights_missing: {size}（本地未缓存，且未联网下载）"
+                raise RuntimeError(_LAST_ERROR) from exc
+            try:
+                model = WhisperModel(size, device="cpu", compute_type="int8")
+            except Exception as inner:  # noqa: BLE001
+                _LAST_ERROR = f"模型加载失败: {inner}"
+                raise
         _MODEL_CACHE[size] = model
         _MODEL_CACHE[f"{size}:loadSeconds"] = round(time.perf_counter() - started, 1)
         return model

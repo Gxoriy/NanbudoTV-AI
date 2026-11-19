@@ -136,9 +136,14 @@ LLM 渠道放 `data/llm-profiles.json`（`custom` / `doubao` / `qwen` 三家，�
 | 项目 DTO | 必须带 `assets.people/scenes/props` 与 `episodes` | 前端多处直接读 `project.assets.people`，缺了抛 TypeError → 同样兜成自动保存失败 |
 | `/api/client/config` | 必须给 `visualModels` 且含 `media: "text"` 条目 | 前端据此填「识别模型/分镜模型」下拉，空了下拉无值 → **当前识别模型尚未配置按次价格** |
 | `/api/upload` | 必须返回 `videoId` / `originalName` / `durationSeconds` | `videoId` 为空则「识别视频对白」永久禁用；`originalName` 缺失显示 **视频已上传: undefined · 00:00** |
+| `/api/transcribe` | 必须支持 **JSON `{videoId,...}` → `{taskId}`**（异步），结果含 `transcript` 与 `meta.{segment_count,duration}` | 只接受原始音频字节时，首页「识别视频对白」直接 `400 invalid_input` |
+| `/api/tasks/<id>` | `state/progress/result` 必须在**顶层**（`task` 里再放一份兼容） | 前端 `pollTask` 读顶层 `state`，只放 `task` 里会一律报**任务状态无效** |
 
 示例价格在 `domain/pricing.py`（文本 3 个模型 × rewrite/original/assets/storyboard/refine；图像 2 个模型 × 1k/2k/4k/auto；视频 × 480p/720p/1080p），
 口径仍是"对外免费"：余额 1,000,000、实际扣费恒 0，价格只用于让前端按钮可用。
+
+
+> **语音权重**：`faster-whisper` 首次使用某档位会去 HuggingFace 下载。本机连不上时（WinError 10060）会**立刻降级到已缓存的 `tiny`** 并在结果里带 `warning`，而不是让任务停在 running。要更高精度请先手动下载对应权重（`WhisperModel('small')` 一次即可）。
 
 ## 7. 已知边界（写清楚，不含糊）
 

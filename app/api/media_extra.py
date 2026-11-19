@@ -24,7 +24,7 @@ MAX_UPLOAD = 64 * 1024 * 1024
 
 
 def build(router: Router, store: DocStore, *, data_dir: pathlib.Path,
-          voice_service=None) -> None:
+          voice_service=None, task_store=None) -> None:
     def _file(relative: str, ctype: str | None = None) -> Response:
         path = store.file_path(relative)
         if path is None:
@@ -90,8 +90,103 @@ def build(router: Router, store: DocStore, *, data_dir: pathlib.Path,
             return Response.error(404, "not_found", "没有这条转写结果。")
         return _file(str(record["payload"].get("srtFile") or ""), "text/plain; charset=utf-8")
 
+    def _find_upload(video_id: str) -> pathlib.Path | None:
+        """按 videoId（上传文件名去扩展名）找回已上传的视频。"""
+        folder = store.files_root / "uploads"
+        if not folder.is_dir() or not video_id:
+            return None
+        for candidate in folder.iterdir():
+            if candidate.is_file() and candidate.stem == video_id:
+                return candidate
+        for candidate in folder.iterdir():
+            if candidate.is_file() and candidate.stem.startswith(video_id):
+                return candidate
+        return None
+
+    def _transcribe_worker(task_id: str, path: pathlib.Path, *, size: str | None,
+                           language: str | None, auto_correct: bool) -> None:
+        from infra.asr import to_srt, transcribe as run_asr  # noqa: PLC0415
+
+        try:
+            task_store.start(task_id)
+        except KeyError:
+            return
+        warning = ""
+        try:
+            task_store.set_progress(task_id, 0.15, "正在解码音频…")
+            try:
+                result = run_asr(path, size=size, language=language)
+            except Exception as exc:  # noqa: BLE001
+                # 权重没下载且连不上 Hub 时降级到本地已缓存的 tiny，
+                # 否则用户看到的是"识别失败"，而其实只是精度档位拿不到。
+                from infra.asr.whisper import DEFAULT_MODEL  # noqa: PLC0415
+
+                if not size or size == DEFAULT_MODEL:
+                    raise
+                warning = (f"未能加载 {size} 权重（{str(exc)[:60]}），"
+                           f"已改用本地缓存的 {DEFAULT_MODEL} 模型，识别精度较低。")
+                result = run_asr(path, size=DEFAULT_MODEL, language=language)
+            task_store.set_progress(task_id, 0.8, "正在整理台词…")
+            text = (result.text or "").strip()
+            payload = {
+                "transcript": text,
+                "srt": to_srt(result.segments) if result.segments else "",
+                "segments": result.segments or [],
+                "language": result.language,
+                "meta": {"segment_count": len(result.segments or []),
+                         "duration": round(float(result.duration or 0), 2),
+                         # 只有真的改了文本才置 True；我们当前没有纠错环节，
+                         # 之前恒 True 会让界面谎称"已自动修正明显错别字"。
+                         "auto_corrected": False},
+                "warning": warning or ("" if text else "未识别到语音（静音或纯音乐）。"),
+            }
+            if text:
+                store.create("transcript", path.stem,
+                             {"sourceFile": f"uploads/{path.name}", "text": text})
+            task_store.succeed(task_id, payload)
+        except Exception as exc:  # noqa: BLE001
+            task_store.fail(task_id, "asr_failed", f"识别失败: {exc}")
+
     def transcribe(req: Request) -> Response:
-        """音频 → 文本 + SRT。写盘后落一条 transcript 记录，供下载与后续对齐。"""
+        """两条契约：
+
+        - JSON `{videoId,...}`（首页"识别视频对白"）→ 建异步任务，返回 `taskId`
+        - 原始音频字节（内部/脚本调用）→ 同步返回 text/segments/srt
+        """
+        body_json = None
+        if req.body[:1] in (b"{", b" ") and b"videoId" in req.body[:400]:
+            try:
+                body_json = req.json()
+            except Exception:  # noqa: BLE001
+                body_json = None
+        if body_json is not None:
+            video_id = str(body_json.get("videoId") or "").strip()
+            if not video_id:
+                return Response.error(400, "invalid_input", "缺少 videoId。")
+            path = _find_upload(video_id)
+            if path is None:
+                return Response.error(404, "not_found",
+                                      "找不到已上传的视频，请重新上传后再识别。")
+            from infra.asr import available  # noqa: PLC0415
+
+            ready, message = available()
+            if not ready:
+                return Response.error(501, "model_required", message)
+            if task_store is None:
+                return Response.error(503, "unsupported", "任务队列未就绪，无法识别。")
+            size = str(body_json.get("modelSize") or "").strip() or None
+            task = task_store.create("asr.transcribe", "D3",
+                                     {"videoId": video_id, "size": size or ""})
+            import threading  # noqa: PLC0415
+
+            threading.Thread(
+                target=_transcribe_worker, args=(task.id, path),
+                kwargs={"size": size,
+                        "language": str(body_json.get("language") or "") or None,
+                        "auto_correct": bool(body_json.get("autoCorrect"))},
+                daemon=True).start()
+            return Response(200, {"ok": True, "taskId": task.id})
+
         if not req.body:
             return Response.error(400, "invalid_input", "缺少音频数据。")
         # 几百字节以下不可能是有效音频，交给 ASR 只会得到 asr_failed（审计发现的 502）

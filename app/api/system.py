@@ -87,7 +87,10 @@ def build(router: Router, store: TaskStore, *, app_name: str, version: str,
         task = store.get(tid)
         if task is None:
             return Response.error(404, "not_found", "任务不存在", id=tid)
-        return Response.ok(task=_public(task))
+        view = _public(task)
+        # 顶层直接给 state/progress/result：前端 pollTask 读的是 response.state，
+        # 只放在 task 里会被判成"任务状态无效"。
+        return Response(200, {**view, "ok": True, "task": view})
 
     def task_cancel(req: Request) -> Response:
         tid = req.route_path.rsplit("/", 1)[-1]

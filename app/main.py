@@ -394,7 +394,7 @@ def main(argv: list[str] | None = None) -> int:
                       install_root=ROOT)
     voice_api.build(router, voice_service)
     media_extra.build(router, workspace, data_dir=data_dir,
-                      voice_service=voice_service)
+                      voice_service=voice_service, task_store=store)
     pipeline_services: dict = {}
     visual_api.build(router, visual_service, pipeline_services=pipeline_services)
     video_pipeline = VideoPipeline(visual_library, store,
