@@ -228,3 +228,4 @@ python -m server --port 8787
 | spec/demo-steps.md | **演示操作步骤单**：准备 4 步 + 上台 6 环节 + 应急卡片 + 一页速查 |
 | spec/writing-audit.md | D1 三条写作链（改写/一键创作/小说转剧本）实盘审计与契约修复 |
 | spec/video-domain-audit.md | 资产提取/爆款拆解/画布删除三处视频域实盘审计 |
+| spec/video-e2e-acceptance.md | 视频域端到端验收（参考图/拆解/画布）14 步 |

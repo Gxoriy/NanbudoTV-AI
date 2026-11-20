@@ -68,6 +68,11 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
         """前端读 project.media / project.sourceFile，这两个不在 payload 里就会像"没上传"。"""
         payload = record.get("payload") or {}
         return {"id": record["id"], "name": record["name"],
+                # 前端 render() 读 project.analysis（识别资产/生成按钮都依赖它）
+                "analysis": payload.get("analysis") or {},
+                "analysisHistory": payload.get("analysisHistory") or [],
+                "motionReference": payload.get("motionReference") or {},
+                "generation": payload.get("generation"),
                 "media": payload.get("mediaType") or "video",
                 "mediaType": payload.get("mediaType") or "video",
                 "sourceFile": payload.get("sourceFile") or "",

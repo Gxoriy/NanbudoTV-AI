@@ -83,9 +83,13 @@ def build(router: Router, service: VisualService, library, *,
                                    "prompt": prompt, **(extra or {})})
             if kind == "cover" and project_id and service.store:
                 service.store.update(project_id, thumbnail=relative)
+            if kind == "asset":
+                _apply_asset_result(project_id, extra or {}, relative, prompt, None)
             if task_store is not None:
                 task_store.succeed(task_id, {"file": relative, "assetId": record["id"]})
         except ImageError as exc:
+            if kind == "asset":
+                _apply_asset_result(project_id, extra or {}, "", prompt, exc.message)
             if task_store is not None:
                 task_store.fail(task_id, "network" if exc.code == "network" else "internal",
                                 exc.message)
@@ -93,12 +97,77 @@ def build(router: Router, service: VisualService, library, *,
             if task_store is not None:
                 task_store.fail(task_id, "internal", repr(exc))
 
+    def _asset_row(project_id: str, asset_kind: str, asset_id: str):
+        if not service.store or not project_id:
+            return None, None
+        current = service.store.get(project_id) or {}
+        settings = dict(current.get("settings") or {})
+        assets = dict(settings.get("assets") or {})
+        rows = list(assets.get(asset_kind) or [])
+        for index, row in enumerate(rows):
+            if str(row.get("id")) == asset_id:
+                return settings, (assets, asset_kind, rows, index)
+        return settings, None
+
+    def _asset_prompt(project_id: str, asset_kind: str, asset_id: str) -> str:
+        settings, found = _asset_row(project_id, asset_kind, asset_id)
+        if not found:
+            return ""
+        assets, _kind, rows, index = found
+        row = rows[index]
+        name = str(row.get("name") or "")
+        layout = {"people": "人物三视图，正面/侧面/背面，统一服装",
+                  "scenes": "场景概念图，交代空间与光线",
+                  "props": "物品设定图，材质与比例清晰"}.get(asset_kind, "参考图")
+        style = str(settings.get("visualStyle") or settings.get("style") or "真人实拍短剧")
+        return f"{name}，{layout}，{style}，干净背景，高清"
+
+    def _apply_asset_result(project_id: str, extra: dict, relative: str,
+                            prompt: str, error: str | None) -> None:
+        """把生成结果写回 project.settings.assets：前端卡片读 status/imageFile。"""
+        asset_kind = str(extra.get("assetKind") or "")
+        asset_id = str(extra.get("assetId") or "")
+        settings, found = _asset_row(project_id, asset_kind, asset_id)
+        if not found or not service.store:
+            return
+        assets, kind_key, rows, index = found
+        row = dict(rows[index])
+        row["prompt"] = prompt
+        if error:
+            row["status"] = "failed"
+            row["error"] = str(error)[:200]
+        else:
+            row["status"] = "done"
+            row["error"] = ""
+            row["imageFile"] = relative
+            history = list(row.get("history") or [])
+            history.append({"file": relative, "prompt": prompt,
+                            "createdAt": __import__("time").time()})
+            row["history"] = history[-12:]
+        rows[index] = row
+        assets[kind_key] = rows
+        settings["assets"] = assets
+        service.store.update(project_id, settings=settings)
+
     def _start_generation(req: Request, kind: str) -> Response:
         body = req.json()
         prompt = str(body.get("prompt") or body.get("requirement") or "").strip()
         project_id = str(body.get("projectId") or "")
         extra = {key: body[key] for key in ("sceneIndex", "shotId", "episode")
                  if key in body}
+        asset_kind = str(body.get("kind") or "")
+        asset_id = str(body.get("assetId") or "")
+        if kind == "asset":
+            extra.update({"assetId": asset_id, "assetKind": asset_kind,
+                          "imageModel": str(body.get("imageModel") or ""),
+                          "tier": str(body.get("tier") or ""),
+                          "imageResolution": str(body.get("imageResolution") or "")})
+            if not prompt:
+                # 卡片上的提示词框允许留空：用资产名 + 项目画风兜底，不能直接 400
+                prompt = _asset_prompt(project_id, asset_kind, asset_id)
+                if not prompt:
+                    return Response.error(400, "invalid_input",
+                                          "缺少素材名称或提示词，无法生成参考图。")
         if not prompt:
             return Response.error(400, "invalid_input", "提示词不能为空。")
         if not image_config.enabled:
@@ -203,6 +272,70 @@ def build(router: Router, service: VisualService, library, *,
         payload["deleted"] = False
         store.update(doc_id, payload=payload)
         return Response(200, {"ok": True, "id": doc_id})
+
+    def _canvas_assets(req: Request):
+        """画布项目资产：存在 canvas 文档 payload.assets 里，文件落 canvas-assets/。"""
+        # upload 走二进制流，只有 JSON 请求才解析 body
+        ctype = (req.headers.get("content-type") or "").lower()
+        body = req.json() if req.body and "json" in ctype else {}
+        canvas_id = str(body.get("canvasId") or req.headers.get("x-canvas-id") or "")
+        record = store.get(canvas_id) if canvas_id else None
+        if record is None or record["kind"] != KIND_CANVAS:
+            return None, None, None
+        payload = dict(record["payload"])
+        return record, payload, list(payload.get("assets") or [])
+
+    def _canvas_assets_save(canvas_id: str, payload: dict, assets: list) -> dict:
+        payload = {**payload, "assets": assets}
+        store.update(canvas_id, payload=payload)
+        return {"ok": True, "assets": assets, "canvasId": canvas_id}
+
+    def canvas_assets_list(req: Request) -> Response:
+        record, payload, assets = _canvas_assets(req)
+        if record is None:
+            return Response.error(404, "not_found", "画布不存在。")
+        return Response(200, {"ok": True, "assets": assets})
+
+    def canvas_assets_upload(req: Request) -> Response:
+        from urllib.parse import unquote  # noqa: PLC0415
+
+        record, payload, assets = _canvas_assets(req)
+        if record is None:
+            return Response.error(404, "not_found", "画布不存在。")
+        if not req.body:
+            return Response.error(400, "invalid_input", "上传内容为空。")
+        name = unquote(req.headers.get("x-asset-name", "")) or unquote(
+            req.headers.get("x-filename", "")) or "参考图"
+        kind = (req.headers.get("x-asset-kind") or "people").strip() or "people"
+        upload_id = (req.headers.get("x-asset-upload-id") or "").strip()
+        relative = store.save_file("canvas-assets", name, req.body)
+        asset = {"id": upload_id or f"asset-{len(assets) + 1}",
+                 "name": name, "kind": kind, "file": relative,
+                 "size": len(req.body), "saved": True}
+        assets = [row for row in assets if row.get("id") != asset["id"]] + [asset]
+        return Response(200, _canvas_assets_save(record["id"], payload, assets))
+
+    def canvas_assets_rename(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        record, payload, assets = _canvas_assets(req)
+        if record is None:
+            return Response.error(404, "not_found", "画布不存在。")
+        asset_id = str(body.get("assetId") or "")
+        for row in assets:
+            if str(row.get("id")) == asset_id:
+                row["name"] = str(body.get("name") or row.get("name") or "")
+                if body.get("kind"):
+                    row["kind"] = str(body["kind"])
+        return Response(200, _canvas_assets_save(record["id"], payload, assets))
+
+    def canvas_assets_remove(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        record, payload, assets = _canvas_assets(req)
+        if record is None:
+            return Response.error(404, "not_found", "画布不存在。")
+        asset_id = str(body.get("assetId") or "")
+        assets = [row for row in assets if str(row.get("id")) != asset_id]
+        return Response(200, _canvas_assets_save(record["id"], payload, assets))
 
     def canvas_document(req: Request) -> Response:
         doc_id = req.q1("id") or req.q1("canvasId") or ""
@@ -512,6 +645,14 @@ def build(router: Router, service: VisualService, library, *,
     router.register("D2", "/api/canvas/list", canvas_list)
     router.register("D2", "/api/canvas/delete", canvas_delete, methods=("POST",))
     router.register("D2", "/api/canvas/restore", canvas_restore, methods=("POST",))
+    router.register("D2", "/api/canvas/assets/list", canvas_assets_list,
+                    methods=("GET", "POST"))
+    router.register("D2", "/api/canvas/assets/upload", canvas_assets_upload,
+                    methods=("POST",))
+    router.register("D2", "/api/canvas/assets/rename", canvas_assets_rename,
+                    methods=("POST",))
+    router.register("D2", "/api/canvas/assets/remove", canvas_assets_remove,
+                    methods=("POST",))
     router.register("D2", "/api/canvas/document", canvas_document)
     router.register("D2", "/api/canvas/save", canvas_save, methods=("POST",))
     router.register("D2", "/api/canvas/create", canvas_create, methods=("POST",))
