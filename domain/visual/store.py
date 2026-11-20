@@ -31,6 +31,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_visual_request
 """
 
 
+def _fnv_hash(text: str) -> str:
+    value = 2166136261
+    for char in text:
+        value = ((value ^ ord(char)) * 16777619) & 0xFFFFFFFF
+    return f"{value:08x}"
+
+
 def _asset_buckets(settings: dict) -> dict:
     """项目资产分组：people/scenes/props。
 
@@ -94,15 +101,15 @@ class VisualStore:
             return self.get(project_id) or {}
         if "settings" in payload and not isinstance(payload["settings"], str):
             incoming = dict(payload["settings"])
-            if "assets" not in incoming:
-                row = self._conn.execute(
-                    "SELECT settings FROM visual_projects WHERE id=?",
-                    (project_id,)).fetchone()
-                if row is not None:
-                    old = json.loads(row["settings"] or "{}")
-                    if old.get("assets"):
-                        incoming["assets"] = old["assets"]
-                        payload["settings"] = incoming
+            row = self._conn.execute(
+                "SELECT settings FROM visual_projects WHERE id=?",
+                (project_id,)).fetchone()
+            old = json.loads(row["settings"] or "{}") if row is not None else {}
+            for key in ("assets", "confirmedScript", "sourceStructure",
+                        "workflowPreparedScript", "workflowAssetSourceHash"):
+                if key not in incoming and old.get(key):
+                    incoming[key] = old[key]
+            payload["settings"] = incoming
         for key in ("settings", "scenes"):
             if key in payload and not isinstance(payload[key], str):
                 payload[key] = json.dumps(payload[key], ensure_ascii=False)
@@ -157,7 +164,18 @@ class VisualStore:
             "sourceStructure": str(settings.get("sourceStructure") or ""),
             # 步骤 01/03 依赖：needsAIDirectory() 读 sceneDirectory
             "workflowPreparedScript": settings.get("workflowPreparedScript") or {},
-            "workflowAssetSourceHash": settings.get("workflowAssetSourceHash") or "",
+            "workflowAssetSourceHash": (
+                settings.get("workflowAssetSourceHash")
+                or (
+                    _fnv_hash(str(settings.get("confirmedScript")
+                                  or settings.get("sourceStructure") or ""))
+                    if any((settings.get("assets") or {}).get(kind)
+                           for kind in ("people", "scenes", "props"))
+                    and str(settings.get("confirmedScript")
+                            or settings.get("sourceStructure") or "").strip()
+                    else ""
+                )
+            ),
             "workflowAssetSourceLength": settings.get("workflowAssetSourceLength") or 0,
             "scriptGenerationId": settings.get("scriptGenerationId") or "",
             # 前端有多处直接读 project.assets.people（不判空），缺了 assets 会在

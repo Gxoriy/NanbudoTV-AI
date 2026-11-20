@@ -45,6 +45,18 @@ class SettingsKeepAssetsTest(unittest.TestCase):
         self.store.update(self.project["id"], settings={"imageResolution": "2K"})
         self.assertEqual(len(self._assets()), 2)
 
+    def test_legacy_project_gets_asset_hash(self) -> None:
+        """旧项目有资产、有正文但没有 hash：读取时应自愈，否则步骤 02 会被拦。"""
+        self.service.save_settings({
+            "projectId": self.project["id"],
+            "settings": {"confirmedScript": "第一场 图书馆 日 内\n林晚推门进来。",
+                         "assets": {"people": [{"name": "林晚"}],
+                                    "scenes": [], "props": []}},
+        })
+        got = self.service.project(self.project["id"])["project"]
+        self.assertEqual(len(got["workflowAssetSourceHash"]), 8)
+        self.assertEqual(len(got["assets"]["people"]), 1)
+
     def test_rename_via_settings(self) -> None:
         self.service.save_settings({"projectId": self.project["id"],
                                     "projectName": "改名后的项目"})

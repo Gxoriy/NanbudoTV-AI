@@ -141,9 +141,26 @@ class VisualService:
         return {"ok": True, "projects": brief}
 
     def project(self, project_id: str) -> dict[str, Any]:
-        record = self._store().get(project_id)
+        store = self._store()
+        record = store.get(project_id)
         if record is None:
             raise VisualError(404, "not_found", "项目不存在或已删除。")
+        # 旧项目自愈：已有资产但缺 workflowAssetSourceHash 时，按当前正文补上。
+        # 前端"下一步：分镜"的守卫只认这个字段，缺了会提示"请先识别人物场景物品"。
+        settings = dict(record.get("settings") or {})
+        assets = record.get("assets") or {}
+        has_assets = any(assets.get(kind) for kind in ("people", "scenes", "props"))
+        if has_assets and not settings.get("workflowAssetSourceHash"):
+            source = str(settings.get("confirmedScript")
+                         or settings.get("sourceStructure") or "")
+            if source.strip():
+                value = 2166136261
+                for char in source:
+                    value = ((value ^ ord(char)) * 16777619) & 0xFFFFFFFF
+                settings["workflowAssetSourceHash"] = f"{value:08x}"
+                settings["workflowAssetSourceLength"] = len(source)
+                store.update(project_id, settings=settings)
+                record = store.get(project_id)
         return {"ok": True, "project": record}
 
     def create_project(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -176,11 +193,13 @@ class VisualService:
             if not isinstance(payload["settings"], dict):
                 raise VisualError(400, "invalid_input", "settings 必须是对象。")
             incoming = dict(payload["settings"])
-            if "assets" not in incoming:
-                # 前端保存外观/线路设置时不带 assets，不能顺手把已提取资产删掉
-                current = (store.get(project_id) or {}).get("settings") or {}
-                if current.get("assets"):
-                    incoming["assets"] = current["assets"]
+            # 前端保存外观/线路设置时只带部分字段；缺的键要继承，否则会把
+            # 已提取资产或正文（confirmedScript）整块抹掉。
+            current = (store.get(project_id) or {}).get("settings") or {}
+            for key in ("assets", "confirmedScript", "sourceStructure",
+                        "workflowPreparedScript", "workflowAssetSourceHash"):
+                if key not in incoming and current.get(key):
+                    incoming[key] = current[key]
             fields["settings"] = incoming
         if "style" in payload:
             fields["style"] = str(payload.get("style") or "")
