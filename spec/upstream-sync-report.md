@@ -80,3 +80,43 @@ workflow_series282.css/js   多剧集管理
 
 353 tests OK；规则 PASS；首页 28 项 0 异常；前端契约缺口 0；
 10 项全量门禁 PASS。
+
+## 七、对原版 exe 的真机抓包（补充）
+
+原版进程 `NanbudoTV·AI.exe`（pid 14136，固定端口 **8765**）正在运行，
+其 `/api/health` 报 `version=2.1.293`，授权卡 `DW-44HD***-2MFB` 仍处于 active
+（未再消耗新卡密）。用 `tools/capture_exe_routes.js` 打开 18 个页面并做
+**安全点击**（跳过删除/重置/生成/安装/更新等按钮），抓到 17 条请求，0 控制台错误：
+
+```
+POST /api/session/login
+GET  /api/visual/points
+GET  /api/hall/downloads
+GET  /api/tutorials?refresh=1
+GET  /api/model-profiles
+GET  /api/visual/profile?refresh=1
+GET  /api/asr/status?model=small
+GET  /api/storage/status
+GET  /api/history
+GET  /api/rewrite-projects
+GET  /api/runtime/status
+GET  /api/client/config?refresh=1
+GET  /api/license/status
+GET  /api/visual/usage
+GET  /api/tasks
+GET  /api/health
+GET  /api/local-storage/settings
+```
+
+对照：我们内核当前注册 **301 条路由**，上面每一条都存在。
+
+`tools/replay_exe_capture.py` 把抓到的 16 条（去掉 login）**逐条回放**到我们的内核：
+
+```
+[OK] ... exe=200 ours=200   ×16
+回放 16 条，差异 0
+```
+
+结论：原版 exe 的运行时契约与当前内核对齐；此前 12 个缺口是 1.280 静态更新
+带来的新前端调用，已由 `feature_pack` 补齐并通过 18 页点击审计。
+
