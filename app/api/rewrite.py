@@ -282,38 +282,6 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
 
         return _guard(run)
 
-    def source_proposals(req: Request) -> Response:
-        body = req.json()
-        text = str(body.get("text") or body.get("content") or "").strip()
-        if not text:
-            return Response.error(400, "invalid_input", "缺少素材文本。")
-
-        def run() -> Response:
-            data = _llm_json(
-                f"素材：{text[:3000]}\n"
-                '给出 3 个选题 JSON：{"proposals":[{"title":"","hook":"","summary":""}]}')
-            proposals = data.get("proposals") or []
-            return Response(200, {"ok": True, "proposals": proposals,
-                                  "count": len(proposals)})
-
-        return _guard(run)
-
-    def source_proposal_refine(req: Request) -> Response:
-        body = req.json()
-        proposal = body.get("proposal") or {}
-        feedback = str(body.get("feedback") or "").strip()
-        if not proposal:
-            return Response.error(400, "invalid_input", "缺少 proposal。")
-
-        def run() -> Response:
-            data = _llm_json(
-                f"原方案：{json.dumps(proposal, ensure_ascii=False)[:1500]}\n"
-                f"修改意见：{feedback or '加强冲突与钩子'}\n"
-                '输出改进后的 JSON：{"proposal":{"title":"","hook":"","summary":""}}')
-            return Response(200, {"ok": True, "proposal": data.get("proposal") or data})
-
-        return _guard(run)
-
     def source_refine(req: Request) -> Response:
         body = req.json()
         text = str(body.get("text") or "").strip()
@@ -367,35 +335,6 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     def prompt_reverse_reconcile(req: Request) -> Response:
         return _rewrite_text_route(req, system_hint="把下面的反推描述合并为一段连贯提示词。")
 
-    def original_recommend(req: Request) -> Response:
-        body = req.json()
-        topic = str(body.get("topic") or body.get("text") or "").strip()
-        if not topic:
-            return Response.error(400, "invalid_input", "缺少主题。")
-
-        def run() -> Response:
-            data = _llm_json(
-                f"主题：{topic[:1500]}\n"
-                '输出 3 条原创方向 JSON：{"suggestions":[{"title":"","angle":""}]}')
-            return Response(200, {"ok": True,
-                                  "suggestions": data.get("suggestions") or []})
-
-        return _guard(run)
-
-    def original_field_optimize(req: Request) -> Response:
-        body = req.json()
-        value = str(body.get("text") or body.get("value") or "").strip()
-        if not value:
-            return Response.error(400, "invalid_input", "缺少内容。")
-
-        def run() -> Response:
-            out = _llm_call(
-                f"字段：{body.get('field') or '设定'}\n原内容：{value[:1500]}\n"
-                "请优化，只输出优化后的内容。")
-            return Response(200, {"ok": True, "text": out.strip()})
-
-        return _guard(run)
-
     def prompt_reverse_analyze(req: Request) -> Response:
         body = req.json()
         source = str(body.get("text") or body.get("url") or "").strip()
@@ -444,9 +383,6 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
         return _guard(run)
 
     router.register("D1", "/api/source/analyze", source_analyze, methods=("POST",))
-    router.register("D1", "/api/source/proposals", source_proposals, methods=("POST",))
-    router.register("D1", "/api/source/proposal-refine", source_proposal_refine,
-                    methods=("POST",))
     router.register("D1", "/api/source/refine", source_refine, methods=("POST",))
     router.register("D1", "/api/quality/score", quality_score, methods=("POST",))
     router.register("D1", "/api/quality/optimize", quality_optimize, methods=("POST",))
@@ -458,10 +394,6 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     router.register("D1", "/api/prompt-reverse/analyze", prompt_reverse_analyze,
                     methods=("POST",))
     router.register("D1", "/api/prompt-reverse/reconcile", prompt_reverse_reconcile,
-                    methods=("POST",))
-    router.register("D1", "/api/original/recommend", original_recommend,
-                    methods=("POST",))
-    router.register("D1", "/api/original/field-optimize", original_field_optimize,
                     methods=("POST",))
     router.register("D1", "/api/rewrite/settings-suggest", settings_suggest,
                     methods=("POST",))
@@ -518,8 +450,10 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
 
     # ---------- 小说转剧本（长文本分卷 + 后台任务） ----------
     def novel_screenplay_start(req: Request) -> Response:
-        body = req.json()
-        text = str(body.get("text") or body.get("content") or "").strip()
+        body = req.json() if req.body else {}
+        # 前端 novel_legacy249.js 用 sourceText，还需要 requirements/style 等
+        text = str(body.get("sourceText") or body.get("text")
+                   or body.get("content") or "").strip()
         if not text:
             return Response.error(400, "invalid_input", "缺少小说正文。")
         if assist is None:
@@ -529,6 +463,9 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
             return Response.error(503, "unsupported", "任务队列未就绪。")
 
         title = str(body.get("title") or "未命名小说")[:60]
+        requirements = str(body.get("requirements") or "").strip()
+        style = str(body.get("style") or "短剧")[:40]
+        prior = str(body.get("priorContext") or "").strip()[:400]
         chunk_size = max(500, min(int(body.get("chunkSize") or 1200), 4000))
         chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)][:12]
         task = task_store.create("novel.screenplay", "D1",
@@ -547,7 +484,8 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                                             f"正在改写第 {index}/{len(chunks)} 段")
                     data = assist.json_call(
                         "你是剧本改编助手，只输出 JSON。",
-                        f"原文片段：{chunk}\n"
+                        f"改编风格：{style}；要求：{requirements[:300]}；"
+                        f"承接：{prior}\n原文片段：{chunk}\n"
                         '输出 JSON：{"scenes":[{"index":1,"location":"","characters":[""],'
                         '"action":"","dialogue":[{"speaker":"","line":""}]}]}')
                     for scene in data.get("scenes") or []:
@@ -556,8 +494,21 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                 record = store.create("novel_screenplay", title,
                                       {"scenes": scenes, "chunks": len(chunks),
                                        "characters": len(text)})
+                # 剧本正文：前端 showResult() 只读 result.screenplay
+                lines: list[str] = [f"【{title}】", ""]
+                for scene in scenes:
+                    lines.append(f"{scene.get('location') or '场景'}："
+                                 f"{scene.get('action') or ''}")
+                    for item in scene.get("dialogue") or []:
+                        lines.append(f"{item.get('speaker') or '角色'}：{item.get('line') or ''}")
+                    lines.append("")
+                screenplay = "\n".join(lines).strip()
+                continuity = "；".join(str(scene.get("continuity") or "")
+                                       for scene in scenes if scene.get("continuity"))
                 task_store.succeed(task_id, {"projectId": record["id"],
-                                             "scenes": len(scenes)})
+                                             "scenes": len(scenes),
+                                             "screenplay": screenplay,
+                                             "continuity": continuity})
             except Exception as exc:  # noqa: BLE001
                 code = getattr(exc, "code", "internal")
                 task_store.fail(task_id, code if isinstance(code, str) else "internal",
@@ -567,6 +518,7 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
 
         threading.Thread(target=work, args=(task.id,), daemon=True).start()
         return Response(200, {"ok": True, "taskId": task.id, "chunks": len(chunks),
+                              "auxReceiptId": str(body.get("auxReceiptId") or ""),
                               "characters": len(text)})
 
     def novel_screenplay_status(req: Request) -> Response:

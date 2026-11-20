@@ -87,8 +87,15 @@ class TaskStore:
             self._conn.executescript(SCHEMA)
 
     # ---------- 生命周期 ----------
+    @property
+    def closed(self) -> bool:
+        return bool(getattr(self, "_closed", False))
+
     def close(self) -> None:
         with self._lock:
+            if getattr(self, "_closed", False):
+                return
+            self._closed = True
             self._conn.close()
 
     def __enter__(self) -> "TaskStore":

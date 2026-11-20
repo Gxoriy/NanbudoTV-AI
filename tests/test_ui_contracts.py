@@ -33,7 +33,7 @@ class FakeAssist:
 
 class UiContractsTest(unittest.TestCase):
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory()
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.root = Path(self._tmp.name)
         self.store = DocStore(self.root / "ws.db", files_root=self.root / "files")
         self.tasks = TaskStore(self.root / "tasks.db")
@@ -61,7 +61,25 @@ class UiContractsTest(unittest.TestCase):
 
         return LibraryStore(self.root / "lib.db", files_root=self.root / "files")
 
+    def _drain_tasks(self, timeout: float = 8.0) -> None:
+        """等异步辅助任务跑完，否则临时目录里 tasks.db 会被线程占用。"""
+        import time
+
+        store = getattr(self, "tasks", None)
+        if store is None:
+            return
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                rows = store.list()
+            except Exception:  # noqa: BLE001
+                return
+            if all(getattr(row, "state", "done") in ("done", "error") for row in rows):
+                return
+            time.sleep(0.05)
+
     def tearDown(self) -> None:
+        self._drain_tasks()
         self.library.close()
         self.visual.store.close()
         self.tasks.close()

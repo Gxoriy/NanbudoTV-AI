@@ -226,3 +226,4 @@ python -m server --port 8787
 4. **P5 打包**：PyInstaller onedir + 运行时外置（ffmpeg/权重按需下载）
 | spec/demo-runbook.md | **课题演示 Runbook**：真实 data/ 的体检、彩排、四幕脚本、失败预案、三条红线 |
 | spec/demo-steps.md | **演示操作步骤单**：准备 4 步 + 上台 6 环节 + 应急卡片 + 一页速查 |
+| spec/writing-audit.md | D1 三条写作链（改写/一键创作/小说转剧本）实盘审计与契约修复 |

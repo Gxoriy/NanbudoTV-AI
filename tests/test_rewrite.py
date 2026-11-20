@@ -19,12 +19,30 @@ from domain.workspace import DocStore  # noqa: E402
 
 class RewriteRoutesTest(unittest.TestCase):
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory()
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.store = DocStore(Path(self._tmp.name) / "workspace.db")
         self.router = Router()
         rewrite_api.build(self.router, self.store)
 
+    def _drain_tasks(self, timeout: float = 8.0) -> None:
+        """等异步辅助任务跑完，否则临时目录里 tasks.db 会被线程占用。"""
+        import time
+
+        store = getattr(self, "tasks", None)
+        if store is None:
+            return
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                rows = store.list()
+            except Exception:  # noqa: BLE001
+                return
+            if all(getattr(row, "state", "done") in ("done", "error") for row in rows):
+                return
+            time.sleep(0.05)
+
     def tearDown(self) -> None:
+        self._drain_tasks()
         self.store.close()
         self._tmp.cleanup()
 
@@ -146,7 +164,7 @@ class GenerateTest(unittest.TestCase):
             return f"第{len(self.calls)}段正文：林晚推门进来，雨声被关在门外。"
 
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory()
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.root = Path(self._tmp.name)
         self.store = DocStore(self.root / "workspace.db", files_root=self.root / "files")
         from infra.tasks import TaskStore
@@ -237,7 +255,7 @@ class MotionRoutesTest(unittest.TestCase):
             return {"id": task_id, "state": "running"}
 
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory()
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.root = Path(self._tmp.name)
         self.store = DocStore(self.root / "workspace.db", files_root=self.root / "files")
         self.pipeline = self.FakePipeline()
@@ -330,17 +348,30 @@ class FakeAssist:
 
 class LlmRoutesTest(unittest.TestCase):
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory()
+        self._tmp = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.root = Path(self._tmp.name)
         self.store = DocStore(self.root / "workspace.db")
+        from infra.tasks import TaskStore
+
+        self.tasks = TaskStore(self.root / "tasks.db")
 
     def tearDown(self) -> None:
+        # 等异步辅助任务结束，否则临时目录里的 tasks.db 会被后台线程占用
+        import time
+
+        deadline = time.time() + 8.0
+        while time.time() < deadline:
+            rows = self.tasks.list()
+            if all(getattr(row, "state", "done") in ("done", "error") for row in rows):
+                break
+            time.sleep(0.05)
+        self.tasks.close()
         self.store.close()
         self._tmp.cleanup()
 
     def _router(self, assist):
         router = Router()
-        rewrite_api.build(router, self.store, assist=assist)
+        rewrite_api.build(router, self.store, assist=assist, task_store=self.tasks)
         return router
 
     def _post(self, router: Router, path: str, body: dict):
@@ -358,9 +389,24 @@ class LlmRoutesTest(unittest.TestCase):
         self.assertEqual(resp.payload["analysis"]["genre"], "都市")
 
     def test_source_proposals_counts(self) -> None:
+        """前端发 sourceText 并轮询 taskId，提案结果在任务里。"""
         assist = FakeAssist({"proposals": [{"title": "A"}, {"title": "B"}]})
-        resp = self._post(self._router(assist), "/api/source/proposals", {"text": "x"})
-        self.assertEqual(resp.payload["count"], 2)
+        router = self._router(assist)
+        resp = self._post(router, "/api/source/proposals",
+                          {"sourceText": "第一场 图书馆", "settings": {}})
+        self.assertEqual(resp.status, 200, resp.payload)
+        task_id = resp.payload["taskId"]
+        import time
+
+        for _ in range(100):
+            snap = self.tasks.get(task_id)
+            if snap is not None and snap.state in ("done", "error"):
+                break
+            time.sleep(0.05)
+        result = snap.result
+        self.assertIsNotNone(result, f"任务失败: {getattr(snap, 'error_detail', '')}")
+        self.assertEqual(result["count"], 2)
+        self.assertEqual(len(result["proposals"]), 2)
 
     def test_quality_score_is_flattened(self) -> None:
         assist = FakeAssist({"score": 82, "dimensions": [{"name": "节奏", "score": 80}],

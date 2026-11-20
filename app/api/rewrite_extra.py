@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import pathlib
 import threading
 import time
@@ -18,6 +19,17 @@ KIND_BREAKDOWN = "breakdown"
 
 
 def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> None:
+    def _llm_json(prompt: str) -> dict:
+        """写作辅助的 JSON 调用（rewrite.py 的 _llm_json 不在这个模块作用域）。"""
+        if assist is None:
+            raise RuntimeError("LLM 未就绪")
+        return assist.json_call("你是短剧编剧，只返回一个合法 JSON 对象。", prompt)
+
+    def _llm_call(prompt: str) -> str:
+        if assist is None:
+            raise RuntimeError("LLM 未就绪")
+        return assist.complete("你是短剧编剧，只输出正文。", prompt)
+
     # ---------- 爆款拆解：上传/参考图/分析/生成/查询 ----------
     def _bd_project(project_id: str) -> dict | None:
         record = store.get(project_id)
@@ -137,4 +149,151 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
     router.register("D1", "/api/breakdown/observe", breakdown_observe,
                     methods=("GET", "POST"))
 
+    def _aux_task(kind: str, payload: dict, work) -> Response:
+        """写作辅助统一入口：前端要 taskId + pollTask，不能同步返回。"""
+        if assist is None or task_store is None:
+            return Response.error(503, "unsupported", "LLM 或任务队列未就绪。")
 
+        def runner(task_id: str) -> None:
+            def safe(fn, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+                # 测试结束/服务关闭后不许再碰 sqlite 文件（否则临时目录删不掉）
+                if getattr(task_store, "closed", False):
+                    return None
+                try:
+                    return fn(*args, **kwargs)
+                except Exception:  # noqa: BLE001
+                    if getattr(task_store, "closed", False):
+                        return None
+                    raise
+
+            try:
+                safe(task_store.start, task_id)
+            except KeyError:
+                return
+            try:
+                safe(task_store.set_progress, task_id, 0.2, "正在生成…")
+                result = work()
+                safe(task_store.succeed, task_id, result)
+            except Exception as exc:  # noqa: BLE001
+                safe(task_store.fail, task_id,
+                     str(getattr(exc, "code", "internal")),
+                     str(getattr(exc, "message", exc)))
+
+        task = task_store.create(f"rewrite.{kind}", "D1", {"kind": kind})
+        import threading  # noqa: PLC0415
+
+        threading.Thread(target=runner, args=(task.id,), daemon=True).start()
+        return Response(200, {"ok": True, "taskId": task.id, "callId": task.id})
+
+    def _stage_text(payload: dict) -> str:
+        """前端字段很多：sourceText / text / settings[field] 都兼容。"""
+        for key in ("sourceText", "text", "content", "value"):
+            value = str(payload.get(key) or "").strip()
+            if value:
+                return value
+        settings = payload.get("settings") or {}
+        if isinstance(settings, dict):
+            for key in ("originalTheme", "originalDirection", "field", "topic",
+                        "originalPlotType", "sourceText"):
+                value = str(settings.get(key) or "").strip()
+                if value:
+                    return value
+        return ""
+
+    def source_proposals(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        text = _stage_text(body)
+        if not text:
+            return Response.error(400, "invalid_input", "缺少原剧本，请先保存原稿。")
+
+        def work():
+            data = _llm_json(
+                f"原剧本：{text[:3000]}\n"
+                '给出 3 条差异化换皮方向 JSON：'
+                '{"proposals":[{"id":"A","title":"","hook":"","summary":"",'
+                '"score":85,"reason":""}]}；score 为 0-100 的可拍性评分。')
+            rows = data.get("proposals") or []
+            for index, row in enumerate(rows):
+                row["id"] = str(row.get("id") or "ABC"[index:index + 1])
+                try:
+                    row["score"] = max(0, min(100, int(float(row.get("score") or 78))))
+                except (TypeError, ValueError):
+                    row["score"] = 78
+            return {"ok": True, "proposals": rows, "count": len(rows),
+                    "recommendation": rows[0] if rows else {}}
+
+        return _aux_task("source_proposals", body, work)
+
+    def source_proposal_refine(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        proposal = body.get("proposal") or {}
+        instruction = str(body.get("instruction") or body.get("feedback") or "").strip()
+        if not proposal:
+            return Response.error(400, "invalid_input", "缺少 proposal。")
+
+        def work():
+            data = _llm_json(
+                f"原方案：{json.dumps(proposal, ensure_ascii=False)[:1500]}\n"
+                f"修改意见：{instruction or '加强冲突与钩子、降低重复风险'}\n"
+                '输出改进后的 JSON：'
+                '{"proposal":{"id":"","title":"","hook":"","summary":"","score":85}}')
+            refined = dict(proposal)
+            refined.update(data.get("proposal") or {})
+            refined["id"] = str(proposal.get("id") or "A")
+            return {"ok": True, "proposals": [refined], "proposal": refined,
+                    "count": 1}
+
+        return _aux_task("source_proposal_refine", body, work)
+
+    def original_recommend(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        settings = body.get("settings") or {}
+        topic = _stage_text(body) or str(settings)[:1200]
+        if not topic:
+            return Response.error(400, "invalid_input", "缺少原创设定。")
+        action = str(body.get("action") or "settings")
+
+        def work():
+            if action == "hot_types":
+                data = _llm_json(
+                    f"原创方向：{topic[:1200]}\n"
+                    '输出热门题材 JSON：{"suggestions":[{"title":"","angle":""}]}')
+                return {"ok": True, "suggestions": data.get("suggestions") or [],
+                        "recommendation": {}}
+            data = _llm_json(
+                f"原创设定：{topic[:2000]}\n"
+                "按现有字段名给出一整套原创设定 JSON："
+                '{"recommendation":{"originalTheme":"","protagonistGender":"",'
+                '"protagonistAge":"","storyEra":"","openingHook":"",'
+                '"protagonistGoal":"","mainObstacle":"","emotionalCore":"",'
+                '"originalDirection":"","originalEnding":""}}')
+            return {"ok": True, "recommendation": data.get("recommendation") or {},
+                    "suggestions": []}
+
+        return _aux_task("original_recommend", body, work)
+
+    def original_field_optimize(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        field = str(body.get("field") or "").strip()
+        settings = body.get("settings") or {}
+        value = (str(body.get("text") or body.get("value") or "").strip()
+                 or (str(settings.get(field) or "").strip() if isinstance(settings, dict) else ""))
+        if not value:
+            return Response.error(400, "invalid_input", "缺少要优化的内容。")
+
+        def work():
+            out = _llm_call(
+                f"字段：{field or '设定'}\n原内容：{value[:1500]}\n"
+                "请优化，只输出优化后的内容。")
+            return {"ok": True, "field": field, "text": out.strip()}
+
+        return _aux_task("original_field_optimize", body, work)
+
+
+    router.register("D1", "/api/source/proposals", source_proposals, methods=("POST",))
+    router.register("D1", "/api/source/proposal-refine", source_proposal_refine,
+                    methods=("POST",))
+    router.register("D1", "/api/original/recommend", original_recommend,
+                    methods=("POST",))
+    router.register("D1", "/api/original/field-optimize", original_field_optimize,
+                    methods=("POST",))
