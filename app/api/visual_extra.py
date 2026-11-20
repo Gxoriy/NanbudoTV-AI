@@ -209,7 +209,17 @@ def build(router: Router, service: VisualService, library, *,
         record = store.get(doc_id)
         if record is None or record["kind"] != KIND_CANVAS:
             return Response.error(404, "not_found", "画布不存在。")
-        return Response(200, {"ok": True, "document": record["payload"],
+        payload = dict(record["payload"])
+        payload.setdefault("ecommerce259", {"mode": "video", "form": {},
+                                            "bindings": {}, "uncertainties": [],
+                                            "versions": [], "results": []})
+        payload.setdefault("graph", {"nodes": [], "edges": []})
+        payload.setdefault("id", record["id"])
+        payload.setdefault("name", record["name"])
+        payload.setdefault("createdAt", record.get("createdAt"))
+        payload.setdefault("updatedAt", record.get("updatedAt"))
+        payload.setdefault("deleted", False)
+        return Response(200, {"ok": True, "document": payload,
                               "id": record["id"], "name": record["name"],
                               "updatedAt": record["updatedAt"]})
 
@@ -223,14 +233,46 @@ def build(router: Router, service: VisualService, library, *,
         record = store.update(doc_id, name=name, payload=doc) if doc_id else None
         if record is None:
             record = store.create(KIND_CANVAS, name, doc, owner=owner_of(req))
+        payload = dict(record["payload"])
+        payload.setdefault("ecommerce259", {"mode": "video", "form": {},
+                                            "bindings": {}, "uncertainties": [],
+                                            "versions": [], "results": []})
+        payload.setdefault("graph", {"nodes": [], "edges": []})
+        payload.update({"id": record["id"], "name": record["name"],
+                        "createdAt": record.get("createdAt"),
+                        "updatedAt": record["updatedAt"], "deleted": False})
         return Response(200, {"ok": True, "id": record["id"], "name": record["name"],
-                              "updatedAt": record["updatedAt"]})
+                              "updatedAt": record["updatedAt"], "document": payload})
+
+    def _canvas_defaults(body: dict) -> dict:
+        doc = body.get("document") if isinstance(body.get("document"), dict) else {}
+        graph = doc.get("graph") if isinstance(doc.get("graph"), dict) else {}
+        return {
+            **doc,
+            "graph": {"nodes": list(graph.get("nodes") or []),
+                      "edges": list(graph.get("edges") or [])},
+            "generation": doc.get("generation"),
+            # 电商页 state() = doc.ecommerce259；缺这个对象会读 state().mode 报错
+            "ecommerce259": doc.get("ecommerce259") or {
+                "mode": "video", "form": {}, "bindings": {}, "uncertainties": [],
+                "versions": [], "results": [],
+            },
+        }
 
     def canvas_create(req: Request) -> Response:
         body = req.json()
+        document = _canvas_defaults(body)
         record = store.create(KIND_CANVAS, str(body.get("name") or "未命名画布"),
-                              body.get("document") or {}, owner=owner_of(req))
-        return Response(200, {"ok": True, "id": record["id"], "name": record["name"]})
+                              document, owner=owner_of(req))
+        payload = record["payload"]
+        return Response(200, {
+            "ok": True, "id": record["id"], "name": record["name"],
+            # 前端取 res.document 再交给 open()，缺了会报"画布内容不完整"
+            "document": {**payload, "id": record["id"], "name": record["name"],
+                         "createdAt": record.get("createdAt"),
+                         "updatedAt": record.get("updatedAt"),
+                         "deleted": False},
+        })
 
     def canvas_styles(_req: Request) -> Response:
         return Response(200, service.styles())

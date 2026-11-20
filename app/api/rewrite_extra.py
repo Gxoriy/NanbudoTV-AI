@@ -45,8 +45,9 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
         relative = store.save_file("breakdown", name, req.body)
         record = store.create(KIND_BREAKDOWN, name,
                               {"sourceFile": relative, "mediaType": media,
-                               "size": len(req.body), "outputs": [], "records": []})
-        return Response(200, {"ok": True, "project": record})
+                               "size": len(req.body), "outputs": [], "records": [],
+                               "results": []})
+        return Response(200, {"ok": True, "project": _bd_public(record)})
 
     def breakdown_reference_upload(req: Request) -> Response:
         from urllib.parse import unquote
@@ -62,6 +63,20 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
         payload = {**project["payload"], "referenceFile": relative}
         updated = store.update(project_id, payload=payload)
         return Response(200, {"ok": True, "project": updated, "file": relative})
+
+    def _bd_public(record: dict) -> dict:
+        """前端读 project.media / project.sourceFile，这两个不在 payload 里就会像"没上传"。"""
+        payload = record.get("payload") or {}
+        return {"id": record["id"], "name": record["name"],
+                "media": payload.get("mediaType") or "video",
+                "mediaType": payload.get("mediaType") or "video",
+                "sourceFile": payload.get("sourceFile") or "",
+                "size": payload.get("size") or 0,
+                "results": payload.get("results") or [],
+                "records": payload.get("records") or [],
+                "outputs": payload.get("outputs") or [],
+                "deleted": bool(payload.get("deleted")),
+                "payload": payload, "updatedAt": record.get("updatedAt")}
 
     def _append_bd_result(store, project_id: str, payload: dict,  # noqa: ANN001
                           data: dict, *, kind: str) -> None:

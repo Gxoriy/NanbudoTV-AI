@@ -634,9 +634,16 @@ def build(router: Router, service: VisualService, library, *,
                 current = service.store.get(project_id) or {}
                 settings = dict(current.get("settings") or {})
                 assets = dict(settings.get("assets") or {})
-                assets["people"] = data.get("people") or []
-                assets["scenes"] = data.get("scenes") or []
-                assets["props"] = data.get("props") or []
+                for kind in ("people", "scenes", "props"):
+                    rows = []
+                    for index, row in enumerate(data.get(kind) or [], start=1):
+                        item = dict(row) if isinstance(row, dict) else {"name": str(row)}
+                        # 前端按 id 查 item；没有 id 就会以为素材不存在
+                        item["id"] = str(item.get("id") or f"{kind}-{index}")
+                        item["kind"] = kind
+                        item.setdefault("name", f"未命名{kind}{index}")
+                        rows.append(item)
+                    assets[kind] = rows
                 settings["assets"] = assets
                 service.store.update(project_id, settings=settings)
                 project = service.store.get(project_id)

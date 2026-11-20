@@ -132,7 +132,22 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
         return _list(KIND_BREAKDOWN, with_ok=False)      # 旧契约没有 ok 字段
 
     def breakdown_project(req: Request) -> Response:
-        return _get(KIND_BREAKDOWN, req.q1("id") or "")
+        doc_id = req.q1("id") or ""
+        record = store.get(doc_id) if doc_id else None
+        if record is None or record.get("kind") != KIND_BREAKDOWN:
+            return Response.error(404, "not_found", "项目不存在。")
+        payload = record.get("payload") or {}
+        # 前端 render() 直接读 project.media / project.sourceFile / project.results
+        return Response(200, {"ok": True, "project": {
+            **record,
+            "media": payload.get("mediaType") or "video",
+            "mediaType": payload.get("mediaType") or "video",
+            "sourceFile": payload.get("sourceFile") or "",
+            "size": payload.get("size") or 0,
+            "results": payload.get("results") or [],
+            "outputs": payload.get("outputs") or [],
+            "records": payload.get("records") or [],
+        }})
 
     def breakdown_save(req: Request) -> Response:
         return _save(KIND_BREAKDOWN, req.json())

@@ -105,6 +105,9 @@ def main() -> int:
              f"state={task.get('state')} err={task.get('error') or ''}")
         step("返回项目与资产计数", bool(result.get("project"))
              and sum(counts.values()) > 0, json.dumps(counts, ensure_ascii=False))
+        people = ((result.get("assets") or {}).get("people") or [])
+        step("资产条目带 id", bool(people) and all(row.get("id") for row in people),
+             f"ids={[row.get('id') for row in people][:3]}")
 
         # ---------- 2) 爆款拆解 ----------
         print("\n=== 爆款拆解：结果可见 ===")
@@ -120,8 +123,10 @@ def main() -> int:
                                      "Content-Type": "application/octet-stream"})
         bid = str((body.get("project") or {}).get("id")
                   or body.get("projectId") or body.get("id") or "")
-        step("上传拆解素材", status == 200 and bool(bid),
-             f"id={bid[:10]} body={str(body)[:90]}")
+        project = body.get("project") or {}
+        step("上传拆解素材", status == 200 and bool(bid)
+             and bool(project.get("media")) and bool(project.get("sourceFile")),
+             f"media={project.get('media')} file={str(project.get('sourceFile'))[:18]}")
         if bid:
             status, body = http(port, "/api/breakdown/analyze", "POST",
                                 {"projectId": bid, "start": 0, "limit": 30})
@@ -139,7 +144,12 @@ def main() -> int:
         status, body = http(port, "/api/canvas/create", "POST",
                             {"name": "审计画布", "document": {"nodes": []}})
         cid = str(body.get("id") or (body.get("canvas") or {}).get("id") or "")
+        document = body.get("document") or {}
         step("创建画布", status == 200 and bool(cid), cid[:10])
+        step("创建返回 document", bool(document.get("id"))
+             and isinstance(document.get("graph"), dict)
+             and isinstance(document.get("ecommerce259"), dict),
+             f"graph={bool(document.get('graph'))} ecom={bool(document.get('ecommerce259'))}")
         if cid:
             status, body = http(port, "/api/canvas/delete", "POST", {"id": cid})
             _, listed = http(port, "/api/canvas/list")

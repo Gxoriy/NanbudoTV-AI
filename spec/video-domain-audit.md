@@ -64,3 +64,38 @@
 - 拆解结果是**文本 JSON 文件**（分析/分镜），不是自动生成的视频；视频仍需单独走生成流程。
 - 画布删除是软删除（可 restore），不是物理删除。
 - 资产提取按剧本全文最多 4000 字送入模型，超出会截断。
+
+## 7. 第三轮（2026-11-20 晚）：参考图 / 拆解 / 画布 / 电商
+
+| 现象 | 根因 | 修法 |
+|---|---|---|
+| 「生成参考图」提示**素材已不存在，未提交生成** | 前端 `project.assets[kind].find(v=>v.id===assetId)`；LLM 提取结果只有 name/role，**没有 id** → 永远查不到 | 资产条目补 `id`（`people-1` / `scenes-1`）、`kind`、缺省 name |
+| 拆解任务完成但结果区空 | 上传/查询返回的项目把 `sourceFile`、`mediaType` 藏在 `payload` 里；前端读 `project.media` / `project.sourceFile` → 玩家是空壳 | `breakdown_upload` / `breakdown_project` 顶层补 `media` / `sourceFile` / `results` |
+| 「全新画布 2.0」新建失败 | 前端取 `(await api()).document` 且 `document` 要带 `id/graph/updatedAt`；我们只回 `{id,name}` | create/document/save 统一返回完整 `document`（含 `graph`、时间戳） |
+| 打开画布报 `reading 'updatedAt'` | `/api/canvas/save` 只回 `{ok,id}`，前端 `doc=response.document` 得到 undefined | save 也返回 `document` |
+| 电商页 `Cannot read properties of undefined (reading 'mode')` | 电商页 `state() = doc.ecommerce259`，画布文档没有该对象 | 画布文档补 `ecommerce259` 默认态（mode=video/form/bindings…） |
+
+验收：
+
+```
+=== 视觉：资产提取 ===
+[OK] 资产识别任务 / 资产计数 {"people":2,"scenes":1,"props":2}
+[OK] 资产条目带 id  ids=['people-1','people-2']
+=== 爆款拆解 ===
+[OK] 上传拆解素材 media=video file=breakdown/...
+[OK] 拆解任务完成 / 结果列表可见 results=1
+=== 画布 ===
+[OK] 创建画布 / 创建返回 document graph=True ecom=True
+[OK] 删除接口 200 / 列表不再显示
+合计 10 步，失败 0
+```
+
+浏览器（`tools/ui_ecom_canvas.js`）：
+
+```
+[OK] 电商页无 mode 报错
+[OK] 电商页有内容
+[OK] 新建对话框打开
+[OK] 创建成功且打开   open=UI 新建画布
+[OK] 无画布 4xx/JS 报错
+```
