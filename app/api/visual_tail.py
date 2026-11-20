@@ -387,8 +387,42 @@ def build(router: Router, service: VisualService, library, *,
                    if key != "source" and value is not None}
         return Response(200, payload)
 
-    def macro_media_catalog(_req: Request) -> Response:
-        return Response(200, {"ok": True, "media": [], "message": VIDEO_REQUIRED})
+    def macro_media_catalog(req: Request) -> Response:
+        """前端 loadCatalog 要求顶层 models 数组；media 字段已废弃。"""
+        from domain.pricing import visual_profile_defaults  # noqa: PLC0415
+
+        project_id = req.q1("projectId") or ""
+        profile = visual_profile_defaults()
+        record = service.store.get(project_id) if service.store else {}
+        settings = dict((record or {}).get("settings") or {})
+        assets = []
+        for kind in ("people", "scenes", "props"):
+            for row in (settings.get("assets") or {}).get(kind) or []:
+                image = str(row.get("imageFile") or "")
+                if not image:
+                    continue
+                assets.append({
+                    "id": str(row.get("id") or f"{kind}-{len(assets) + 1}"),
+                    "name": str(row.get("name") or "参考图"),
+                    "kind": kind,
+                    "imageFile": image,
+                    "imageReady": True,
+                    "url": f"/api/asset-library/image?file={image}",
+                })
+        return Response(200, {
+            "ok": True,
+            "projectId": project_id,
+            "models": list(profile.get("visualModels") or []),
+            "imagePricing": list(profile.get("imagePricing") or []),
+            "videoPricing": list(profile.get("videoPricing") or []),
+            "modelCapabilities": dict(profile.get("modelCapabilities") or {}),
+            "pointsPerCny": profile.get("pointsPerCny"),
+            "assets": assets,
+            "projectMediaDefaults": settings.get("mediaDefaults") or {},
+            "videoRouteGroups": [],
+            "concurrency": {"video": {"limit": 2}, "image": {"limit": 2}},
+            "visualCatalogPublished": False,
+        })
 
     def macro_media_submit(req: Request) -> Response:
         """媒体提交：走与分镜视频同一条管线（上游 /v1/media/generate）。"""

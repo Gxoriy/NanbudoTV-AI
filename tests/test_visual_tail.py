@@ -76,6 +76,16 @@ class TailRoutesTest(unittest.TestCase):
         self.assertEqual(body["removed"], 1)
         self.assertEqual(body["kept"], 1)
 
+    def test_macro_media_catalog_has_models(self) -> None:
+        """新版 loadCatalog 只认 models 数组，缺了就报"媒体模型目录格式无效"。"""
+        got = self.call("GET", "/api/visual/macro/media/catalog?projectId=p1")
+        self.assertEqual(got.status, 200, got.payload)
+        models = got.payload.get("models") or []
+        self.assertTrue(models)
+        self.assertTrue(any(row.get("media") == "video" and row.get("gatewayReady")
+                            for row in models))
+        self.assertTrue(got.payload.get("videoPricing"))
+
     def test_macro_state_exposes_plan_segments(self) -> None:
         """新版 renderCards 只遍历 plan.segments，缺了就看不到已补齐的分镜卡。"""
         self.workspace.set_setting("macro:p1", {
