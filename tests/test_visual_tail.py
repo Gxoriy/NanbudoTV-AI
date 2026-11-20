@@ -76,6 +76,23 @@ class TailRoutesTest(unittest.TestCase):
         self.assertEqual(body["removed"], 1)
         self.assertEqual(body["kept"], 1)
 
+    def test_macro_state_exposes_plan_segments(self) -> None:
+        """新版 renderCards 只遍历 plan.segments，缺了就看不到已补齐的分镜卡。"""
+        self.workspace.set_setting("macro:p1", {
+            "projectId": "p1",
+            "scenes": [{"id": "scene-1", "number": 1, "title": "第一场",
+                        "source": "林晚推门进来。",
+                        "cards": [{"number": 1, "prompt": "林晚推门进来。",
+                                   "complete": True}]}],
+        })
+        got = self.call("GET", "/api/visual/macro/state?projectId=p1")
+        self.assertEqual(got.status, 200, got.payload)
+        segments = got.payload.get("plan", {}).get("segments") or []
+        self.assertEqual(len(segments), 1, got.payload)
+        self.assertEqual(segments[0]["segmentId"], "scene-1")
+        cards = got.payload["segments"]["scene-1"]["result"]["cards"]
+        self.assertEqual(cards[0]["number"], 1)
+
     def test_macro_state_roundtrip_and_video_gate(self) -> None:
         # 卡片草稿沿用 macro_save：写状态、读得回来
         saved = self.call("POST", "/api/visual/macro/card/draft",

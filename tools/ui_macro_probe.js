@@ -8,19 +8,25 @@ const PROJECT = process.argv[4] || '';
 const PROFILE = path.join(PW_DIR, 'profile-macro-probe');
 
 (async () => {
-  const out = { steps: [], quotes: [], errors: [] };
+  const out = { steps: [], quotes: [], errors: [], taskCalls: [] };
   const ctx = await chromium.launchPersistentContext(PROFILE, { headless: true });
   const page = ctx.pages()[0] || (await ctx.newPage());
   page.setDefaultTimeout(25000);
   page.on('pageerror', (e) => out.errors.push(String(e.message).slice(0, 160)));
   out.macroCalls = [];
   page.on('request', (r) => {
-    if (r.url().includes('/api/visual/macro/') && r.method() === 'POST') {
+    if ((r.url().includes('/api/visual/macro/') || r.url().includes('/api/tasks/'))
+        && r.method() === 'POST') {
       out.macroCalls.push({ url: r.url().replace(BASE, ''), body: (r.postData() || '').slice(0, 500) });
       if (r.url().includes('/macro/quote')) out.lastQuoteRequest = r.postData();
     }
   });
   page.on('response', async (r) => {
+    if (r.url().includes('/api/visual/macro/submit') || r.url().includes('/api/tasks/')) {
+      let body = '';
+      try { body = (await r.text()).slice(0, 500); } catch (e) { body = ''; }
+      out.taskCalls.push({ url: r.url().replace(BASE, ''), status: r.status(), body });
+    }
     if (r.url().includes('/api/visual/macro/quote')) {
       let body = '';
       try { body = (await r.text()).slice(0, 900); } catch (e) { body = ''; }
@@ -126,14 +132,30 @@ const PROFILE = path.join(PW_DIR, 'profile-macro-probe');
       const node = nodes[nodes.length - 1];
       return node ? (node.innerText || '').slice(0, 200) : '';
     }).catch(() => '');
-    const accepted = await frame.evaluate(() => {
+    const dumpButtons = () => Array.from(document.querySelectorAll('button,[role=button]'))
+      .filter((n) => n.offsetParent !== null || (n.tagName || '').toLowerCase() === 'button')
+      .map((n) => ({ tag: n.tagName, cls: (n.className || '').toString().slice(0, 40),
+                     text: (n.textContent || '').trim().slice(0, 20),
+                     disabled: !!n.disabled }));
+    out.topButtons = await page.evaluate(dumpButtons).catch(() => []);
+    out.frameButtons = await frame.evaluate(dumpButtons).catch(() => []);
+    out.topDialogs = await page.evaluate(() => Array.from(document.querySelectorAll('dialog'))
+      .map((n) => ({ open: n.open, cls: n.className,
+                     text: (n.innerText || '').slice(0, 120) }))).catch(() => []);
+
+    const clickConfirm = () => {
       const nodes = Array.from(document.querySelectorAll('button'))
         .filter((n) => n.offsetParent && /确认|开始|继续|提交/.test(n.textContent || '')
           && !n.disabled);
       if (!nodes.length) return false;
       nodes[nodes.length - 1].click();
       return true;
-    }).catch(() => false);
+    };
+    let accepted = await frame.evaluate(clickConfirm).catch(() => false);
+    if (!accepted) {
+      accepted = await page.evaluate(clickConfirm).catch(() => false);
+    }
+    out.confirmWhere = accepted ? (out.confirmWhere || 'unknown') : 'none';
     step('确认报价', accepted, out.confirmText);
     for (let i = 0; i < 60; i += 1) {
       await page.waitForTimeout(2000);

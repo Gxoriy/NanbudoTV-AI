@@ -283,12 +283,20 @@ def build(router: Router, service: VisualService, library, *,
                 scene["cards"] = previous["cards"]
         final_scenes = merged or saved.get("scenes") or []
         segments_payload: dict[str, dict] = {}
-        for scene in final_scenes:
-            scene_id = str(scene.get("id") or "")
+        plan_segments: list[dict] = []
+        for index, scene in enumerate(final_scenes, start=1):
+            scene_id = str(scene.get("id") or f"scene-{index}")
             cards = list(scene.get("cards") or [])
             scene.setdefault("cardPlans", cards)
-            if scene_id:
-                segments_payload[scene_id] = {"result": {"cards": cards}}
+            segments_payload[scene_id] = {"result": {"cards": cards}}
+            plan_segments.append({
+                "segmentId": scene_id, "id": scene_id,
+                "number": int(scene.get("number") or index),
+                "title": str(scene.get("title") or ""),
+                "source": str(scene.get("source") or ""),
+                "cardPlans": cards,
+            })
+        saved_plan = dict(saved.get("plan") or {})
         snapshot = {
             **saved,
             "ok": True,
@@ -296,7 +304,9 @@ def build(router: Router, service: VisualService, library, *,
             "source": source,
             "currentSource": source,
             "scenes": final_scenes,
-            # 前端 readSceneCards 走这里；缺了就会认为"本场没有卡"
+            # 前端 renderCards 只遍历 plan.segments
+            "plan": {**saved_plan, "segments": plan_segments},
+            # readSceneCards 走 segments[id].result.cards
             "segments": {**(saved.get("segments") or {}), **segments_payload},
         }
         # state 键保留给旧调用方/测试，顶层才是前端快照契约
@@ -538,9 +548,20 @@ def build(router: Router, service: VisualService, library, *,
                     if cards:
                         scene["cards"] = cards
                         total += len(cards)
+                plan_segments = []
+                for index, scene in enumerate(scenes, start=1):
+                    scene_id = str(scene.get("id") or f"scene-{index}")
+                    plan_segments.append({
+                        "segmentId": scene_id, "id": scene_id,
+                        "number": int(scene.get("number") or index),
+                        "title": str(scene.get("title") or ""),
+                        "source": str(scene.get("source") or ""),
+                        "cardPlans": list(scene.get("cards") or []),
+                    })
                 state.update({"projectId": project_id, "source": source,
                               "currentSource": source, "scenes": scenes,
-                              "plan": {"scenePlan": {"scenes": scenes}}})
+                              "plan": {"scenePlan": {"scenes": scenes},
+                                       "segments": plan_segments}})
                 store.set_setting(f"macro:{project_id}", state)
                 task_store.succeed(task_id, {"scenes": len(scenes),
                                              "cards": total,
