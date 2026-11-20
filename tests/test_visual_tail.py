@@ -89,6 +89,23 @@ class TailRoutesTest(unittest.TestCase):
         self.assertIsInstance(video.get("referenceImageLimit"), int)
         self.assertTrue(video.get("supportedDurations"))
 
+    def test_macro_media_quote_matches_card_settings(self) -> None:
+        """directSubmit 会逐项比对 segment/card/duration/resolution/ratio/model。"""
+        quote = self.call("POST", "/api/visual/macro/media/quote", {
+            "projectId": "p1", "segmentId": "scene-1", "cardNumber": 2,
+            "action": "video", "model": "seedance-2.0-anci",
+            "resolution": "720p", "ratio": "16:9", "duration": 4,
+        }).payload
+        self.assertTrue(quote.get("quoteId"))
+        self.assertEqual(quote["action"], "video")
+        self.assertEqual(quote["segmentId"], "scene-1")
+        self.assertEqual(quote["cardNumber"], 2)
+        self.assertEqual(quote["duration"], 4)
+        self.assertEqual(quote["resolution"], "720p")
+        self.assertEqual(quote["ratio"], "16:9")
+        self.assertEqual(quote["model"], "seedance-2.0-anci")
+        self.assertGreater(quote["totalCredits"], 0)
+
     def test_macro_state_exposes_plan_segments(self) -> None:
         """新版 renderCards 只遍历 plan.segments，缺了就看不到已补齐的分镜卡。"""
         self.workspace.set_setting("macro:p1", {

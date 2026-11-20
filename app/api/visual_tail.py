@@ -460,8 +460,12 @@ def build(router: Router, service: VisualService, library, *,
     router.register("D2", "/api/visual/macro/media/submit", macro_media_submit,
                     methods=("POST",))
 
-    def macro_media_quote(_req: Request) -> Response:
-        return macro_quote(_req)
+    def macro_media_quote(req: Request) -> Response:
+        """单卡媒体报价：前端直接提交时逐项比对卡片身份与生成设置。"""
+        from .media_quote import build_quote  # noqa: PLC0415
+
+        body = req.json() if req.body else {}
+        return Response(200, build_quote(body, _macro, _macro_quotes))
 
     def macro_media_observe(_req: Request) -> Response:
         return Response(200, {"ok": True, "state": "idle", "progress": 0})
