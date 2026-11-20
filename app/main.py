@@ -290,6 +290,8 @@ def write_runtime_file(data_dir: Path, port: int, host: str) -> Path:
         "port": port,
         "baseUrl": f"http://{host}:{port}",
         "version": __version__,
+        "commit": build_info.COMMIT,
+        "codeHash": build_info.CODE_HASH,
         "startedAt": time.time(),
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     return path

@@ -48,6 +48,8 @@ def build(router: Router, store: TaskStore, *, app_name: str, version: str,
             "port": port_ref.get("port", 0),
             "uptimeSeconds": round(time.time() - started_at, 1),
             "startedAt": started_at,
+            "commit": build_info.COMMIT,
+            "codeHash": build_info.CODE_HASH,
         }
         if health_registry is not None:
             # 注意：参数不能叫 health，否则被下面的同名 handler 覆盖（曾踩）

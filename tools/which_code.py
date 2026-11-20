@@ -48,6 +48,29 @@ def _processes() -> list[str]:
         return []
 
 
+def _listening_ports() -> list[int]:
+    """没有 runtime-*.json 时，按 app.main 进程的监听端口找内核。"""
+    try:
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "$pids=(Get-CimInstance Win32_Process "
+             "| Where-Object { $_.Name -eq 'python.exe' -and $_.CommandLine -like '*app.main*' }).ProcessId; "
+             "Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue "
+             "| Where-Object { $pids -contains $_.OwningProcess } "
+             "| ForEach-Object { $_.LocalPort }"],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=10,
+            check=False)
+        ports = []
+        for line in result.stdout.splitlines():
+            try:
+                ports.append(int(line.strip()))
+            except ValueError:
+                continue
+        return sorted(set(ports))
+    except (OSError, subprocess.SubprocessError):
+        return []
+
+
 def main() -> int:
     kill_stale = "--kill-stale" in sys.argv
     local_commit = build_info.COMMIT
@@ -56,7 +79,34 @@ def main() -> int:
 
     runtimes = sorted((ROOT / "data").glob("runtime-*.json"))
     if not runtimes:
-        print("\n[!] data/ 下没有 runtime-*.json —— 当前没有通过本仓库启动的内核。")
+        print("\n[!] data/ 下没有 runtime-*.json（内核退出时会删除该文件）。")
+        ports = _listening_ports()
+        if ports:
+            print("[*] 改按监听端口探测:", ports)
+            checked = []
+            for port in ports:
+                live = _health(f"http://127.0.0.1:{port}")
+                if live.get("error"):
+                    continue
+                same = live.get("codeHash") == local_hash
+                checked.append("MATCH" if same else "STALE")
+                print(f"\n[{'MATCH' if same else 'STALE'}] http://127.0.0.1:{port}")
+                print(f"       运行 commit={live.get('commit')} codeHash={live.get('codeHash')}")
+                print(f"       本地 commit={local_commit} codeHash={local_hash}")
+            if checked:
+                print("\n结论：" + ("内核与当前代码一致。" if all(v == "MATCH" for v in checked)
+                                   else "存在 STALE 内核，请重启。"))
+                return 0 if all(v == "MATCH" for v in checked) else 3
+        builds = sorted((ROOT / "data").glob("build-*.json"))
+        if builds:
+            manifest = json.loads(builds[-1].read_text(encoding="utf-8"))
+            same = manifest.get("codeHash") == local_hash
+            print(f"[*] 最近构建清单 {builds[-1].name}: commit={manifest.get('commit')} "
+                  f"codeHash={manifest.get('codeHash')} → "
+                  f"{'与当前代码一致，但内核未运行' if same else '与当前代码不同，请重新 build'}")
+        print("\n启动内核：.\\scripts\\build.ps1 -Run -NoGui   "
+              "（或 .\\scripts\\start.ps1），然后在另一个终端重跑本脚本。")
+        return 2
     verdicts: list[str] = []
     for path in runtimes:
         try:

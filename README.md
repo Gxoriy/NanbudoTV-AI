@@ -88,6 +88,11 @@ ffmpeg -version
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
+# "构建"（校验源码 + 门禁 + 写 data/build-<commit>.json 指纹清单）
+.\scripts\build.ps1
+.\scripts\build.ps1 -Run            # 校验后前台启动桌面内核
+.\scripts\build.ps1 -Run -NoGui     # 校验后前台启动纯 HTTP 内核（推荐验收用）
+
 # 启动（桌面窗口 / 纯 HTTP）
 .\scripts\start.ps1
 .\scripts\start.ps1 -NoGui -Port 0
@@ -106,6 +111,10 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m unittest discover -s tests
 .\.venv\Scripts\python.exe tools\check_rules.py
 ```
+
+> `data/runtime-*.json` 在**正常退出时会被删除**，桌面窗口一关就没了。
+> `which_code.py` 会回退按 `app.main` 进程的监听端口探测 `/api/health`，
+> 因此没有 runtime 文件也能判定 MATCH/STALE。
 
 `which_code.py` 会列出每个 `data/runtime-*.json` 对应进程的
 `commit` / `codeHash` / 运行时长，并与当前工作区比对：
