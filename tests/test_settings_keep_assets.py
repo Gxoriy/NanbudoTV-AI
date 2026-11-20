@@ -45,6 +45,11 @@ class SettingsKeepAssetsTest(unittest.TestCase):
         self.store.update(self.project["id"], settings={"imageResolution": "2K"})
         self.assertEqual(len(self._assets()), 2)
 
+    def test_rename_via_settings(self) -> None:
+        self.service.save_settings({"projectId": self.project["id"],
+                                    "projectName": "改名后的项目"})
+        self.assertEqual(self.store.get(self.project["id"])["name"], "改名后的项目")
+
     def test_explicit_assets_still_replace(self) -> None:
         self.service.save_settings({"projectId": self.project["id"],
                                     "settings": {"assets": {"people": [],

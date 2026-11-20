@@ -113,10 +113,31 @@ class VisualService:
 
     def projects(self) -> dict[str, Any]:
         items = self._store().list()
-        brief = [{"id": p["id"], "name": p["name"], "style": p["style"],
-                  "thumbnail": p["thumbnail"], "scenes": len(p["scenes"]),
-                  "createdAt": p["createdAt"], "updatedAt": p["updatedAt"]}
-                 for p in items]
+        brief = []
+        for project in items:
+            assets = project.get("assets") or {}
+            settings = project.get("settings") or {}
+            counts = {kind: len(assets.get(kind) or [])
+                      for kind in ("people", "scenes", "props")}
+            macro = settings.get("macroArrangement") or {}
+            cards = macro.get("cards") or []
+            videos = [card for card in cards
+                      if str(card.get("status") or "") == "done"]
+            images = [row for kind in ("people", "scenes", "props")
+                      for row in (assets.get(kind) or []) if row.get("imageFile")]
+            brief.append({
+                "id": project["id"], "name": project["name"],
+                "projectName": project.get("projectName") or project["name"],
+                "style": project["style"], "thumbnail": project["thumbnail"],
+                "scenes": len(project["scenes"]),
+                "createdAt": project["createdAt"],
+                "updatedAt": project["updatedAt"],
+                "peopleCount": counts["people"], "sceneCount": counts["scenes"],
+                "propCount": counts["props"],
+                "cardCount": len(cards), "episodeCount": len(cards),
+                "videoCount": len(videos), "imageCount": len(images),
+                "macroSceneCount": len(macro.get("scenes") or []),
+            })
         return {"ok": True, "projects": brief}
 
     def project(self, project_id: str) -> dict[str, Any]:

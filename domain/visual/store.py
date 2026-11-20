@@ -164,4 +164,8 @@ class VisualStore:
             # 保存回调里抛 TypeError，被兜成"自动保存未完成"。
             "assets": _asset_buckets(settings),
             "episodes": settings.get("episodes") or [],
+            # 前端项目卡片/激活逻辑用 projectName 与各类计数
+            "projectName": row["name"],
+            "macroArrangement": settings.get("macroArrangement") or {},
+            "scriptCuts": settings.get("scriptCuts") or [],
         }
