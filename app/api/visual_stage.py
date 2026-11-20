@@ -160,6 +160,31 @@ def build(router: Router, service: VisualService, library, *,
                       name="项目源素材")
         return Response(200, {"ok": True, "source": row["payload"]})
 
+    def _tiny_hash(text: str) -> str:
+        value = 2166136261
+        for char in text:
+            value = ((value ^ ord(char)) * 16777619) & 0xFFFFFFFF
+        return f"{value:08x}"
+
+    def _scene_directory(text: str) -> list[dict]:
+        """按"第 N 场/集/章"切分；没有标记就整段作为一场。"""
+        import re  # noqa: PLC0415
+
+        pattern = re.compile(r"^\s*(第[一二三四五六七八九十百0-9]+[场集章节])[^\n]*", re.M)
+        marks = list(pattern.finditer(text or ""))
+        rows: list[dict] = []
+        if not marks:
+            if (text or "").strip():
+                rows.append({"id": "scene-1", "number": 1,
+                             "title": "全文", "source": text.strip()})
+            return rows
+        for index, mark in enumerate(marks, start=1):
+            end = marks[index].start() if index < len(marks) else len(text)
+            title = mark.group(0).strip()[:60]
+            rows.append({"id": f"scene-{index}", "number": index,
+                         "title": title, "source": text[mark.start():end].strip()})
+        return rows
+
     def project_prepare(req: Request) -> Response:
         """按需求做一次"准备"：LLM 归一 + 分镜规划，结果留档。"""
         body = req.json()
@@ -170,12 +195,41 @@ def build(router: Router, service: VisualService, library, *,
         problem = _require_assist()
         if problem:
             return problem
-        requirement = str(body.get("requirement") or body.get("text") or "").strip()
+        requirement = str(body.get("sourceText") or body.get("requirement")
+                          or body.get("text") or "").strip()
         if not requirement:
             source = _find("project_source", project_id)
             requirement = str((source or {}).get("payload", {}).get("text") or "").strip()
         if not requirement:
             return Response.error(400, "invalid_input", "缺少需求描述或项目源素材。")
+        # 前端点"下一步：分镜"要求 project.workflowPreparedScript.sceneDirectory 非空，
+        # 否则会被判成"还没提取大纲"跳回步骤 01。这里先做本地分场（不调模型）。
+        directory = _scene_directory(requirement)
+        if service.store is not None:
+            current = service.store.get(project_id) or {}
+            settings = dict(current.get("settings") or {})
+            prepared = dict(settings.get("workflowPreparedScript") or {})
+            prepared.update({"cleanedSource": requirement,
+                             "sceneDirectory": directory,
+                             "originalSourceHash": _tiny_hash(requirement)})
+            settings["workflowPreparedScript"] = prepared
+            service.store.update(project_id, settings=settings)
+
+        # 已有同源分场结果：直接返回，避免点"下一步：分镜"还要等一次模型
+        if (body.get("confirmed") is True and not body.get("force")
+                and service.store is not None):
+            current = service.store.get(project_id) or {}
+            prepared = (current.get("settings") or {}).get("workflowPreparedScript") or {}
+            if (prepared.get("cleanedSource") == requirement
+                    and prepared.get("sceneDirectory")):
+                return Response(200, {
+                    "ok": True, "project": current, "prepared": prepared,
+                    "preparationWarning": "",
+                    "stages": [{"name": "cache", "ok": True, "ms": 0}],
+                    "summary": {"count": len(prepared.get("sceneDirectory") or [])},
+                    "cached": True, "fingerprint": _tiny_hash(requirement),
+                })
+
         shots = int(body.get("shots") or 6)
         cut_key = _cut_key(requirement, shots, "prepare")
         if not body.get("force"):
@@ -184,6 +238,8 @@ def build(router: Router, service: VisualService, library, *,
                 cached = hit["payload"].get("data") or {}
                 return Response(200, {
                     "ok": True, "prepared": cached,
+                    "project": service.store.get(project_id),
+                    "preparationWarning": "",
                     "stages": [{"name": "cache", "ok": True, "ms": 0}],
                     "summary": cached.get("summary") or {},
                     "cached": True, "fingerprint": cut_key,
@@ -244,6 +300,9 @@ def build(router: Router, service: VisualService, library, *,
                     "normalized": normalized.get("normalized", normalized),
                     "shots": scenes, "summary": summary})
         return Response(200, {"ok": True, "prepared": row["payload"],
+                              # 前端 prepareVisualScript 依赖 data.project（拿目录/正文）
+                              "project": service.store.get(project_id),
+                              "preparationWarning": "",
                               "stages": stages, "summary": summary,
                               "cached": False, "fingerprint": cut_key})
 
