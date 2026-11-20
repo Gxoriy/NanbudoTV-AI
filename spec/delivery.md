@@ -19,6 +19,8 @@
 | 启动脚本 | `scripts/start.ps1` | 桌面/纯内核/自定义数据目录三种用法 |
 | 配置样例 | `config/*.example.json` | 模型与授权配置模板（不含密钥） |
 
+> 运行代码核验：`python tools\which_code.py`（STALE 就先 `--kill-stale` 再 `scripts\start.ps1`）。
+
 ## 2. 环境与依赖
 
 | 项 | 版本/说明 | 必需 |

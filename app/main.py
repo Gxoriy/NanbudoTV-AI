@@ -11,6 +11,8 @@
 from __future__ import annotations
 
 import argparse
+
+from . import build_info  # noqa: E402
 import json
 import logging
 import os

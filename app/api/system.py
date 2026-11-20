@@ -11,6 +11,8 @@ import os
 import time
 from typing import Any, Callable
 
+from .. import build_info  # noqa: E402
+
 from .router import Request, Response, Router
 from infra import llm
 from infra.tasks import TaskStore

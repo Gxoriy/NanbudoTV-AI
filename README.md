@@ -78,6 +78,45 @@ ffmpeg -version
 .\.venv\Scripts\python.exe tools\front_contract_check.py   # 前端会调但内核没有的接口
 ```
 
+### 2.4 常用命令速查 / 确认运行的是不是新代码
+
+本项目**没有 npm 工程、也没有构建步骤**：`static/` 是明文 JS/CSS/HTML，
+由 Python 内核直接提供；改完前端或后端，**重启进程**即生效。
+
+```powershell
+# 安装依赖（只需要一次）
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+# 启动（桌面窗口 / 纯 HTTP）
+.\scripts\start.ps1
+.\scripts\start.ps1 -NoGui -Port 0
+
+# 其他等价写法
+.\.venv\Scripts\python.exe -m app.main
+.\.venv\Scripts\python.exe -m app.main --no-gui --port 0
+
+# 确认"现在跑的是不是新代码"（对照本地 git HEAD + 源码指纹）
+.\.venv\Scripts\python.exe tools\which_code.py
+# 清理过期/无指纹实例（只杀 runtime-*.json 里 STALE/OFFLINE 的 pid）
+.\.venv\Scripts\python.exe tools\which_code.py --kill-stale
+
+# 验收门禁
+.\.venv\Scripts\python.exe tools\verify_all.py --with-ui
+.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe tools\check_rules.py
+```
+
+`which_code.py` 会列出每个 `data/runtime-*.json` 对应进程的
+`commit` / `codeHash` / 运行时长，并与当前工作区比对：
+
+- `MATCH`：跑的就是当前代码
+- `STALE`：老进程，**必须重启**——之前"改了没生效"多半是这个原因
+- `OFFLINE`：记录存在但内核已退出
+
+已知现场：机器上曾同时存在两个 `app.main` 进程（一个来自 `.venv`，一个来自 uv 的
+Python 缓存目录），旧进程会抢占早期端口，导致浏览器连到旧代码。
+
 交付口径、首次配置、演示脚本与已知边界见 **`spec/delivery.md`**。
 
 ---
