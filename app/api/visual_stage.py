@@ -704,6 +704,12 @@ def build(router: Router, service: VisualService, library, *,
                         rows.append(item)
                     assets[kind] = rows
                 settings["assets"] = assets
+                # 前端"下一步：分镜"守卫读这个字段，代表资产与当前原稿匹配
+                value = 2166136261
+                for char in source_text:
+                    value = ((value ^ ord(char)) * 16777619) & 0xFFFFFFFF
+                settings["workflowAssetSourceHash"] = f"{value:08x}"
+                settings["workflowAssetSourceLength"] = len(source_text)
                 service.store.update(project_id, settings=settings)
                 project = service.store.get(project_id)
                 task_store.succeed(task_id, {

@@ -157,6 +157,8 @@ class VisualStore:
             "sourceStructure": str(settings.get("sourceStructure") or ""),
             # 步骤 01/03 依赖：needsAIDirectory() 读 sceneDirectory
             "workflowPreparedScript": settings.get("workflowPreparedScript") or {},
+            "workflowAssetSourceHash": settings.get("workflowAssetSourceHash") or "",
+            "workflowAssetSourceLength": settings.get("workflowAssetSourceLength") or 0,
             "scriptGenerationId": settings.get("scriptGenerationId") or "",
             # 前端有多处直接读 project.assets.people（不判空），缺了 assets 会在
             # 保存回调里抛 TypeError，被兜成"自动保存未完成"。

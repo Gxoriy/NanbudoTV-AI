@@ -679,6 +679,7 @@ def build(router: Router, service: VisualService, library, *,
     router.register("D2", "/api/asset-library/add", asset_add, methods=("POST",))
     router.register("D2", "/api/asset-library/delete", asset_delete, methods=("POST",))
     router.register("D2", "/api/asset-library/media", asset_media)
+    router.register("D2", "/api/asset-library/image", asset_media)
     router.register("D2", "/api/asset-library/upload", asset_upload, methods=("POST",))
     from .asset_library import build as build_asset_library  # noqa: PLC0415
 
