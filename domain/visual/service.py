@@ -154,7 +154,13 @@ class VisualService:
         if "settings" in payload:
             if not isinstance(payload["settings"], dict):
                 raise VisualError(400, "invalid_input", "settings 必须是对象。")
-            fields["settings"] = payload["settings"]
+            incoming = dict(payload["settings"])
+            if "assets" not in incoming:
+                # 前端保存外观/线路设置时不带 assets，不能顺手把已提取资产删掉
+                current = (store.get(project_id) or {}).get("settings") or {}
+                if current.get("assets"):
+                    incoming["assets"] = current["assets"]
+            fields["settings"] = incoming
         if "style" in payload:
             fields["style"] = str(payload.get("style") or "")
         return {"ok": True, "project": store.update(project_id, **fields)}

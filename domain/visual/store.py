@@ -92,6 +92,17 @@ class VisualStore:
         payload = {k: v for k, v in fields.items() if k in allowed}
         if not payload:
             return self.get(project_id) or {}
+        if "settings" in payload and not isinstance(payload["settings"], str):
+            incoming = dict(payload["settings"])
+            if "assets" not in incoming:
+                row = self._conn.execute(
+                    "SELECT settings FROM visual_projects WHERE id=?",
+                    (project_id,)).fetchone()
+                if row is not None:
+                    old = json.loads(row["settings"] or "{}")
+                    if old.get("assets"):
+                        incoming["assets"] = old["assets"]
+                        payload["settings"] = incoming
         for key in ("settings", "scenes"):
             if key in payload and not isinstance(payload[key], str):
                 payload[key] = json.dumps(payload[key], ensure_ascii=False)
