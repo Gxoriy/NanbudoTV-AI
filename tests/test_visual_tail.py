@@ -85,6 +85,9 @@ class TailRoutesTest(unittest.TestCase):
         self.assertTrue(any(row.get("media") == "video" and row.get("gatewayReady")
                             for row in models))
         self.assertTrue(got.payload.get("videoPricing"))
+        video = next(row for row in models if row.get("media") == "video")
+        self.assertIsInstance(video.get("referenceImageLimit"), int)
+        self.assertTrue(video.get("supportedDurations"))
 
     def test_macro_state_exposes_plan_segments(self) -> None:
         """新版 renderCards 只遍历 plan.segments，缺了就看不到已补齐的分镜卡。"""
@@ -93,6 +96,7 @@ class TailRoutesTest(unittest.TestCase):
             "scenes": [{"id": "scene-1", "number": 1, "title": "第一场",
                         "source": "林晚推门进来。",
                         "cards": [{"number": 1, "prompt": "林晚推门进来。",
+                                   "storyboard": "【镜头】1\n【画面】林晚推门进来。",
                                    "complete": True}]}],
         })
         got = self.call("GET", "/api/visual/macro/state?projectId=p1")
@@ -100,8 +104,11 @@ class TailRoutesTest(unittest.TestCase):
         segments = got.payload.get("plan", {}).get("segments") or []
         self.assertEqual(len(segments), 1, got.payload)
         self.assertEqual(segments[0]["segmentId"], "scene-1")
-        cards = got.payload["segments"]["scene-1"]["result"]["cards"]
+        segment_result = got.payload["segments"]["scene-1"]["result"]
+        self.assertIs(segment_result.get("complete"), True)
+        cards = segment_result["cards"]
         self.assertEqual(cards[0]["number"], 1)
+        self.assertIn("【镜头】", cards[0].get("storyboard", ""))
 
     def test_macro_state_roundtrip_and_video_gate(self) -> None:
         # 卡片草稿沿用 macro_save：写状态、读得回来

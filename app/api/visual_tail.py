@@ -288,7 +288,7 @@ def build(router: Router, service: VisualService, library, *,
             scene_id = str(scene.get("id") or f"scene-{index}")
             cards = list(scene.get("cards") or [])
             scene.setdefault("cardPlans", cards)
-            segments_payload[scene_id] = {"result": {"cards": cards}}
+            segments_payload[scene_id] = {"result": {"complete": True, "cards": cards}}
             plan_segments.append({
                 "segmentId": scene_id, "id": scene_id,
                 "number": int(scene.get("number") or index),
@@ -409,10 +409,21 @@ def build(router: Router, service: VisualService, library, *,
                     "imageReady": True,
                     "url": f"/api/asset-library/image?file={image}",
                 })
+        models = []
+        for row in (profile.get("visualModels") or []):
+            model = dict(row)
+            model["pricingMode"] = "flat"
+            model["supportedAspectRatios"] = ["16:9", "9:16", "1:1"]
+            if model.get("media") == "video":
+                model["supportedDurations"] = [4, 5, 6, 8, 10, 15]
+                model["minDurationSeconds"] = 1
+                model["maxDurationSeconds"] = 30
+            model["referenceImageLimit"] = 9
+            models.append(model)
         return Response(200, {
             "ok": True,
             "projectId": project_id,
-            "models": list(profile.get("visualModels") or []),
+            "models": models,
             "imagePricing": list(profile.get("imagePricing") or []),
             "videoPricing": list(profile.get("videoPricing") or []),
             "modelCapabilities": dict(profile.get("modelCapabilities") or {}),
@@ -429,7 +440,11 @@ def build(router: Router, service: VisualService, library, *,
         if video_pipeline is None:
             return Response.error(501, "model_required", VIDEO_REQUIRED)
         body = req.json()
-        prompt = str(body.get("prompt") or body.get("requirement") or "").strip()
+        quote = _macro_quotes.get(str(body.get("quoteId") or ""))
+        prompt = str(body.get("prompt") or body.get("requirement")
+                     or (quote or {}).get("source") or "").strip()
+        if not prompt:
+            return Response.error(400, "invalid_input", "缺少生成提示词或有效报价。")
         result = video_pipeline.start(
             "macro", prompt=prompt, project_id=str(body.get("projectId") or ""),
             duration=str(body.get("duration") or "") or None,
@@ -563,10 +578,17 @@ def build(router: Router, service: VisualService, library, *,
                     existing = list(scene.get("cards") or [])
                     parts = [part.strip() for part in
                              text.replace("\n", "。").split("。") if part.strip()]
-                    fresh = [{"number": index, "prompt": part,
-                              "sourceText": part, "complete": True}
-                             for index, part in enumerate(parts[:8], start=1)]
-                    if completion == "all" or not existing:
+                    fresh = [{
+                        "number": index,
+                        "prompt": part,
+                        "sourceText": part,
+                        "storyboard": f"【镜头】{index}\n【画面】{part}",
+                        "durationSeconds": 4,
+                        "complete": True,
+                    } for index, part in enumerate(parts[:8], start=1)]
+                    if completion == "all" or action == "plan" or not existing:
+                        # 整剧 plan 必须重建：旧的 complete=true 但无 storyboard 的卡
+                        # 会让前端 cardComplete 判假，批量视频按钮永久置灰。
                         cards = fresh
                     else:
                         by_number = {int(row.get("number") or 0): row

@@ -13,6 +13,11 @@ const PROFILE = path.join(PW_DIR, 'profile-macro-probe');
   const page = ctx.pages()[0] || (await ctx.newPage());
   page.setDefaultTimeout(25000);
   page.on('pageerror', (e) => out.errors.push(String(e.message).slice(0, 160)));
+  page.on('dialog', async (d) => {
+    out.nativeDialogs = out.nativeDialogs || [];
+    out.nativeDialogs.push(String(d.message()).slice(0, 120));
+    try { await d.accept(); } catch (e) { /* already handled */ }
+  });
   out.macroCalls = [];
   page.on('request', (r) => {
     if ((r.url().includes('/api/visual/macro/') || r.url().includes('/api/tasks/'))
@@ -68,6 +73,8 @@ const PROFILE = path.join(PW_DIR, 'profile-macro-probe');
       .catch(() => {});
     await page.waitForTimeout(3500);
 
+    out.pid = await frame.$eval('.open-visual-project',
+      (n) => n.closest('[data-project-id]')?.dataset.projectId || '').catch(() => '');
     out.stage3Text = (await frame.evaluate(
       () => (document.body.innerText || '').slice(0, 0) || document
         .querySelector('#macroInlineWorkspace')?.innerText?.slice(0, 300) || ''))
@@ -144,9 +151,10 @@ const PROFILE = path.join(PW_DIR, 'profile-macro-probe');
                      text: (n.innerText || '').slice(0, 120) }))).catch(() => []);
 
     const clickConfirm = () => {
+      const modal = document.querySelector('dialog[open] .studio-dialog-confirm');
+      if (modal && !modal.disabled) { modal.click(); return true; }
       const nodes = Array.from(document.querySelectorAll('button'))
-        .filter((n) => n.offsetParent && /确认|开始|继续|提交/.test(n.textContent || '')
-          && !n.disabled);
+        .filter((n) => /确认|开始|继续|提交/.test(n.textContent || '') && !n.disabled);
       if (!nodes.length) return false;
       nodes[nodes.length - 1].click();
       return true;
@@ -165,10 +173,51 @@ const PROFILE = path.join(PW_DIR, 'profile-macro-probe');
       }).catch(() => 0);
       if (size > 300) break;
     }
+    out.mediaClick = await frame.evaluate(() => {
+      const node = Array.from(document.querySelectorAll('button'))
+        .find((n) => (n.textContent || '').includes('生成本场全部视频') && !n.disabled);
+      if (!node) return false;
+      node.click();
+      return true;
+    }).catch(() => false);
+    await page.waitForTimeout(2500);
+    if (out.mediaClick) {
+      let ok = await frame.evaluate(clickConfirm).catch(() => false);
+      if (!ok) ok = await page.evaluate(clickConfirm).catch(() => false);
+      out.mediaConfirm = ok;
+      await page.waitForTimeout(6000);
+    }
     out.workspaceFinal = await frame.evaluate(() => {
       const node = document.getElementById('macroInlineWorkspace');
       return node ? (node.innerText || '').slice(0, 400) : '';
     }).catch(() => '');
+    out.videoPlan = await frame.evaluate(async (pid) => {
+      try {
+        const snap = await (await fetch('/api/visual/macro/state?projectId=' + encodeURIComponent(pid))).json();
+        const cat = await (await fetch('/api/visual/macro/media/catalog?projectId=' + encodeURIComponent(pid))).json();
+        const seg = ((snap.plan || {}).segments || [])[0] || {};
+        const id = seg.segmentId || seg.id || '';
+        const view = { snapshot: snap, catalog: cat, mediaUnknown: {}, mediaDrafts: {},
+                       operations: {}, textTasks: {}, activeTask: '', busy: false };
+        const card0 = ((snap.segments || {})[id] || {}).result?.cards?.[0] || null;
+        const check = { complete: window.MacroArrangement?.cardComplete?.(card0),
+                        prompt: window.MacroArrangement?.cardPrompt?.(card0)?.slice(0, 40) };
+        const seg0 = (snap.plan?.segments || []).find((s) => (s.segmentId || s.id) === id) || {};
+        const rc = window.MacroArrangement?.readSceneCards?.(snap, seg0) || [];
+        const check2 = { count: rc.length, first: rc[0] || null,
+                         complete: window.MacroArrangement?.cardComplete?.(rc[0]) };
+        const plan = window.MacroArrangement?.sceneVideoPlan230?.(view, id) || null;
+        return { check, check2, pid, id, card0: ((snap.segments || {})[id] || {}).result?.cards?.[0] || null,
+                 keys: Object.keys(snap), snapProject: snap.projectId, segs: ((snap.plan || {}).segments || []).length, sourceEpochMatches: snap.sourceEpochMatches,
+                 totalCards: plan?.totalCards, ready: plan?.cardNumbers,
+                 skipped: plan?.skipped, models: (cat.models || []).length };
+      } catch (err) { return { error: String(err.message).slice(0, 160) }; }
+    }, out.pid).catch(() => null);
+    out.videoButtons = await frame.evaluate(() => Array.from(document.querySelectorAll('button'))
+      .filter((n) => /视频/.test(n.textContent || ''))
+      .map((n) => ({ text: (n.textContent || '').trim().slice(0, 24),
+                     disabled: !!n.disabled, title: n.title || '',
+                     reason: n.dataset.mediaIssue || n.dataset.reason || '' }))).catch(() => []);
     await page.waitForTimeout(2500);
     out.dialog = await frame.evaluate(() => {
       const nodes = Array.from(document.querySelectorAll(
