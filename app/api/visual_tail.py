@@ -668,6 +668,52 @@ def build(router: Router, service: VisualService, library, *,
                     methods=("GET", "POST"))
 
     router.register("D2", "/api/visual/macro/state", macro_state)
+    def macro_card_draft(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        project_id = str(body.get("projectId") or "")
+        segment_id = str(body.get("segmentId") or "")
+        number = int(body.get("cardNumber") or 1)
+        state = dict(_macro(project_id) or {})
+        previous = dict(((state.get("cardDrafts") or {}).get(segment_id) or {})
+                        .get(str(number)) or {})
+        revision = int(previous.get("revision") or 0) + 1
+        draft = {
+            "prompt": str(body.get("prompt") or ""),
+            "referenceAssetIds": list(body.get("referenceAssetIds") or []),
+            "revision": revision,
+        }
+        drafts = dict(state.get("cardDrafts") or {})
+        drafts[segment_id] = {**drafts.get(segment_id, {}), str(number): draft}
+        state["cardDrafts"] = drafts
+        state["projectId"] = project_id
+        store.set_setting(f"macro:{project_id}", state)
+        return Response(200, {"ok": True, "draft": draft, "state": state})
+
+    def macro_card_source(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        project_id = str(body.get("projectId") or "")
+        segment_id = str(body.get("segmentId") or "")
+        number = int(body.get("cardNumber") or 1)
+        state = dict(_macro(project_id) or {})
+        edits = dict(state.get("sourceEdits") or {})
+        scoped = dict(edits.get(segment_id) or {})
+        previous = dict(scoped.get(str(number)) or {})
+        revision = int(previous.get("revision") or 0) + 1
+        source_edit = {"sourceText": str(body.get("sourceText") or ""),
+                       "revision": revision}
+        scoped[str(number)] = source_edit
+        edits[segment_id] = scoped
+        state["sourceEdits"] = edits
+        state["projectId"] = project_id
+        store.set_setting(f"macro:{project_id}", state)
+        return Response(200, {"ok": True, "state": state,
+                              "sourceEdit": source_edit})
+
+    router.register("D2", "/api/visual/macro/card/draft", macro_card_draft,
+                    methods=("POST",))
+    router.register("D2", "/api/visual/macro/card/source", macro_card_source,
+                    methods=("POST",))
+
     for path in ("/api/visual/macro/card/draft",
                  "/api/visual/macro/card/reference", "/api/visual/macro/card/source",
                  "/api/visual/macro/regroup/apply", "/api/visual/macro/regroup/preview",

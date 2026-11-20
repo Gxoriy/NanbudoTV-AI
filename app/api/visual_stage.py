@@ -15,10 +15,12 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import re
 import time
 from typing import Any
 
 from .router import Request, Response, Router
+from .stage_helpers import local_asset_guess, scene_directory, tiny_hash
 from domain.prompts import compose
 from domain.visual.service import VisualError, VisualService
 from domain.visual.library import KIND_ASSET
@@ -160,31 +162,6 @@ def build(router: Router, service: VisualService, library, *,
                       name="项目源素材")
         return Response(200, {"ok": True, "source": row["payload"]})
 
-    def _tiny_hash(text: str) -> str:
-        value = 2166136261
-        for char in text:
-            value = ((value ^ ord(char)) * 16777619) & 0xFFFFFFFF
-        return f"{value:08x}"
-
-    def _scene_directory(text: str) -> list[dict]:
-        """按"第 N 场/集/章"切分；没有标记就整段作为一场。"""
-        import re  # noqa: PLC0415
-
-        pattern = re.compile(r"^\s*(第[一二三四五六七八九十百0-9]+[场集章节])[^\n]*", re.M)
-        marks = list(pattern.finditer(text or ""))
-        rows: list[dict] = []
-        if not marks:
-            if (text or "").strip():
-                rows.append({"id": "scene-1", "number": 1,
-                             "title": "全文", "source": text.strip()})
-            return rows
-        for index, mark in enumerate(marks, start=1):
-            end = marks[index].start() if index < len(marks) else len(text)
-            title = mark.group(0).strip()[:60]
-            rows.append({"id": f"scene-{index}", "number": index,
-                         "title": title, "source": text[mark.start():end].strip()})
-        return rows
-
     def project_prepare(req: Request) -> Response:
         """按需求做一次"准备"：LLM 归一 + 分镜规划，结果留档。"""
         body = req.json()
@@ -204,14 +181,14 @@ def build(router: Router, service: VisualService, library, *,
             return Response.error(400, "invalid_input", "缺少需求描述或项目源素材。")
         # 前端点"下一步：分镜"要求 project.workflowPreparedScript.sceneDirectory 非空，
         # 否则会被判成"还没提取大纲"跳回步骤 01。这里先做本地分场（不调模型）。
-        directory = _scene_directory(requirement)
+        directory = scene_directory(requirement)
         if service.store is not None:
             current = service.store.get(project_id) or {}
             settings = dict(current.get("settings") or {})
             prepared = dict(settings.get("workflowPreparedScript") or {})
             prepared.update({"cleanedSource": requirement,
                              "sceneDirectory": directory,
-                             "originalSourceHash": _tiny_hash(requirement)})
+                             "originalSourceHash": tiny_hash(requirement)})
             settings["workflowPreparedScript"] = prepared
             service.store.update(project_id, settings=settings)
 
@@ -227,12 +204,12 @@ def build(router: Router, service: VisualService, library, *,
                     "preparationWarning": "",
                     "stages": [{"name": "cache", "ok": True, "ms": 0}],
                     "summary": {"count": len(prepared.get("sceneDirectory") or [])},
-                    "cached": True, "fingerprint": _tiny_hash(requirement),
+                    "cached": True, "fingerprint": tiny_hash(requirement),
                 })
 
         shots = int(body.get("shots") or 6)
         cut_key = _cut_key(requirement, shots, "prepare")
-        if not body.get("force"):
+        if not body.get("force") and not body.get("regenerate"):
             hit = _cut_lookup(cut_key)
             if hit is not None:
                 cached = hit["payload"].get("data") or {}
@@ -306,16 +283,27 @@ def build(router: Router, service: VisualService, library, *,
                               "stages": stages, "summary": summary,
                               "cached": False, "fingerprint": cut_key})
 
-    def _publish_directory(project_id: str, source: str) -> dict:
+    def _publish_directory(project_id: str, source: str,
+                           scenes: list[dict] | None = None) -> dict:
         """把分场目录写进项目 settings，前端「提取大纲」后才看得到变化。"""
         if service.store is None:
             return {}
         record = service.store.get(project_id) or {}
         settings = dict(record.get("settings") or {})
-        directory = _scene_directory(source)
+        directory = scene_directory(source)
+        for index, shot in enumerate(scenes or [], start=1):
+            if index > len(directory):
+                break
+            detail = " ".join(str(shot.get(key) or "") for key in
+                              ("description", "prompt", "action", "text")
+                              if shot.get(key)).strip()
+            if detail:
+                directory[index - 1]["source"] = detail
+                directory[index - 1]["description"] = detail
+                directory[index - 1]["shot"] = shot
         prepared = dict(settings.get("workflowPreparedScript") or {})
         prepared.update({"cleanedSource": source, "sceneDirectory": directory,
-                         "originalSourceHash": _tiny_hash(source)})
+                         "originalSourceHash": tiny_hash(source)})
         settings["workflowPreparedScript"] = prepared
         service.store.update(project_id, settings=settings)
         return prepared
@@ -331,6 +319,10 @@ def build(router: Router, service: VisualService, library, *,
         if problem:
             return problem
         requirement = str(body.get("requirement") or "").strip()
+        if not requirement and service.store is not None:
+            record = service.store.get(project_id) or {}
+            requirement = str((record.get("settings") or {}).get("confirmedScript")
+                              or "").strip()
         if not requirement:
             prepared = _find(PREPARED_KIND, project_id)
             requirement = str((prepared or {}).get("payload", {})
@@ -380,7 +372,7 @@ def build(router: Router, service: VisualService, library, *,
             except (KeyError, TypeError):
                 pass
         _cut_store(cut_key, "scenes", requirement, shots_wanted, scenes)
-        prepared = _publish_directory(project_id, requirement)
+        prepared = _publish_directory(project_id, requirement, scenes=scenes)
         return Response(200, {"ok": True, "scenes": scenes, "count": len(scenes),
                               "storyboardId": row["id"], "cached": False,
                               "fingerprint": cut_key,
@@ -709,11 +701,31 @@ def build(router: Router, service: VisualService, library, *,
             try:
                 task_store.set_progress(task_id, 0.2, "正在识别人物、场景与物品…")
                 # VisualAssist 暴露的是 _json_call(spec, user)，不是 TextAssist.json_call
-                data = assist._json_call(
-                    '输出 JSON：{"people":[{"name":"","aliases":[],"role":""}],'
-                    '"scenes":[{"name":"","description":""}],'
-                    '"props":[{"name":"","description":""}]}',
-                    f"剧本：{source_text[:4000]}")
+                import threading  # noqa: PLC0415
+
+                box: dict = {}
+
+                def run_llm() -> None:
+                    try:
+                        box["data"] = assist._json_call(
+                            '输出 JSON：{"people":[{"name":"","aliases":[],"role":""}],'
+                            '"scenes":[{"name":"","description":""}],'
+                            '"props":[{"name":"","description":""}]}',
+                            f"剧本：{source_text[:4000]}")
+                    except Exception as exc:  # noqa: BLE001
+                        box["error"] = str(exc)[:180]
+
+                worker = threading.Thread(target=run_llm, daemon=True)
+                worker.start()
+                worker.join(timeout=25)
+                if "data" not in box:
+                    # 上游卡住时不能让任务永远 running：本地启发式先给出资产，
+                    # 并在结果里标明来源，用户可后续重新提取覆盖。
+                    data = local_asset_guess(source_text)
+                    fallback = box.get("error") or "模型响应超过 25 秒"
+                else:
+                    data = box["data"]
+                    fallback = ""
                 current = service.store.get(project_id) or {}
                 settings = dict(current.get("settings") or {})
                 assets = dict(settings.get("assets") or {})
@@ -738,6 +750,9 @@ def build(router: Router, service: VisualService, library, *,
                 project = service.store.get(project_id)
                 task_store.succeed(task_id, {
                     "ok": True, "project": project, "assets": assets,
+                    "source": "local-fallback" if fallback else "llm",
+                    "warning": (f"模型未及时返回（{fallback}），已用本地识别结果；"
+                                "可稍后重新提取。") if fallback else "",
                     "assetCounts": {key: len(value or [])
                                     for key, value in assets.items()},
                     "message": "资产提取完成",

@@ -111,12 +111,16 @@ class TailRoutesTest(unittest.TestCase):
         self.assertIn("【镜头】", cards[0].get("storyboard", ""))
 
     def test_macro_state_roundtrip_and_video_gate(self) -> None:
-        # 卡片草稿沿用 macro_save：写状态、读得回来
+        # 卡片草稿必须回 {draft:{prompt,revision}}，并重回项目
         saved = self.call("POST", "/api/visual/macro/card/draft",
-                          {"projectId": "p1", "stage": "cards"}).payload
-        self.assertEqual(saved["state"]["stage"], "cards")
+                          {"projectId": "p1", "segmentId": "scene-1",
+                           "cardNumber": 1, "prompt": "图书馆的灯闪了一下"}).payload
+        self.assertEqual(saved["draft"]["prompt"], "图书馆的灯闪了一下")
+        self.assertIsInstance(saved["draft"]["revision"], int)
+        self.assertEqual(saved["state"]["projectId"], "p1")
         state = self.call("GET", "/api/visual/macro/state?projectId=p1").payload
-        self.assertEqual(state["state"]["stage"], "cards")
+        self.assertEqual(state["cardDrafts"]["scene-1"]["1"]["revision"],
+                         saved["draft"]["revision"])
 
         quote = self.call("POST", "/api/visual/macro/quote", {})
         # 前端要靠 quoteId/totalCredits/expiresAt 才能提交补齐分镜
