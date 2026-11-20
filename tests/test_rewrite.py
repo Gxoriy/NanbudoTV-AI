@@ -219,6 +219,12 @@ class GenerateTest(unittest.TestCase):
         relative = result["metaFile"]
         self.assertTrue((self.root / "files" / relative).is_file())
         self.assertEqual(self.store.get(result["scriptId"])["kind"], "rewrite_script")
+        # renderResult() 读的是 structure/resultKind/structureFile，不是 text
+        self.assertEqual(result["structure"], result["text"])
+        self.assertEqual(result["resultKind"], "script")
+        self.assertTrue(result["workflowComplete"])
+        self.assertEqual(result["structureFile"], relative)
+        self.assertEqual(result["scriptFile"], relative)
 
     def test_original_generate_uses_topic(self) -> None:
         resp = self.post("/api/original/generate",

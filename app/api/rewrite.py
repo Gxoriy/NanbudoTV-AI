@@ -605,7 +605,17 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                                       {"text": text, "segments": len(parts),
                                        "settings": settings, "file": relative})
                 task_store.succeed(task_id, {
-                    "text": text, "metaFile": relative, "scriptId": record["id"],
+                    "text": text,
+                    # renderResult() 实际读这些字段：缺 structure 时结果区空白
+                    "structure": text,
+                    "resultKind": "script",
+                    "workflowComplete": True,
+                    "hasStoryboard": False,
+                    "structureFile": relative,
+                    "scriptFile": relative,
+                    "assets": [],
+                    "validation": {"ok": True},
+                    "metaFile": relative, "scriptId": record["id"],
                     "segments": len(parts), "settings": settings, "mode": mode})
             except Exception as exc:  # noqa: BLE001
                 task_store.fail(task_id, str(getattr(exc, "code", "internal")),

@@ -87,6 +87,29 @@ if (!["queued","running","done","error"].includes(task.state)) throw "任务状�
 .\.venv\Scripts\python.exe .local\deploy\run_ui_proposals.py
 ```
 
+## 4.5 最终成稿（选提案 → 确认资料 → 开始改写）
+
+前端 `renderResult()` 读取的是 `result.structure` / `resultKind` / `structureFile` / `workflowComplete`，
+而我们原来的 `/api/rewrite/generate` 任务结果只有 `text` / `metaFile`——任务虽然 `done`，
+结果区却是空白（又一次"接口 200 但界面没内容"）。
+
+补上后实盘验证（真 LLM，1 段成稿）：
+
+```
+[*] 提交 200 task=75420ca3
+[*] 状态 done
+    structure        图书馆内，日光从高窗斜落，长桌两侧各坐一人…
+    resultKind       script
+    workflowComplete True
+    structureFile    scripts/2f028cab…
+    scriptFile       scripts/2f028cab…
+    metaFile         scripts/2f028cab…
+    segments         1
+[OK] 最终成稿契约 通过
+```
+
+复跑：`.local/deploy/final_gen_audit.py`（脚本在 .local，属一次性验收工具）。
+
 ## 5. 诚实边界
 
 - 这三个链现在会把**真实正文发给配置的 LLM**，按渠道计费；示例价格只用于解锁前端按钮，
