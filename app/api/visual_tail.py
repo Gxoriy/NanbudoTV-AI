@@ -248,9 +248,49 @@ def build(router: Router, service: VisualService, library, *,
         return store.get_setting(f"macro:{project_id}", {}) or {}
 
     def macro_state(req: Request) -> Response:
+        """前端把响应**整体**当快照用：必须顶层有 source/currentSource/scenes。
+
+        之前塞在 state 里，宏编排拿不到正文 → 补齐分镜报「原稿为空」。
+        """
         project_id = req.q1("projectId") or ""
-        return Response(200, {"ok": True, "projectId": project_id,
-                              "state": _macro(project_id)})
+        saved = _macro(project_id)
+        record = service.store.get(project_id) if service.store else None
+        settings = (record or {}).get("settings") or {}
+        source = str(settings.get("confirmedScript")
+                     or settings.get("sourceStructure") or "")
+        directory = ((settings.get("workflowPreparedScript") or {})
+                     .get("sceneDirectory") or [])
+        scenes = []
+        offset = 0
+        for index, row in enumerate(directory, start=1):
+            text = str(row.get("source") or "")
+            scenes.append({
+                "id": str(row.get("id") or f"scene-{index}"),
+                "number": int(row.get("number") or index),
+                "title": str(row.get("title") or ""),
+                "source": text,
+                "sourceStart": offset,
+                "sourceDuration": len(text),
+            })
+            offset += len(text)
+        # 已补齐的分镜卡不能因为目录重建而丢：按 id/number 合并
+        merged = scenes or []
+        saved_scenes = {str(row.get("id")): row
+                        for row in (saved.get("scenes") or [])}
+        for scene in merged:
+            previous = saved_scenes.get(str(scene.get("id")))
+            if previous and previous.get("cards"):
+                scene["cards"] = previous["cards"]
+        snapshot = {
+            **saved,
+            "ok": True,
+            "projectId": project_id,
+            "source": source,
+            "currentSource": source,
+            "scenes": merged or saved.get("scenes") or [],
+        }
+        # state 键保留给旧调用方/测试，顶层才是前端快照契约
+        return Response(200, {**snapshot, "state": snapshot})
 
     def macro_save(req: Request) -> Response:
         body = req.json()
@@ -265,9 +305,33 @@ def build(router: Router, service: VisualService, library, *,
         project_id = req.q1("projectId") or ""
         return Response(200, {"ok": True, "items": _macro(project_id).get("history") or []})
 
-    def macro_quote(_req: Request) -> Response:
-        return Response(200, {"ok": True, "estimatedPoints": 0.0, "pricingMode": "free",
-                              "message": "免费。"})
+    _macro_quotes: dict[str, dict] = {}
+
+    def macro_quote(req: Request) -> Response:
+        """前端要靠 quoteId/expiresAt/totalCredits 才能提交；不能只回 estimatedPoints。"""
+        import uuid  # noqa: PLC0415
+
+        body = req.json() if req.body else {}
+        project_id = str(body.get("projectId") or "")
+        source = str(body.get("source") or "")
+        quote = {
+            "ok": True,
+            "quoteId": uuid.uuid4().hex,
+            "projectId": project_id,
+            "action": str(body.get("action") or "plan"),
+            "segmentId": ("" if body.get("segmentId") is None
+                          else str(body.get("segmentId"))),
+            "cardNumber": body.get("cardNumber"),
+            "maxCalls": 1,
+            "totalCredits": 1.0,
+            "estimatedPoints": 1.0,
+            "expiresAt": __import__("time").time() + 600,
+            "pricingMode": "free",
+            "source": source[:4000],
+            "message": "免费演示，不扣积分。",
+        }
+        _macro_quotes[quote["quoteId"]] = quote
+        return Response(200, quote)
 
     def macro_media_catalog(_req: Request) -> Response:
         return Response(200, {"ok": True, "media": [], "message": VIDEO_REQUIRED})
@@ -363,10 +427,73 @@ def build(router: Router, service: VisualService, library, *,
             return Response.error(400, "invalid_input", "缺少 projectId。")
         if task_store is None:
             return Response.error(503, "unsupported", "任务队列未就绪。")
+        quote_id = str(body.get("quoteId") or "")
+        quote = _macro_quotes.pop(quote_id, None)
+        if quote is None:
+            return Response.error(400, "invalid_input",
+                                  "报价已失效，请重新核价后再提交。")
+        if quote.get("projectId") and quote["projectId"] != project_id:
+            return Response.error(409, "conflict", "报价属于其他项目，请重新核价。")
+        action = str(quote.get("action") or "plan")
+        segment_id = str(quote.get("segmentId") or "")
         task = task_store.create("visual.macro", "D2",
                                  {"projectId": project_id,
-                                  "quoteId": str(body.get("quoteId") or ""),
-                                  "action": str(body.get("action") or "")})
+                                  "quoteId": quote_id, "action": action})
+
+        def work(task_id: str) -> None:
+            try:
+                task_store.start(task_id)
+            except KeyError:
+                return
+            try:
+                task_store.set_progress(task_id, 0.3, "正在补齐分镜…")
+                state = dict(_macro(project_id) or {})
+                record = service.store.get(project_id) if service.store else {}
+                settings = (record or {}).get("settings") or {}
+                source = str(quote.get("source")
+                             or state.get("currentSource")
+                             or settings.get("confirmedScript") or "")
+                scenes = list(state.get("scenes") or [])
+                if not scenes:
+                    for index, row in enumerate(
+                            ((settings.get("workflowPreparedScript") or {})
+                             .get("sceneDirectory") or []), start=1):
+                        scenes.append({"id": str(row.get("id") or f"scene-{index}"),
+                                       "number": int(row.get("number") or index),
+                                       "title": str(row.get("title") or ""),
+                                       "source": str(row.get("source") or "")})
+                total = 0
+                for scene in scenes:
+                    if segment_id and str(scene.get("id")) != segment_id:
+                        continue
+                    text = str(scene.get("source") or source or "").strip()
+                    if not text:
+                        continue
+                    # 本地按句切镜：稳定、免费，先把"补齐分镜"跑通
+                    parts = [part.strip() for part in
+                             text.replace("\n", "。").split("。") if part.strip()]
+                    cards = [{"number": index, "prompt": part,
+                              "sourceText": part, "complete": True}
+                             for index, part in enumerate(parts[:8], start=1)]
+                    if cards:
+                        scene["cards"] = cards
+                        total += len(cards)
+                state.update({"projectId": project_id, "source": source,
+                              "currentSource": source, "scenes": scenes,
+                              "plan": {"scenePlan": {"scenes": scenes}}})
+                store.set_setting(f"macro:{project_id}", state)
+                task_store.succeed(task_id, {"scenes": len(scenes),
+                                             "cards": total,
+                                             "projectId": project_id})
+            except Exception as exc:  # noqa: BLE001
+                task_store.fail(task_id, "internal", str(exc)[:200])
+
+        import threading  # noqa: PLC0415
+
+        threading.Thread(target=work, args=(task.id,), daemon=True).start()
+        return Response(200, {"ok": True, "quoteId": quote_id, "action": action,
+                              "maxCalls": 1, "totalCredits": 1.0,
+                              "segmentId": segment_id, "taskId": task.id})
 
         def work(task_id: str) -> None:
             try:

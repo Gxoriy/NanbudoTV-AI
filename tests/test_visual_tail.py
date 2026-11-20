@@ -85,7 +85,11 @@ class TailRoutesTest(unittest.TestCase):
         self.assertEqual(state["state"]["stage"], "cards")
 
         quote = self.call("POST", "/api/visual/macro/quote", {})
-        self.assertEqual(quote.payload["estimatedPoints"], 0.0)
+        # 前端要靠 quoteId/totalCredits/expiresAt 才能提交补齐分镜
+        self.assertTrue(quote.payload["quoteId"])
+        self.assertEqual(quote.payload["maxCalls"], 1)
+        self.assertGreater(quote.payload["totalCredits"], 0)
+        self.assertGreater(quote.payload["expiresAt"], 0)
 
         # 未注入视频管线时，提交必须明确 501，而不是假装排了任务
         submit = self.call("POST", "/api/visual/macro/media/submit", {})

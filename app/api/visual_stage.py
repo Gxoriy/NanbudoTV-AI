@@ -306,6 +306,20 @@ def build(router: Router, service: VisualService, library, *,
                               "stages": stages, "summary": summary,
                               "cached": False, "fingerprint": cut_key})
 
+    def _publish_directory(project_id: str, source: str) -> dict:
+        """把分场目录写进项目 settings，前端「提取大纲」后才看得到变化。"""
+        if service.store is None:
+            return {}
+        record = service.store.get(project_id) or {}
+        settings = dict(record.get("settings") or {})
+        directory = _scene_directory(source)
+        prepared = dict(settings.get("workflowPreparedScript") or {})
+        prepared.update({"cleanedSource": source, "sceneDirectory": directory,
+                         "originalSourceHash": _tiny_hash(source)})
+        settings["workflowPreparedScript"] = prepared
+        service.store.update(project_id, settings=settings)
+        return prepared
+
     def project_scenes(req: Request) -> Response:
         """分镜生成：LLM 规划 + 落库，可重复调用（覆盖旧结果）。"""
         body = req.json()
@@ -333,10 +347,16 @@ def build(router: Router, service: VisualService, library, *,
             hit = _cut_lookup(cut_key)
             if hit is not None:
                 cached = hit["payload"].get("data") or []
+                prepared = _publish_directory(project_id, requirement)
                 return Response(200, {"ok": True, "scenes": cached,
                                       "count": len(cached), "cached": True,
                                       "fingerprint": cut_key,
                                       "storyboardId": hit["id"],
+                                      "project": service.store.get(project_id),
+                                      "directoryReady": bool(
+                                          prepared.get("sceneDirectory")),
+                                      "sceneCount": len(
+                                          prepared.get("sceneDirectory") or []),
                                       "message": "命中上次切分，未调用模型。"})
         try:
             planned = assist.plan(
@@ -360,9 +380,13 @@ def build(router: Router, service: VisualService, library, *,
             except (KeyError, TypeError):
                 pass
         _cut_store(cut_key, "scenes", requirement, shots_wanted, scenes)
+        prepared = _publish_directory(project_id, requirement)
         return Response(200, {"ok": True, "scenes": scenes, "count": len(scenes),
                               "storyboardId": row["id"], "cached": False,
-                              "fingerprint": cut_key})
+                              "fingerprint": cut_key,
+                              "project": service.store.get(project_id),
+                              "directoryReady": bool(prepared.get("sceneDirectory")),
+                              "sceneCount": len(prepared.get("sceneDirectory") or [])})
 
     # ---------- 素材分析与删除 ----------
     def assets_analyze(req: Request) -> Response:

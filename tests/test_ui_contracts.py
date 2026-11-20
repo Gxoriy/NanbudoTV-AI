@@ -158,8 +158,12 @@ class UiContractsTest(unittest.TestCase):
 
     # ---------- 宏提交 ----------
     def test_macro_submit_returns_task_id(self) -> None:
+        quote = self.call("POST", "/api/visual/macro/quote",
+                          {"projectId": "p1", "action": "plan", "source": "第一场"})
+        self.assertEqual(quote.status, 200, quote.payload)
         resp = self.call("POST", "/api/visual/macro/submit",
-                         {"projectId": "p1", "quoteId": "q1", "confirmed": True})
+                         {"projectId": "p1", "confirmed": True,
+                          "quoteId": quote.payload["quoteId"]})
         self.assertEqual(resp.status, 200, resp.payload)
         self.assertTrue(resp.payload["taskId"])
         self.assertEqual(self.call("POST", "/api/visual/macro/submit", {}).status, 400)
