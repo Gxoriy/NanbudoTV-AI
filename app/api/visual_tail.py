@@ -341,7 +341,9 @@ def build(router: Router, service: VisualService, library, *,
             "source": source[:4000],
             "message": "免费演示，不扣积分。",
         }
-        if segment_id not in (None, ""):
+        # 只有场级补齐才回 segmentId；plan/plan_resume 前端用 id='' 比对，
+        # 回了真实场次反而会被判定"身份不匹配"。
+        if action == "segment" and segment_id not in (None, ""):
             quote["segmentId"] = str(segment_id)
         if body.get("cardNumber") is not None:
             quote["cardNumber"] = int(body["cardNumber"])
