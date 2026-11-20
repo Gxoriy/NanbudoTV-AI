@@ -187,3 +187,24 @@ html body.atelier-workflow #startPreparedSceneShots { min-height:38px; margin:0!
 #macroInlineWorkspace .card-text-wait { display:flex; align-items:center; gap:14px; padding:16px; margin:10px 0; border:1px solid #8a7446; background:#e5c4750a; border-radius:8px; color:#f0d48b; }
 #macroInlineWorkspace .card-text-wait .video-generation-spinner { flex:none; width:26px; height:26px; }
 #macroInlineWorkspace .card-text-wait small { display:block; margin-top:5px; color:#c1c8c9; overflow-wrap:anywhere; }
+#workflowSceneSource284{margin:14px 0 18px;padding:16px 18px;border:1px solid var(--line,#464b50);border-radius:9px;background:var(--panel,#24282b);min-width:0}#workflowSceneSource284[hidden]{display:none!important}.workflow-source-heading284{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.workflow-source-heading284 small,#workflowSceneSource284>p{color:var(--muted,#a9b2ba);font-size:12px}#workflowSceneSourceText284{max-height:440px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;font:inherit;line-height:1.9;margin:0;padding:12px 14px;border:1px solid var(--line,#464b50);border-radius:6px;background:var(--bg,#202326);user-select:text}#workflowSceneSource284>p{margin:10px 0 0}.mi-capacity-details284{margin-top:9px;font-size:12px;color:inherit}.mi-capacity-details284>summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}.mi-capacity-details284 p{margin:7px 0;white-space:normal;line-height:1.7}.mi-capacity-details284 small{opacity:.85}
+#macroInlineWorkspace .mi-parts286 { margin:6px 0 12px; padding:0 12px; border:1px solid #414a51; border-radius:7px; background:#24282b; color:#e3e8eb; }
+#macroInlineWorkspace .mi-parts286[hidden] { display:none; }
+#macroInlineWorkspace .mi-parts286>summary { display:flex; flex-wrap:wrap; align-items:center; gap:5px 12px; padding:8px 0; cursor:pointer; font-size:13px; list-style:none; }
+#macroInlineWorkspace .mi-parts286>summary::-webkit-details-marker { display:none; }
+#macroInlineWorkspace .mi-parts286>summary>span { font-size:12px; color:#bdc9d0; }
+#macroInlineWorkspace .mi-parts286>summary>.mi-part-gap-text { color:#ffcd8d; }
+#macroInlineWorkspace .mi-part-disclosure { margin-left:auto; }
+#macroInlineWorkspace .mi-part-disclosure::before { content:"展开详情"; }
+#macroInlineWorkspace .mi-parts286[open] .mi-part-disclosure::before { content:"收起详情"; }
+#macroInlineWorkspace .mi-part-note { margin:0; padding:7px 0; border-top:1px solid #414a51; font-size:12px; color:#c8d1d7; }
+#macroInlineWorkspace .mi-part-list { margin:0 0 7px; padding:0; list-style:none; max-height:min(300px,35vh); overflow:auto; }
+#macroInlineWorkspace .mi-part-row { display:flex; flex-wrap:wrap; align-items:center; gap:5px 12px; min-width:0; padding:7px 8px; border-top:1px solid #3a4248; }
+#macroInlineWorkspace .mi-part-row[data-part-gap] { border-left:2px solid #dfaa64; padding-left:6px; }
+#macroInlineWorkspace .mi-part-content { flex:1 1 270px; min-width:0; }
+#macroInlineWorkspace .mi-part-heading, #macroInlineWorkspace .mi-part-actions { display:flex; flex-wrap:wrap; align-items:center; gap:5px 9px; font-size:13px; }
+#macroInlineWorkspace .mi-part-row p { margin:3px 0 0; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+#macroInlineWorkspace .mi-part-actions button { min-height:28px; padding:3px 7px; font-size:12px; }
+#macroInlineWorkspace .mi-part-state, #macroInlineWorkspace .mi-part-location { font-size:11px; color:#bdc9d0; }
+#macroInlineWorkspace .mi-part-row[data-part-state="accepted"] .mi-part-state { color:#9adda9; }
+#macroInlineWorkspace .mi-part-row:is([data-part-state="receipt_pending"],[data-part-state="return_invalid"],[data-part-state="provider_failed"]) .mi-part-state { color:#ffcd8d; }

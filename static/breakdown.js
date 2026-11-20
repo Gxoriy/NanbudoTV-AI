@@ -445,7 +445,13 @@ function generationSettings() {
     (!dynamic || row.supportsVideoReference) && ($('mode').value!=='model_edit' || row.supportsVideoEdit) &&
     (row.pricingMode==='live_quote'||(pricesForMedia || []).some(price => price.model===row.model)));
   const previousModel=generationKey===key?select.value:'', defaultId=config.breakdownModels?.[key];
-  select.innerHTML=choices.map(row => `<option value="${esc(row.model)}">${esc(image?row.displayName:ModelPresentation.videoOptionLabel(generationProfile(),row))}${row.model===defaultId?' · 默认':''}</option>`).join('') || '<option value="">尚无可用模型</option>';
+  const profile=generationProfile();
+  const renderChoices=rows=>rows.map(row => `<option value="${esc(row.model)}">${esc(image?row.displayName:ModelPresentation.videoOptionLabel(profile,row))}${row.model===defaultId?' · 默认':''}</option>`).join('');
+  const optionMarkup=!image && Array.isArray(profile.videoRouteGroups) ? ModelPresentation.routeEntries(profile,'video').map(([id,label])=>{
+    const options=renderChoices(choices.filter(row=>ModelPresentation.routeForModel(profile,'video',row.model)===id));
+    return options?`<optgroup label="${esc(label)}">${options}</optgroup>`:'';
+  }).join('') : renderChoices(choices);
+  select.innerHTML=optionMarkup || '<option value="">尚无可用模型</option>';
   select.value=choices.some(row=>row.model===previousModel)?previousModel:choices.some(row=>row.model===defaultId)?defaultId:choices[0]?.model || '';
   preserveRetiredModel(select,previousModel,choices);
   generationKey=key;
@@ -683,7 +689,7 @@ async function listProjects() {
   if (project) $('projects').value = project.id;
 }
 let catalogFlight277=null;
-const breakdownCatalogSignature=value=>JSON.stringify([value.visualConfigRevision,value.visualModels,value.visualImagePricing,value.visualVideoPricing,value.visualVideoSkuPricing172,value.textButtonBindings,value.textModelPricing,value.breakdownModels]);
+const breakdownCatalogSignature=value=>JSON.stringify([value.visualConfigRevision,value.visualModels,value.videoRouteGroups,value.visualImagePricing,value.visualVideoPricing,value.visualVideoSkuPricing172,value.textButtonBindings,value.textModelPricing,value.breakdownModels]);
 function refreshModelCatalog(){
   if(catalogFlight277)return catalogFlight277;
   catalogFlight277=api('/api/client/config?refresh=1').then(received=>{

@@ -1,0 +1,21 @@
+.workflow-script-review286 {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--border, #505259);
+  border-radius: 12px;
+  background: var(--panel, #252629);
+}
+.workflow-script-review286[hidden] { display: none; }
+.workflow-script-line286 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, auto);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--border, #505259);
+}
+.workflow-script-line286 p { margin: 4px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.workflow-script-review286 form { margin: 0; }
+@media (max-width: 640px) {
+  .workflow-script-line286 { grid-template-columns: minmax(0, 1fr); }
+}

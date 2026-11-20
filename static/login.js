@@ -1,5 +1,6 @@
 const $ = id => document.getElementById(id);
-const state = { mode: "bound", status: {}, config: {}, updateFile: "", updateBusy: false };
+const state = { mode: "bound", status: {}, config: {}, updateFile: "", updateBusy: false,
+  updateCanApplyOnline: false, updateApplying: false };
 
 async function api(url, body) {
   const response = await fetch(url, {
@@ -79,11 +80,33 @@ function announcements(config) {
   }
 }
 
+function showOnlineUpdateNotice292(config) {
+  const notice = typeof config?.onlineUpdateNotice === "string" ? config.onlineUpdateNotice.trim() : "";
+  if (!notice || state.onlineUpdateNoticeShown292) return;
+  try { if (sessionStorage.getItem("ntv-online-update-notice292") === "1") return; } catch (_) { /* Page-local fallback. */ }
+  const detail = $("updateDetail");
+  if (!detail) return;
+  const info = document.createElement("small");
+  info.id = "onlineUpdateNotice292";
+  info.setAttribute("role", "status");
+  info.style.marginTop = "8px";
+  info.textContent = notice;
+  detail.insertAdjacentElement("afterend", info);
+  state.onlineUpdateNoticeShown292 = true;
+  try { sessionStorage.setItem("ntv-online-update-notice292", "1"); } catch (_) { /* Keep the in-page guard. */ }
+}
+
 function renderConfig(config, checked = false) {
   state.config = config || {};
+  if (!state.updateBusy && !state.updateApplying) {
+    $("updateButton").textContent = state.updateFile
+      ? (state.updateCanApplyOnline === true ? "安装更新并重启" : "打开安装包位置")
+      : "下载更新并重启";
+  }
   const current = String(config?.currentVersion || "--");
   $("brandVersion").textContent = `v${current}`;
   announcements(config || {});
+  showOnlineUpdateNotice292(config);
   const available = Boolean(config?.updateAvailable && config?.downloadUrl && config?.sha256);
   const icon = $("updateIcon");
   if (!checked) {
@@ -167,20 +190,44 @@ async function pollUpdate(taskId) {
   }
 }
 
-async function updateSoftware() {
-  if (state.updateBusy) return;
-  state.updateBusy = true;
+async function updateSoftware(event) {
+  if (state.updateBusy || state.updateApplying) return;
   const button = $("updateButton");
+  // Carry this explicit click only through its own verified download. A
+  // config refresh, synthetic event or later page load never starts an install.
+  const downloadAndRestart = !state.updateFile && event?.type === "click" && event.isTrusted === true
+    && ["下载更新并重启", "重试下载并重启"].includes(button.textContent);
+  state.updateBusy = true;
   button.disabled = true;
   try {
     if (!state.updateFile) {
       button.textContent = "正在下载更新…";
       const started = await api("/api/update/download", {});
       const result = await pollUpdate(started.taskId);
+      if (typeof result.fileName !== "string" || !result.fileName.trim()) {
+        throw new Error("没有收到已校验的安装包记录，请继续下载或重试。");
+      }
       state.updateFile = result.fileName;
-      button.textContent = "打开安装包位置";
-      button.disabled = false;
-      message("新版已下载并通过完整性校验，点击“打开安装包位置”后手动检查和安装。完整性校验不是病毒扫描。");
+      state.updateCanApplyOnline = result.canApplyOnline === true;
+      button.textContent = state.updateCanApplyOnline ? "安装更新并重启" : "打开安装包位置";
+      const ready = state.updateCanApplyOnline
+        ? (downloadAndRestart ? "新版已下载并通过完整性校验，正在启动更新并重启。"
+          : "新版已下载并通过完整性校验。点击“安装更新并重启”即可安装，软件将自动重新打开。")
+        : "新版已下载并通过完整性校验。此安装包需手动安装，请点击“打开安装包位置”。";
+      $("updateProgressText").textContent = ready;
+      message(ready);
+      if (!downloadAndRestart || state.updateCanApplyOnline !== true) return;
+    }
+    if (state.updateCanApplyOnline === true) {
+      button.textContent = "正在启动更新…";
+      const result = await api("/api/update/apply-online", { fileName: state.updateFile });
+      if (result.ok !== true) throw new Error(result.error || result.message || "未能启动更新，请稍后重试。");
+      state.updateApplying = true;
+      button.textContent = "正在安装并重启…";
+      $("enterApp").disabled = true;
+      $("updateProgress").classList.remove("hidden");
+      $("updateProgressText").textContent = result.message || "更新已启动，安装完成后软件会自动重新打开。";
+      message($("updateProgressText").textContent);
       return;
     }
     button.textContent = "正在打开安装包位置…";
@@ -188,13 +235,17 @@ async function updateSoftware() {
     $("updateProgressText").textContent = result.message || "已打开安装包位置，请手动完成安装。";
     $("updateProgressPercent").textContent = "100%";
     $("updateProgressBar").style.width = "100%";
+    button.textContent = "打开安装包位置";
   } catch (error) {
     message(error.message, true);
-    button.disabled = false;
-    button.textContent = state.updateFile ? "打开安装包位置" : "继续下载 / 重试";
+    $("updateProgress").classList.remove("hidden");
+    $("updateProgressText").textContent = error.message;
+    button.textContent = state.updateFile
+      ? (state.updateCanApplyOnline === true ? "安装更新并重启" : "打开安装包位置")
+      : "重试下载并重启";
   } finally {
     state.updateBusy = false;
-    button.disabled = false;
+    button.disabled = state.updateApplying;
   }
 }
 

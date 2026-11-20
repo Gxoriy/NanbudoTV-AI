@@ -295,8 +295,13 @@
       catch(error){uploadStatus(id,number,error.message,true);}
     });
     function unsavedScene(id){capture();return {sourceCards:[...sources].filter(([token,row])=>JSON.parse(token)[0]===id&&row.dirty).map(([token])=>JSON.parse(token)[1]),storyboardCards:[...drafts].filter(([token,row])=>JSON.parse(token)[0]===id&&row.dirty&&row.manual).map(([token])=>JSON.parse(token)[1])};}
+    function hasUnsavedDrafts(){
+      capture();
+      return [...sources.values()].some(row=>row.dirty)
+        || [...drafts.values()].some(row=>row.dirty&&(row.manual||row.manualReferenceIds?.length));
+    }
     function clearScene(id){for(const map of [drafts,mounted,sources,sourceMounted])for(const token of map.keys())if(JSON.parse(token)[0]===id)map.delete(token);}
-    return {capture,mount,save,saveSource,sourceDraft,synchronizeReferences,get,assertReferencesReady233,unsavedScene,clearScene,clear:()=>{drafts.clear();mounted.clear();sources.clear();sourceMounted.clear();}};
+    return {capture,mount,save,saveSource,sourceDraft,synchronizeReferences,get,assertReferencesReady233,unsavedScene,hasUnsavedDrafts,clearScene,clear:()=>{drafts.clear();mounted.clear();sources.clear();sourceMounted.clear();}};
   }
   root.MacroCardEditors={create};
 })(typeof window!=='undefined'?window:globalThis);

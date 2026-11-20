@@ -1,0 +1,60 @@
+[hidden].visual-series282,[hidden].visual-series-context282,[hidden].series-assets282{display:none!important}
+.visual-series-view282 .visual-studio-panel>:not(.visual-studio-heading):not(.visual-series282){display:none!important}
+.visual-series-view282 #visualWorkspaceActions{display:none!important}
+html body.atelier-workflow.visual-series-view282 #workflowSceneLayout206,
+html body.atelier-workflow.visual-series-view282 #macroInlineWorkspace,
+html body.atelier-workflow.visual-series-view282 #workflowSceneStart,
+html body.atelier-workflow.visual-series-view282 #workflowSceneDirectory,
+html body.atelier-workflow.visual-series-view282 #visualStudioControls,
+html body.atelier-workflow.visual-series-view282 #visualWorkflowSteps{display:none!important}
+.visual-series282{display:grid;gap:16px}
+.series-heading282,.series-episode282,.visual-series-context282{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.series-heading282 h2,.series-form282 h2{margin:0}
+.series-heading282 p,.series-episode282 p{color:var(--muted);margin:5px 0 0;overflow-wrap:anywhere}
+.series-list282{display:grid;gap:9px}
+.series-episode282,.visual-series-context282,.series-assets282{padding:12px 15px;border:1px solid var(--line);border-radius:10px;background:var(--theme-input,var(--input-bg,#202327))}
+.series-episode282 strong{display:block;margin-top:4px;overflow-wrap:anywhere}
+.series-episode282 small{color:var(--muted)}
+.visual-series-context282{margin:12px 0}
+.visual-series-context282 strong{flex:1;min-width:160px;overflow-wrap:anywhere}
+.series-status282{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.series-status282 p{margin:0}
+.series-status282 button{margin-inline-start:auto}
+.series-error{color:var(--theme-danger,#ff9f96)}
+.series-form282{max-width:580px}
+.series-editor282{display:grid;gap:12px}
+.series-editor282 label,.series-asset-review-row282 label{display:grid;gap:6px}
+.series-editor282 input,.series-editor282 textarea{width:100%}
+.series-editor282 [role="alert"]:empty{display:none}
+.series-assets282{width:100%;margin:8px 0;font-size:.9rem}
+.series-assets282 h3{margin:0 0 8px;font-size:1rem}
+.series-assets282 details>summary{cursor:pointer}
+.series-asset-options282,.series-asset-review282{display:grid;gap:8px;margin:12px 0}
+.series-asset-options282 fieldset{border:1px solid var(--line);border-radius:8px;min-width:0;margin:0;padding:8px 12px}
+.series-asset-options282 label{display:inline-flex;gap:6px;align-items:center;margin:4px 15px 4px 0}
+.series-asset-review-row282{display:grid;gap:5px;padding:8px;border:1px solid var(--line);border-radius:8px}
+.series-asset-review-row282 p{color:var(--muted);margin:0}
+.series-asset-review-row282 select{width:100%}
+.series-asset-buttons282{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.series-asset-empty282{color:var(--muted);margin:8px 0}
+.media-card-settings{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:2px 0 8px;color:var(--muted)}
+.media-card-settings button{padding:3px 8px;font-size:12px}
+.media-card-settings-default{display:block;margin:0 0 8px;color:var(--muted)}
+body[data-series-workspace="1"] .episode-local-settings>label:not(:has(.episode-tail-continuation)),
+body[data-series-workspace="1"] .asset-local-model,
+body[data-series-workspace="1"] #visualAssetLayoutRow205,
+body[data-series-workspace="1"] #swapWorkflowStyle195,
+body[data-series-workspace="1"] #newCustomStyle,
+body[data-series-workspace="1"] label:has(#sourceVisualStyle),
+body[data-series-workspace="1"] .visual-video-model-bar>label,
+body[data-series-workspace="1"] #applyGlobalVideoSettings,
+body[data-series-workspace="1"] .visual-video-quote-note,
+body[data-series-workspace="1"] #visualAssetModelRow205>label,
+body[data-series-workspace="1"] #saveProjectSettings{display:none!important}
+html body.atelier-workflow[data-series-workspace="1"] #visualAssetToolbar #visualAssetModelRow205>label,
+html body.atelier-workflow[data-series-workspace="1"] #visualAssetToolbar #visualAssetLayoutRow205,
+html body.atelier-workflow[data-series-workspace="1"] #compactAssetWorkspace205 .asset-local-model{display:none!important}
+@media(max-width:620px){
+  .series-heading282,.series-episode282{align-items:flex-start;flex-direction:column}
+  .visual-series-context282 strong{order:-1;flex-basis:100%}
+}

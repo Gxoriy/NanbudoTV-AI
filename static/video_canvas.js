@@ -12,7 +12,7 @@
   let textPollCursor=0,textPollTimer=null,textPollFlight=null,mediaFallbackCursor=0;
   let navigationBusy259=false;
   let listRead261=0,removedRead261=0,lifecycleFrozen261=false;
-  let locationFile='',studio=null,assistant254=null,director254=null,directorPending254=null,gallery=null;
+  let locationFile='',studio=null,assistant254=null,director254=null,directorPending254=null,gallery=null,tail283=null;
   let catalogFlight251=null,catalogAttempt251=-Infinity,catalogError251='',catalogPaintPending251=false,catalogQuotePending251=false,canvasOpenEpoch251=0,quoteReadEpoch251=0,canvasModuleActive251=true;
   const catalogSignature251=value=>JSON.stringify([value.visualConfigRevision,value.visualModels,value.visualImagePricing,value.visualVideoPricing,value.visualVideoSkuPricing172,value.breakdownModels]);
   function catalogStatus251(text,error=false){
@@ -68,13 +68,15 @@
   const globalLocked=()=>lifecycleFrozen261||navigationBusy259;
   const locked=()=>globalLocked()||!!doc?.generation;
   const persistedRun=nid=>doc?.nodeGenerations?.[nid]||(doc?.generation?.nodeId===nid?doc.generation:null);
+  const generationPreflights=new Set();
+  const checkingSelected281=()=>generationPreflights.has(JSON.stringify([canvasOpenEpoch251,doc?.id,runNodeId]));
   const ownsInputs=(run)=>workingPhases.has(run.phase)||run.phase==='unknown';
   const activeMediaNodes=()=>[...new Set([...Object.keys(doc?.nodeGenerations||{}),...[...nodeRuns].filter(([,run])=>ownsInputs(run)).map(([nid])=>nid)])];
   const reaches=(source,target)=>!!source&&!!target&&G.descendants(doc?.graph.edges||[],[source]).has(target);
   const inputLocked=nid=>locked()||activeMediaNodes().some(active=>reaches(nid,active));
   const runLocked=nid=>locked()||activeMediaNodes().some(active=>reaches(nid,active)||reaches(active,nid));
   const locallyRunning=()=>[...nodeRuns.values(),...textRuns.values()].some(run=>workingPhases.has(run.phase));
-  const promptRevision=nid=>canvasOpenEpoch251+':'+(nodeRevisions.get(nid)||0);
+  const promptRevision=nid=>canvasOpenEpoch251+':'+(node(nid)?.kind==='generator'?revision:nodeRevisions.get(nid)||0);
   function generationInput(nid){
     const inputs=doc.graph.nodes.filter(item=>reaches(item.id,nid));
     const ids=new Set(inputs.map(item=>item.id));
@@ -104,6 +106,7 @@
   function durationIssue(n=processor()){return n?.kind==='generator'?ModelPresentation.videoDurationIssue(config,n.settings?.model,Number(n.settings?.duration)):'';}
   function videoInputIssue(n=processor()){
     if(n?.kind!=='generator')return '';
+    const tailIssue=tail283?.issue(n)||window.CanvasTail283?.issue(doc,n);if(tailIssue)return tailIssue;
     const ability=(config.visualModels||[]).find(item=>item.media==='video'&&item.model===n.settings.model)||{},ratios=ability.supportedAspectRatios||[];
     return durationIssue(n)||((ratios.length&&!ratios.includes(n.settings.ratio)||n.settings.ratio==='21:9'&&!ratios.includes('21:9'))?'该模型不支持当前画幅；原设定'+n.settings.ratio+'已保留，请调整画幅或更换模型。':'')||(ability.maxPromptChars&&Array.from(String(n.text||'')).length>ability.maxPromptChars?'当前节点提示词超过模型'+ability.maxPromptChars+'个字符的上限，未提交。完整提交还包含连接输入及风格说明，以后台提交前校验为准；请手动调整或选择其他模型，文本不会自动裁剪。':'');
   }
@@ -114,9 +117,11 @@
   }
   function controls(){const block=locked(),runBlock=runLocked(runNodeId),selectedBlock=inputLocked(selected),cost=Number(quote?.quote?.estimatedPoints),creditValid=Number.isFinite(points)&&points>=0,costValid=Number.isFinite(cost)&&cost>0;
     paintGenerationActivity257();
-    $('generate').disabled=runBlock||!processor()||!!videoInputIssue()||!costValid&&!catalogQuotePending251||!creditValid||costValid&&points<cost;
+    const checking=checkingSelected281();
+    $('generate').disabled=checking||runBlock||!processor()||!!videoInputIssue()||!costValid&&!catalogQuotePending251||!creditValid||costValid&&points<cost;
+    $('generate').setAttribute('aria-busy',String(checking));
     const ownRun=nodeRuns.get(runNodeId),legacy=doc?.generation;
-    $('generate').textContent=runBlock?(legacy||ownsInputs(ownRun||{})?'原任务处理中':'依赖节点原任务处理中'):!creditValid?'积分未确认 · 暂不可生成':costValid&&points<cost?'积分不足 · 请充值':catalogQuotePending251&&!costValid?'核对新价格并生成当前节点':'确认积分并生成当前节点';
+    $('generate').textContent=checking?'正在核对本节点…':runBlock?(legacy||ownsInputs(ownRun||{})?'原任务处理中':'依赖节点原任务处理中'):!creditValid?'积分未确认 · 暂不可生成':costValid&&points<cost?'积分不足 · 请充值':catalogQuotePending251&&!costValid?'核对新价格并生成当前节点':'确认积分并生成当前节点';
     $('recharge').hidden=!costValid||!creditValid||points>=cost;
     $('observe').hidden=globalLocked()||(!persistedRun(runNodeId)&&!legacy&&ownRun?.phase!=='unknown')||workingPhases.has(ownRun?.phase);
     for(const eid of ['saveCanvas','canvasName'])$(eid).disabled=block||navigationBusy259;
@@ -446,6 +451,7 @@
     // Rich chips contain buttons: do not nest them inside a <label>, whose
     // implicit activation would click the hidden workflow auto-label control.
     const wrapper=document.createElement('section'),heading=document.createElement('p');wrapper.className='canvas-text-field';heading.textContent=field.parentElement.querySelector('span')?.textContent||'提示词与素材引用';field.parentElement.replaceWith(wrapper);wrapper.append(heading,panel);
+    if(n.kind==='generator'){const regenerate=document.createElement('button');regenerate.type='button';regenerate.className='canvas-regenerate283';regenerate.textContent='重新生成分镜提示词';regenerate.disabled=inputLocked(n.id);regenerate.onclick=safe(async()=>{if(selected!==n.id||inputLocked(n.id))return;studio?.hideInspector();await assistant254?.open({action:'storyboard_regenerate'});});heading.append(regenerate);}
     const canvasId=doc.id,active=()=>doc?.id===canvasId&&selected===n.id&&node(n.id)===n&&panel.isConnected;
     const assertActive=()=>{if(!active())throw new Error('编辑节点已切换，已取消旧素材选择。');};
     const editor=ReferenceMentions.mount(panel,{
@@ -585,9 +591,9 @@
     }
     const received=G.received(doc.graph.nodes,doc.graph.edges,n.id,doc.nodeOutputs);
     $('fields').insertAdjacentHTML('afterbegin','<section class="receive-summary"><b>接收与发送</b><p>'+doc.graph.edges.filter(e=>e.target===n.id).length+' 条输入线 · '+doc.graph.edges.filter(e=>e.source===n.id).length+' 条输出线</p><p>'+ (G.processors.has(n.kind)?'生成节点接收文字与支持的素材；只发送本节点真实生成结果。':'素材节点会汇合连入内容与自身内容并传到下游，不自动识图、改图或生成。')+'</p>'+(received.length?'<p>接收：'+received.map(item=>esc(node(item.id)?.name||'上游')+'（'+(item.blocked?'结果待就绪':item.file?(item.media==='video'?'视频':'图片'):'文字')+'）').join('、')+'</p>':'<p>尚无上游输入，可上传 / 填写内容，也可从其他节点连入。</p>')+'</section>');
-    mountCharacterSpeech(n);mountMentions(n);controls();
+    mountCharacterSpeech(n);mountMentions(n);tail283?.mount(n,$('fields'));controls();
   }
-  function select(nid,deferQuote=false,keepSelection=false){if(!keepSelection)studio?.resetSelection(nid);studio?.showInspector();const hadSelectedEdge=selectedEdge>=0;selected=nid;selectedEdge=-1;if(hadSelectedEdge)drawWires();if(G.processors.has(node(nid)?.kind)&&runNodeId!==nid){runNodeId=nid;invalidateQuote();if(!deferQuote)safe(refreshQuote)();}renderSelection();inspect();assistant254?.sync();}
+  function select(nid,deferQuote=false,keepSelection=false){if(!keepSelection)studio?.resetSelection(nid);studio?.showInspector();const hadSelectedEdge=selectedEdge>=0;selected=nid;selectedEdge=-1;tail283?.sync();if(hadSelectedEdge)drawWires();if(G.processors.has(node(nid)?.kind)&&runNodeId!==nid){runNodeId=nid;invalidateQuote();if(!deferQuote)safe(refreshQuote)();}renderSelection();inspect();assistant254?.sync();}
   function renderSelection(){document.querySelectorAll('.node[data-id]').forEach(el=>{el.classList.toggle('selected',(studio?studio.isSelected(el.dataset.id):el.dataset.id===selected));el.classList.toggle('run-target',el.dataset.id===runNodeId);});document.querySelectorAll('.out').forEach(el=>el.classList.toggle('pending',el.closest('[data-id]').dataset.id===pending));controls();studio?.renderSelection();}
   async function save(){if(saveFlight){await saveFlight;return save();}if(!doc||lifecycleFrozen261||doc.generation||!dirty)return;const version=revision,canvasId=doc.id,owner=canvasOpenEpoch251,payload={canvasId,name:$('canvasName').value,graph:snapshot()};saveFlight=api('/api/canvas/save',payload);
     try{const response=await saveFlight;if(doc?.id!==canvasId||owner!==canvasOpenEpoch251||lifecycleFrozen261)return;if(revision===version){dirty=false;$('saveCanvas').textContent='保存画布';}mergeRunDocument(response.document);}finally{saveFlight=null;}if(dirty)await save();
@@ -799,42 +805,48 @@
     const owner=canvasOpenEpoch251,canvasId=doc?.id,nid=runNodeId;
     const current=()=>doc?.id===canvasId&&canvasOpenEpoch251===owner;
     const selectedRun=()=>current()&&nid===runNodeId;
-    await refreshQuote();if(!selectedRun())return;
-    await refreshPoints();if(!selectedRun()||!quote||$('generate').disabled)return;
-    const receipt=quote.quote,review={input:generationInput(nid),quoteEpoch};
-    const unchanged=()=>current()&&generationInput(nid)===review.input;
-    const media=processor().kind==='generator'?'video':'image';
-    const warning=media==='video'?ModelPresentation.activityWarning(config,quote.model,quote.resolution):'';
-    if(!await studioConfirm('运行“'+processor().name+'”，'+ModelPresentation.quoteText(receipt)+'。'+(warning?'\n\n'+warning:'')+'\n\n确认开始？'))return;
-    if(!selectedRun()||quoteEpoch!==review.quoteEpoch||!unchanged()){message('确认期间输入、引用或运行节点已改变，请重新核对并确认。');return;}
-    if(runLocked(nid))return;
-    const clientRunId=id();
-    setGenerationActivity257(nid,'submitting',{media,taskId:null,message:'正在提交当前节点…'});controls();
+    const flight=JSON.stringify([owner,canvasId,nid]);
+    generationPreflights.add(flight);controls();
     try{
-      await save();
-      if(!unchanged())throw Object.assign(new Error('生成输入已改变，请重新确认。'),{status:400});
-      const accepted=await api('/api/canvas/generate',{canvasId,nodeId:nid,parallelNodes:true,clientRunId,billingConfirmed:true,...ModelPresentation.quoteReceiptFields(receipt)});
-      if(!current())return;
-      if(accepted.done){
-        const fresh=(await api('/api/canvas/document?id='+encodeURIComponent(canvasId))).document;
-        if(current()){mergeRunDocument(fresh);setGenerationActivity257(nid,'');refreshRunView();}
-        return;
-      }
-      if(!accepted.taskId)throw new Error('提交回执尚未确认，请查询原任务。');
-      setGenerationActivity257(nid,'queued',{taskId:accepted.taskId,message:'节点任务已提交。'});
-      scheduleRuns();
-    }catch(error){
-      if(!current())return;
+      await Promise.all([refreshQuote(),refreshPoints()]);
+      if(!selectedRun()||!quote||runLocked(nid)||!Number.isFinite(points)||points<Number(quote.quote.estimatedPoints))return;
+      const receipt=quote.quote,reviewedTail=quote.tailQuoteHash283,review={input:generationInput(nid),quoteEpoch};
+      const unchanged=()=>current()&&generationInput(nid)===review.input;
+      const media=processor().kind==='generator'?'video':'image';
+      const warning=media==='video'?ModelPresentation.activityWarning(config,quote.model,quote.resolution):'';
+      if(!await studioConfirm('运行“'+processor().name+'”，'+ModelPresentation.quoteText(receipt)+'。'+(warning?'\n\n'+warning:'')+'\n\n确认开始？'))return;
+      if(!selectedRun()||quoteEpoch!==review.quoteEpoch||!unchanged()){message('确认期间输入、引用或运行节点已改变，请重新核对并确认。');return;}
+      if(runLocked(nid))return;
+      const clientRunId=id();
+      setGenerationActivity257(nid,'submitting',{media,taskId:null,message:'正在提交当前节点…'});
+      generationPreflights.delete(flight);controls();
       try{
-        const fresh=(await api('/api/canvas/document?id='+encodeURIComponent(canvasId))).document;
+        await save();
+        if(!unchanged())throw Object.assign(new Error('生成输入已改变，请重新确认。'),{status:400});
+        const accepted=await api('/api/canvas/generate',{canvasId,nodeId:nid,parallelNodes:true,clientRunId,billingConfirmed:true,...ModelPresentation.quoteReceiptFields(receipt),...(reviewedTail?{expectedTailQuote283:reviewedTail}:{})});
         if(!current())return;
-        mergeRunDocument(fresh);
-      }catch(_){}
-      const original=persistedRun(nid);
-      if(original?.taskId){setGenerationActivity257(nid,'checking',{taskId:original.taskId,message:original.error});scheduleRuns();}
-      else setGenerationActivity257(nid,error.status>=400&&error.status<500?'failed':'unknown',{message:error.message});
-      throw error;
-    }finally{if(current())controls();}
+        if(accepted.done){
+          setGenerationActivity257(nid,'checking',{media,message:'结果已返回，正在同步本节点…'});controls();
+          const fresh=(await api('/api/canvas/document?id='+encodeURIComponent(canvasId))).document;
+          if(current()){mergeRunDocument(fresh);setGenerationActivity257(nid,'');refreshRunView();}
+          return;
+        }
+        if(!accepted.taskId)throw new Error('提交回执尚未确认，请查询原任务。');
+        setGenerationActivity257(nid,'queued',{taskId:accepted.taskId,message:'节点任务已提交。'});
+        scheduleRuns();
+      }catch(error){
+        if(!current())return;
+        try{
+          const fresh=(await api('/api/canvas/document?id='+encodeURIComponent(canvasId))).document;
+          if(!current())return;
+          mergeRunDocument(fresh);
+        }catch(_){}
+        const original=persistedRun(nid);
+        if(original?.taskId){setGenerationActivity257(nid,'checking',{taskId:original.taskId,message:original.error});scheduleRuns();}
+        else setGenerationActivity257(nid,error.status>=400&&error.status<500?'failed':'unknown',{message:error.message});
+        throw error;
+      }finally{if(current())controls();}
+    }finally{if(generationPreflights.delete(flight)&&current())controls();}
   }
   async function connect(source,target,replacing=-1){if(locked())return;const old=doc.graph.edges[replacing];if(inputLocked(target)||old&&inputLocked(old.target)){message('这条连接参与当前生成，请在原任务结束后调整。',true);return;}const error=G.reason(doc.graph.nodes,doc.graph.edges,source,target,replacing);if(error){message(error);return;}checkpoint();if(replacing>=0)doc.graph.edges.splice(replacing,1,{source,target});else doc.graph.edges.push({source,target});pending='';rewire=null;selectedEdge=-1;changed([target,...(old?[old.target]:[])]);render();
     inspect();await save();await refreshQuote();message('连线已保存，运行节点会读取此输入；连接本身不扣积分。');}
@@ -1188,10 +1200,13 @@
     resultAction:handleResultAction,
     openAssistant:()=>{studio?.hideInspector();return assistant254?.open();},openDirector:()=>director254?.open()
   });
+  tail283=window.CanvasTail283?.create({state:()=>({doc,selected}),locked:inputLocked,media,notify:message,
+    previewChanged:controls,preview:async n=>{const canvasId=doc.id,sourceFile=n.settings.tailSourceFile;await save();if(doc?.id!==canvasId||node(n.id)!==n||n.settings.tailSourceFile!==sourceFile)return '';return '/api/canvas/tail-preview?'+new URLSearchParams({canvasId,nodeId:n.id,sourceFile});},
+    commit:safe(async(n,patch)=>{if(!doc?.graph.nodes.includes(n)||inputLocked(n.id))return;checkpoint();Object.assign(n.settings,patch);changed([n.id]);render();inspect();await refreshQuote();})});
   assistant254=window.CanvasAssistant254?.create({
-    host:document.body,state:()=>({canvasId:doc?.id||'',nodeId:selected,text:node(selected)?.text||'',revision:promptRevision(selected),locked:globalLocked()}),
+    host:document.body,state:()=>({canvasId:doc?.id||'',nodeId:selected,nodeKind:node(selected)?.kind,text:node(selected)?.text||'',revision:promptRevision(selected),locked:globalLocked()}),
     request:api,notify:message,prepare:()=>save(),onReceipt:receiveTextReceipt,
-    canApply:mode=>!locked()&&(mode==='new'||!inputLocked(selected)),
+    canApply:mode=>!locked()&&(mode==='new'?node(selected)?.kind==='prompt':!inputLocked(selected)),
     apply:async result=>{
       const source=node(result.nodeId);
       if(locked()||result.mode!=='new'&&inputLocked(result.nodeId)||doc?.id!==result.canvasId||selected!==result.nodeId||!source||source.text!==result.sourceText||promptRevision(result.nodeId)!==result.sourceRevision)throw new Error('画布、原文或原任务状态已改变。建议仍保留在协作记录中，可在输入解锁后应用。');
@@ -1236,7 +1251,7 @@
   });
   api('/api/canvas/styles').then(value=>{styles=value.styles||[];if(doc)paintCatalog251();}).catch(()=>{});
   refreshCanvasCatalog251(true);
-  window.addEventListener('pagehide',()=>{assistant254?.destroy();director254?.destroy();});
+  window.addEventListener('pagehide',()=>{assistant254?.destroy();director254?.destroy();tail283?.destroy();});
   gallery.show();
   updateWireFlowVisibility();
 })();

@@ -42,6 +42,7 @@ from app.api import visual as visual_api
 from app.api import visual_extra
 from app.api import visual_stage
 from app.api import visual_tail
+from app.api import feature_pack
 from app.api import voice as voice_api
 from domain.license import LicenseService
 from domain.license.service import device_from, LicenseStore
@@ -426,6 +427,8 @@ def main(argv: list[str] | None = None) -> int:
                        video_pipeline=video_pipeline,
                        images=ImageConfig.load(data_dir / "model-config.json"),
                        task_store=store,
+                       assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
+    feature_pack.build(router, visual_service, task_store=store,
                        assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
 
     def _licensed_gate(headers: dict[str, str]) -> bool:

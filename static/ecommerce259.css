@@ -157,3 +157,43 @@
   font-size: 12px;
   font-weight: 500;
 }
+
+.video-mode-options288 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.video-mode-options288 button {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  padding: 13px 14px;
+  text-align: left;
+  background: var(--ec-paper);
+}
+.video-mode-options288 button[aria-pressed="true"] {
+  border-color: var(--ec-accent);
+  box-shadow: inset 0 0 0 1px var(--ec-accent);
+}
+.video-mode-options288 button span {
+  font-size: 12px;
+  color: var(--ec-muted);
+}
+.video-speech-header288, .video-help-footer288 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+.video-speech-header288 { margin-bottom: 7px; }
+.video-speech-header288 label { font-size: 13px; }
+#videoSpeechPanel288 textarea { width: 100%; }
+#videoHelpStatus288:empty { display: none; }
+#videoHelpStatus288[data-error] { color: var(--ec-danger); }
+#legacyVideoMode288[aria-pressed="true"] { color: var(--ec-accent); }
+@media(min-width:1201px) {
+  .asset-zone260:has(#personPanel260[hidden]):not(:has(#scenePanel260[hidden])) {
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  }
+}

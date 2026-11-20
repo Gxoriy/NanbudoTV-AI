@@ -8,13 +8,14 @@
   const suffix = tier => tier[0].toUpperCase() + tier.slice(1);
   const generic = /^(经济|标准|均衡|旗舰)(档|图片|视频)?$/;
   const canonical = value => ["wan3.0","wan-3.0","wan3.0-video","wan-3.0-video"].includes(String(value).toLowerCase()) ? "wan3.0" : String(value).toLowerCase();
-  const routeKinds234 = new Set(['discount','official']);
+  const legacyRoutes = [['official','官方线路'],['discount','特价线路']];
+  const routeKinds234 = new Set(legacyRoutes.map(([id])=>id));
   const selectableModel = (row, media) => row?.media === media && row.enabled !== false &&
     row.gatewayReady !== false && !row.supportsPreciseEdit;
   const permittedModel = (profile, media, model) => !profile.visualCatalogPublished ||
     (profile.visualModels || []).some(row => selectableModel(row, media) && row.model === model);
   const discountModels234 = new Set(['seedance-2-0-special','seedance-2-0-manju-special','seedance-2-0-ecom-special','seedance-2-0-9tu-special','seedance-2-5-special','seedance-2-0-promo','seedance-2-5-promo']);
-  function routeForModel(profile = {}, media, model, fallback = 'official') {
+  function legacyRouteForModel(profile = {}, media, model, fallback = 'official') {
     const row=(profile.visualModels || profile.models || []).find(item=>item?.media===media && canonical(item.model || item.id)===canonical(model));
     if(routeKinds234.has(row?.routeType))return row.routeType;
     const capability=profile.modelCapabilities?.[String(model || '').toLowerCase()];
@@ -25,13 +26,37 @@
     if(row || capability)return 'official';
     return routeKinds234.has(fallback)?fallback:'official';
   }
+  function routeEntries(profile = {}, media) {
+    if (media !== 'video' || !Array.isArray(profile.videoRouteGroups)) return legacyRoutes;
+    const groups = new Map();
+    for (const row of profile.videoRouteGroups) {
+      if (typeof row?.id === 'string' && row.id !== 'all' && /^[a-z][a-z0-9_-]{0,31}$/.test(row.id)
+          && typeof row.label === 'string' && row.label.trim() && !groups.has(row.id)) {
+        groups.set(row.id, row.label.trim());
+      }
+    }
+    for (const [id,label] of legacyRoutes) if (!groups.has(id)) groups.set(id,label);
+    return [...groups];
+  }
+  function routeForModel(profile = {}, media, model, fallback = 'official') {
+    if (media === 'video' && Array.isArray(profile.videoRouteGroups)) {
+      const row = (profile.visualModels || profile.models || []).find(item=>item?.media === media &&
+        canonical(item.model || item.id) === canonical(model));
+      const capability = profile.modelCapabilities?.[String(model || '').toLowerCase()];
+      const group = row?.routeGroup ?? capability?.routeGroup;
+      const known = routeEntries(profile,media).some(([id])=>id === group);
+      if (known) return group;
+      if (!row && !capability && routeEntries(profile,media).some(([id])=>id === fallback)) return fallback;
+    }
+    return legacyRouteForModel(profile,media,model,fallback);
+  }
   function routeModels(profile = {}, media, routeType, settings = {}) {
-    return catalog(profile,media,settings).filter(item=>item.routeType===(routeKinds234.has(routeType)?routeType:'official'));
+    const route = routeEntries(profile,media).some(([id])=>id===routeType)?routeType:'official';
+    return catalog(profile,media,settings).filter(item=>item.routeType===route);
   }
   function availableRoutes(profile, media, settings = {}) {
     const choices = new Set(catalog(profile, media, settings).map(item => item.routeType));
-    return [['official','官方线路'],['discount','特价线路']]
-      .filter(([id]) => choices.has(id));
+    return routeEntries(profile,media).filter(([id]) => choices.has(id));
   }
   const ACTIVITY_VIDEO_WARNING = "当前为特价线路；具体时长、参考图和计费以所选模型为准。";
   const videoPrices = profile => profile.videoPricing ?? profile.visualVideoPricing ?? [];
@@ -100,7 +125,7 @@
     return '';
   }
   function activityWarning(profile = {}, model, resolution = '') {
-    return routeForModel(profile,'video',model) === 'discount' ? ACTIVITY_VIDEO_WARNING : '';
+    return legacyRouteForModel(profile,'video',model) === 'discount' ? ACTIVITY_VIDEO_WARNING : '';
   }
   function videoOptionLabel(profile = {}, item = {}) {
     const model = item.id || item.model || '', name = item.name || item.displayName || model;
@@ -275,5 +300,5 @@
     const expiry=typeof receipt.expiresAt==='number'?receipt.expiresAt*(receipt.expiresAt<1e12?1000:1):Date.parse(receipt.expiresAt);
     return `实时核价 · 本次 ${points} 积分 · 报价有效至 ${Number.isFinite(expiry)?new Date(expiry).toLocaleTimeString('zh-CN',{hour12:false}):'未确认'}`+(receipt.upstreamEstimateOnly?'\n上游估价；本次确认积分固定。':'');
   }
-  return {catalog, routeForModel, routeModels, availableRoutes, quote, imageQuote, imageCapability, imageResolutionOptions, imageResolutionForModel, imageResolutionLabel, publishedUnitPrice, publishedPriceEstimate, videoSkuPrice172,videoPriceRange172,normalizeRatio172,suffix, recordName, videoAspectRatios, videoDurationInfo, videoDurationIssue, activityWarning, videoOptionLabel, ACTIVITY_VIDEO_WARNING,isLiveQuote,pendingImageRecovery,quoteFailureMessage,quoteReceiptFields,quoteText};
+  return {catalog, routeForModel, legacyRouteForModel, routeEntries, routeModels, availableRoutes, quote, imageQuote, imageCapability, imageResolutionOptions, imageResolutionForModel, imageResolutionLabel, publishedUnitPrice, publishedPriceEstimate, videoSkuPrice172,videoPriceRange172,normalizeRatio172,suffix, recordName, videoAspectRatios, videoDurationInfo, videoDurationIssue, activityWarning, videoOptionLabel, ACTIVITY_VIDEO_WARNING,isLiveQuote,pendingImageRecovery,quoteFailureMessage,quoteReceiptFields,quoteText};
 });

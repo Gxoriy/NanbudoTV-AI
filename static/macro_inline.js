@@ -19,6 +19,42 @@
   const stateNames = {planned:'尚未编排', pending:'待补齐分镜', waiting_cut:'后台编排中', waiting_resume:'待继续编排', ready:'分镜已保存', done:'分镜已保存', completed:'分镜已保存', arranged:'分镜已保存',
     queued:'已排队', running:'正在编排', submitted:'正在处理', reserving:'正在准备', returned:'正在验收',
     failed:'本场未完成', error:'本场未完成', returned_unstructured:'已返回，尚未转为视频卡', validation_failed:'原返回验收未通过', not_submitted:'尚未提交', needs_review:'原调用待核对'};
+  const partStates = {accepted:'已验收',unsubmitted:'未提交',queued:'排队中',running:'生成中',
+    receipt_pending:'原调用待核对',return_invalid:'返回未通过验收',provider_failed:'上游生成失败'};
+  const partActions = {inspect_return:'查看原返回',recover_original:'核对原调用',retry_part:'补做本段 · 核价'};
+
+  function partLocation(part) {
+    const start=part.sourceStart,end=part.sourceEnd;
+    if(!Number.isInteger(start)||start<1||!Number.isInteger(end)||end<start)return '';
+    return `原文单元 ${start}${end===start?'':'–'+end}`;
+  }
+
+  function partsMarkup(diagnostics,blocked,stale,esc) {
+    const parts=diagnostics.parts;
+    const accepted=parts.filter(row=>row.state==='accepted').length;
+    const gap=diagnostics.blockingPartNumber;
+    const rows=parts.map(row=>{
+      const location=partLocation(row),actions=(row.actions||[]).filter(key=>Object.hasOwn(partActions,key));
+      const blockedReason=row.retryBlockedReason||'';
+      return `<li class="mi-part-row" data-part-state="${esc(row.state)}" ${row.blocksCards?'data-part-gap':''}>
+        <div class="mi-part-content"><div class="mi-part-heading"><b>第 ${esc(row.partNumber)} 段</b>
+          <span class="mi-part-state">${esc(row.label||partStates[row.state]||'状态待确认')}</span>
+          ${row.blocksCards?'<span class="mi-part-location">待从此段组卡</span>':''}
+          ${location?`<span class="mi-part-location">${esc(location)}</span>`:''}</div>
+        ${row.message&&row.state!=='accepted'?`<p>${esc(row.message)}</p>`:''}
+        ${blockedReason?`<p class="mi-part-location">${esc(blockedReason)}</p>`:''}</div>
+        ${actions.length?`<div class="mi-part-actions">${actions.map(key=>`<button type="button"
+          data-part-action="${key}" data-request-hash="${esc(row.requestHash)}"
+          ${blocked||key==='retry_part'&&stale?'disabled':''}
+          aria-label="${partActions[key]} · 第 ${esc(row.partNumber)} 段">${partActions[key]}</button>`).join('')}</div>`:''}
+      </li>`;
+    }).join('');
+    return `<summary><b>分段记录</b><span>已验收 ${accepted}/${parts.length} 段</span>
+      ${Number.isInteger(gap)?`<span class="mi-part-gap-text">第 ${gap} 段待处理</span>`:''}<span class="mi-part-disclosure" aria-hidden="true"></span></summary>
+      ${Number.isInteger(gap)?'<p class="mi-part-note">此段验收后将继续按原文顺序组卡。已形成的视频卡现在可用。</p>':''}
+      ${diagnostics.retryBlockedReason?`<p class="mi-part-note">${esc(diagnostics.retryBlockedReason)}</p>`:''}
+      <ol class="mi-part-list">${rows}</ol>`;
+  }
 
   function textProgressMarkup(view, escapeHTML) {
     const tasks=Object.values(view?.textTasks || {}).filter(shared.textTaskInFlight);
@@ -28,12 +64,14 @@
     const progress=values.length===tasks.length?Math.max(0,Math.min(100,Math.round(values.reduce((sum,value)=>sum+value,0)/values.length))):null;
     const isPlan=['plan','plan_resume'].includes(first.action||'plan'),shotFirst=view?.snapshot?.shotFirst||first.shotFirst;
     const title=first.state==='queued'?'本地任务排队中':isPlan?(shotFirst?'正在生成镜头并组卡':'正在识别剧情场次'):first.cardNumber?'正在补齐本卡分镜':'正在补齐本场分镜';
-    const labels=isPlan?(shotFirst?['读取场次目录','生成连续镜头','本地顺序组卡','保存分批结果']:['整理原稿','识别剧情场次','检查场景边界','保存场次结果']):['读取视频卡','生成分镜内容','检查连续性','保存分镜结果'];
-    const phase=first.state==='queued'||['config','order','preparing'].includes(first.phase)?0:first.phase==='validating'?2:first.phase==='settling'?3:progress===null?1:progress>=92?3:progress>=68?2:progress>=15?1:0;
+    const labels=isPlan?(shotFirst?['准备请求','生成连续镜头','本地顺序组卡','保存分批结果']:['整理原稿','识别剧情场次','检查场景边界','保存场次结果']):['读取视频卡','生成分镜内容','检查连续性','保存分镜结果'];
+    const phase=first.state==='queued'||['config','order','preparing'].includes(first.phase)?0:
+      first.phase==='model'?1:first.phase==='validating'?2:['saving','settling','recovering'].includes(first.phase)?3:
+      progress===null?1:progress>=92?3:progress>=68?2:progress>=15?1:0;
     const steps=labels.map((label,index)=>`<span class="${index<phase?'done':index===phase?'active':''}">${esc(label)}</span>`).join('');
     const concurrent=[first,view.snapshot?.active,...Object.values(view.snapshot?.activeTasks||{})].find(row=>Number.isInteger(row?.requestConcurrencyLimit)&&row.requestConcurrencyLimit>0);
-    const formed=rows(view.snapshot).reduce((sum,scene)=>sum+shared.readSceneCards(view.snapshot,scene).filter(shared.cardComplete).length,0);
-    const detail=(concurrent?`模型请求同时进行 ${Math.max(0,Number(concurrent.activeRequestCount)||0)}/${concurrent.requestConcurrencyLimit}；已形成 ${formed} 张视频卡，后续分镜继续处理。`:'')+(first.message||shared.textWorkTitle(first));
+    const formed=first.availableCardCount??rows(view.snapshot).reduce((sum,scene)=>sum+shared.readSceneCards(view.snapshot,scene).filter(shared.cardComplete).length,0);
+    const detail=(concurrent?`本地分段处理中 ${Math.max(0,Number(concurrent.activeRequestCount)||0)}/${concurrent.requestConcurrencyLimit}；已形成 ${formed} 张视频卡。\n`:'')+(first.message?(shared.textWorkMessage291?.(first)??first.message):shared.textWorkTitle(first));
     const message=tasks.length>1?`正在处理 ${tasks.length} 项任务。${esc(detail)}`:esc(detail);
     const progressAttrs=progress===null?`aria-valuetext="${esc(shared.textWorkTitle(first))}"`:`aria-valuenow="${progress}"`;
     const bar=progress===null?'<i class="indeterminate"></i>':`<i style="width:${progress}%"></i>`;
@@ -75,20 +113,59 @@
     const cardTabId = (id,number) => 'mi-card-tab-'+encodeURIComponent(projectId)+'-'+encodeURIComponent(id)+'-'+number;
     const cardPanelId = (id,number) => 'mi-card-panel-'+encodeURIComponent(projectId)+'-'+encodeURIComponent(id)+'-'+number;
     let lastCardPanel = '';
-    let regroupError='';
+    let regroupError='',regroupCapacity284=null;
     const regroupLimit=(snapshot,id)=>{const scene=rows(snapshot).find(row=>idOf(row)===id),value=regroupLimits.get(id)??snapshot?.plan?.regroupSettings?.[id]??scene?.maxSeconds??scene?.localRegroup?.maxSeconds??snapshot?.policy?.maxSeconds;return [15,30].includes(Number(value))?Number(value):15;};
     const scopeOverlap=(a,b)=>!a||!b||a.id===b.id&&(!a.number||!b.number||a.number===b.number);
-    const frame=()=>win.requestAnimationFrame?new Promise(resolve=>win.requestAnimationFrame(()=>win.setTimeout(resolve,0))):Promise.resolve();
+    const frame=()=>win.requestAnimationFrame?new Promise(resolve=>{
+      const deadline=win.setTimeout(resolve,32);
+      win.requestAnimationFrame(()=>{win.clearTimeout(deadline);win.setTimeout(resolve,0);});
+    }):Promise.resolve();
     const stateOf=target=>target?.peekState?.()||target?.getState();
     const mediaScopeLabel=item=>{const index=rows(stateOf(controller)?.snapshot).findIndex(row=>idOf(row)===item.segmentId);return `${index>=0?'第'+(index+1)+'场 · ':''}卡${item.cardNumber}`;};
     root.classList.add('macro-inline');
     root.classList.toggle('mi-compact-header206', compactHeader);
     root.innerHTML = `<div class="mi-toolbar">${compactHeader?'':'<div class="mi-scene-navigation"><button type="button" data-inline-action="previous" aria-label="上一场">‹ 上一场</button><label class="mi-scene-label">场次<select data-inline-role="selector" aria-label="切换剧情场次"></select></label><button type="button" data-inline-action="next" aria-label="下一场">下一场 ›</button><span class="mi-count" data-inline-role="count"></span><button type="button" data-inline-action="refresh">刷新状态</button></div>'}<div class="mi-toolbar-scene-info" data-inline-role="summary"></div><div class="mi-scene-actions" data-inline-role="scene-actions"></div></div><div class="mi-status" data-inline-role="status" role="status" aria-live="polite"></div><section class="mi-scene-return279" data-inline-role="scene-return" aria-label="本场原返回" hidden><div><b>本场原返回</b><button type="button" data-inline-action="close-scene-return" aria-label="关闭本场原返回">关闭</button></div><pre></pre></section><nav class="mi-card-tabs" data-inline-role="card-tabs" role="tablist" aria-label="本场视频卡" aria-orientation="horizontal" hidden></nav><div class="mi-cards" data-inline-role="cards"></div>`;
     let displayedSceneReturn279=null;
+    const partsPanel=root.ownerDocument?.createElement?.('details');
+    if(partsPanel){
+      partsPanel.className='mi-parts286';
+      partsPanel.hidden=true;
+      root.querySelector('[data-inline-role="scene-return"]')?.before?.(partsPanel);
+    }
+    let partsScene286='',partsMarkup286='';
+    function renderSceneParts286(snapshot,id,blocked,stale){
+      if(!partsPanel)return;
+      const diagnostics=snapshot.sceneParts286?.[id];
+      partsPanel.hidden=!diagnostics?.parts?.length;
+      if(partsPanel.hidden){partsPanel.open=false;partsScene286='';return;}
+      const sceneKey=cardSelectionKey(id),sameScene=partsScene286===sceneKey;
+      if(!sameScene){partsPanel.open=false;partsScene286=sceneKey;}
+      const markup=partsMarkup(diagnostics,blocked,stale,esc);
+      if(markup===partsMarkup286)return;
+      const focused=root.ownerDocument.activeElement;
+      const focusedSummary=focused===partsPanel.querySelector('summary');
+      const requestHash=partsPanel.contains(focused)?focused.dataset.requestHash:null;
+      const action=requestHash?focused.dataset.partAction:null;
+      const scrollTop=sameScene?partsPanel.querySelector('.mi-part-list')?.scrollTop:0;
+      partsPanel.innerHTML=markup;
+      partsMarkup286=markup;
+      if(scrollTop)partsPanel.querySelector('.mi-part-list').scrollTop=scrollTop;
+      if(action){
+        const next=[...partsPanel.querySelectorAll('[data-part-action]')].find(button=>!button.disabled&&button.dataset.partAction===action&&button.dataset.requestHash===requestHash);
+        (next||partsPanel.querySelector('summary'))?.focus({preventScroll:true});
+      }else if(focusedSummary)partsPanel.querySelector('summary')?.focus({preventScroll:true});
+    }
     function renderSceneReturn279(snapshot,id){
       const panel=$('scene-return'),visible=displayedSceneReturn279;
-      panel.hidden=!visible||visible.sceneId!==id||visible.identity!==shared.pipelineReturnIdentity(snapshot);
-      if(!panel.hidden&&panel.querySelector('pre').textContent!==visible.text)panel.querySelector('pre').textContent=visible.text;
+      const part=visible?.part;
+      const current=part?shared.scenePart286(snapshot,id,part.requestHash,'inspect_return'):null;
+      const same=part?current?.stageClaimId===part.stageClaimId&&current?.rawResponseHash===part.rawResponseHash
+        : visible?.identity===shared.pipelineReturnIdentity(snapshot);
+      panel.hidden=!visible||visible.sceneId!==id||!same;
+      if(!panel.hidden){
+        panel.querySelector('b').textContent=part?`第 ${part.partNumber} 段原返回`:'本场原返回';
+        if(panel.querySelector('pre').textContent!==visible.text)panel.querySelector('pre').textContent=visible.text;
+      }
     }
     const $ = name => root.querySelector('[data-inline-role="' + name + '"]');
     if(!compactHeader)root.querySelector('.mi-scene-navigation')?.insertAdjacentHTML?.('beforeend','<button type="button" data-inline-action="history">历史版本</button>');
@@ -124,8 +201,9 @@
     function report(error) {
       if (destroyed) return;
       if(error?.projectStateRead){render(stateOf(controller));return;}
-      const message = error?.message || String(error);
+      const capacity=shared.capacityFailure284(error),message = capacity?shared.capacityMessage284(capacity):error?.message || String(error);
       if(win.ModelActivity)win.ModelActivity.set($('status'),{state:'error',message});else $('status').textContent = message;
+      if(capacity)$('status').insertAdjacentHTML('beforeend',shared.capacityMarkup284(capacity));
       $('status').classList.add('error');
       if(projectNeedsRefresh&&!view.busy)$('status').insertAdjacentHTML('beforeend','<button type="button" data-inline-action="refresh">重新加载</button>');
       if (typeof options.onError === 'function') options.onError(message);
@@ -189,11 +267,37 @@
       Promise.resolve().then(()=>alive(serial,target)?target.readPipelineReturn({segmentId:id}):null)
         .catch(error=>{if(alive(serial,target)&&selected===id)report(Error('已保存的原返回暂未读取：'+error.message+'。可点击查看最近原返回重试。'));});
     }
-    function render(next) {
+    function render(next,progressOnly=false) {
       view=next;
       if(drawPending||destroyed)return;
+      if(progressOnly){drawStatus(next,rows(next.snapshot).find(row=>idOf(row)===selected));return;}
       if(win.requestAnimationFrame){drawPending=true;win.requestAnimationFrame(()=>{drawPending=false;if(!destroyed)draw(view);});}
       else draw(next);
+    }
+    function drawStatus(next,current) {
+      const snapshot=next.snapshot||{},readError=next.projectReadError||'';
+      const planning=shared.snapshotTextInFlight(snapshot)||Object.values(next.textTasks||{}).some(row=>shared.textTaskInFlight(row));
+      const syncingRows=Object.values(next.textTasks||{}).filter(row=>row.syncing);
+      const syncing=syncingRows.length>0;
+      const sceneNotice=!planning&&!syncing&&!regroupError&&current?shared.sceneStatusNotice(snapshot,selected,next.message):'';
+      const sceneIssue=!planning&&!syncing&&current?shared.sceneIssueMessage?.(snapshot,selected):'';
+      const displayError=!!readError||!!regroupError||!!sceneIssue||next.error&&!sceneNotice&&!planning;
+      const capacity=!readError&&displayError&&(regroupError?regroupCapacity284||shared.capacityFailure284(regroupError):shared.capacityFailure284(snapshot.sceneIssues223?.[selected])||shared.capacityFailure284(next.errorDetails)||shared.capacityFailure284(next.message));
+      const statusMessage=capacity?shared.capacityMessage284(capacity):readError||regroupError||sceneIssue||sceneNotice||syncingRows[0]?.syncing||next.message||
+        (projectId ? '已读取已保存状态' : '请先选择一个项目。');
+      const indicator=$('status');
+      const capacityOpen=indicator.querySelector?.('.mi-capacity-details284')?.open;
+      indicator.hidden=Object.keys(next.mediaTasks||{}).length>0&&!next.activeTask&&!Object.keys(snapshot.active||{}).length&&!next.busy&&!operation&&!next.error&&!readError;
+      const progressPanel=displayError?'':textProgressMarkup(next,esc);
+      if(progressPanel){
+        indicator.innerHTML=progressPanel+syncingRows.map(row=>`<p role="status">${esc(row.syncing)}</p>`).join('');
+        win.ModelActivity?.set(indicator,{state:'',preserve:true});
+      }
+      else if(win.ModelActivity)win.ModelActivity.set(indicator,{state:displayError?'error':next.busy||operation||syncing?'pending':'success',message:statusMessage});
+      else indicator.textContent=statusMessage;
+      if(capacity)indicator.insertAdjacentHTML('beforeend',shared.capacityMarkup284(capacity,capacityOpen));
+      indicator.classList.toggle('error',displayError);
+      if((readError||projectNeedsRefresh&&next.error)&&!next.busy)indicator.insertAdjacentHTML('beforeend','<button type="button" data-inline-action="refresh">重新加载</button>');
     }
     function draw(next) {
       if (destroyed) return;
@@ -201,7 +305,7 @@
       rememberReferences();
       view = next;
       const snapshot = view.snapshot || {}, planned = rows(snapshot);
-      const readError=view.projectReadError||'',stale=readOnly();
+      const stale=readOnly();
       if (selected !== 'all' && !planned.some(row => idOf(row) === selected)) selected = planned.length ? idOf(planned[0]) : null;
       const current = planned.find(row => idOf(row) === selected), index = planned.indexOf(current);
       if(!compactHeader){
@@ -224,15 +328,17 @@
       $('summary').innerHTML = '';
       $('scene-actions').innerHTML = '';
       renderSceneReturn279(snapshot,selected);
+      renderSceneParts286(snapshot,selected,operation||view.busy||confirmationPending||[...localOperations.values()].some(row=>scopeOverlap(row,{id:selected})),stale);
       if(compactHeader){
         root.querySelector('.mi-toolbar').hidden=!current;
         if(current){
-          const progress=snapshot.sceneProgress278?.[selected],hasParts=Number.isInteger(progress?.totalParts)&&progress.totalParts>0&&Number.isInteger(progress?.acceptedParts);
-          $('summary').innerHTML=`<h3>第 ${index+1} 场 · ${esc(current.title||'未命名场次')}</h3>${hasParts?`<span class="mi-scene-parts279">已验收 ${progress.acceptedParts}/${progress.totalParts} 段</span>`:''}`;
+          const progress=snapshot.sceneProgress278?.[selected],detailed=snapshot.sceneParts286?.[selected]?.parts;
+          const showPartCount=!detailed?.length&&Number.isInteger(progress?.totalParts)&&progress.totalParts>0&&Number.isInteger(progress?.acceptedParts);
+          $('summary').innerHTML=`<h3>第 ${index+1} 场 · ${esc(current.title||'未命名场次')}</h3>${showPartCount?`<span class="mi-scene-parts279">已验收 ${progress.acceptedParts}/${progress.totalParts} 段</span>`:''}`;
           $('scene-actions').innerHTML=`<button type="button" class="primary scene-fill-button" data-inline-action="arrange" ${stale||operation||view.busy||planning?'disabled':''}>补齐分镜</button>`;
-          const claimId=sceneRecoveryClaim279(snapshot,selected);
+          const claimId=detailed?.some(row=>row.actions?.includes('recover_original'))?'':sceneRecoveryClaim279(snapshot,selected);
           if(claimId)$('scene-actions').insertAdjacentHTML('beforeend',`<button type="button" data-inline-action="recover-scene" ${operation||view.busy||planning?'disabled':''} title="核对原调用，保留已有卡片">核对原分镜结果</button>`);
-          if(snapshot.savedStoryboardReturns?.[selected]&&progress?.state!=='complete'&&snapshot.segments?.[selected]?.result?.complete!==true)
+          if(!detailed?.some(row=>row.actions?.includes('inspect_return'))&&snapshot.savedStoryboardReturns?.[selected]&&progress?.state!=='complete'&&snapshot.segments?.[selected]?.result?.complete!==true)
             $('scene-actions').insertAdjacentHTML('beforeend',`<button type="button" data-inline-action="scene-return" ${operation||view.busy?'disabled':''}>查看本场原返回</button>`);
         }
       }else{
@@ -269,19 +375,7 @@
         $('scene-actions').insertAdjacentHTML('beforeend',`<button type="button" data-inline-action="scene-download" ${!available||sceneDownloads240.has(key)?'disabled':''} title="选择本地文件夹，按视频卡顺序保存本场已生成的视频">${sceneDownloads240.has(key)?'正在下载本场视频…':progressiveIncomplete?'下载已生成视频':'下载本场视频'}</button>`);
         if(sceneDownloadMessages240.has(key))$('scene-actions').insertAdjacentHTML('beforeend',`<small data-scene-download-status role="status">${esc(sceneDownloadMessages240.get(key))}</small>`);
       }
-      const sceneNotice=!planning&&!regroupError&&current?shared.sceneStatusNotice(snapshot,selected,view.message):'';
-      const sceneIssue=!planning&&current?shared.sceneIssueMessage?.(snapshot,selected):'';
-      const displayError=!!readError||!!regroupError||!!sceneIssue||view.error&&!sceneNotice;
-      const statusMessage=readError||regroupError||sceneIssue||sceneNotice||view.message||
-        (projectId ? '已读取已保存状态' : '请先选择一个项目。');
-      const videoOnly=Object.keys(view.mediaTasks||{}).length>0&&!view.activeTask&&!Object.keys(snapshot.active||{}).length&&!view.busy&&!operation&&!view.error&&!readError;
-      $('status').hidden=videoOnly;
-      const progressPanel=displayError?'':textProgressMarkup(view,esc);
-      if(progressPanel){$('status').innerHTML=progressPanel;win.ModelActivity?.set($('status'),{state:'',preserve:true});$('status').classList.remove('error');}
-      else if(win.ModelActivity)win.ModelActivity.set($('status'),{state:displayError?'error':view.busy||operation?'pending':'success',message:statusMessage});
-      else $('status').textContent=statusMessage;
-      $('status').classList.toggle('error', !!displayError);
-      if((readError||projectNeedsRefresh&&view.error)&&!view.busy)$('status').insertAdjacentHTML('beforeend','<button type="button" data-inline-action="refresh">重新加载</button>');
+      drawStatus(next,current);
       const activeCardNumbers=renderCardTabs(snapshot,current);
       shared.reconcileCards($('cards'),planned.length ? shared.renderCards(snapshot, selected || 'all', {...view,activeCardNumbers,cardNavigation:{tabId:cardTabId,panelId:cardPanelId},operations:{...view.operations,...Object.fromEntries([...localOperations].map(([,scope],index)=>['inline'+index,{action:'segment',segmentId:scope.id,cardNumber:scope.number,kind:scope.kind||'text',state:'running'}]))}, busy:stale || view.busy || operation}) : '');
       restoreReferences();
@@ -322,7 +416,7 @@
           ...(abort?{signal:abort.signal}:{}),...(settings.body ? {headers:{'Content-Type':'application/json'}, body:JSON.stringify(settings.body)} : {})});
         let data; try { data = await response.json(); } catch (_) { throw Error('接口未返回可识别数据，请刷新核对原状态。'); }
         const terminalTask=url.startsWith('/api/tasks/')&&['error','failed'].includes(data.state);
-        if (!response.ok || data.error && !data.projectId&&!terminalTask) throw Error(data.error || `接口返回 ${response.status}`);
+        if (!response.ok || data.error && !data.projectId&&!terminalTask) throw shared.responseError284(data,response.status);
         return data;
       })();
       try{return await(read?Promise.race([transport,deadline]):transport);}
@@ -364,15 +458,21 @@
     }
     async function watch(target, serial) {
       if (watchPromise) return watchPromise;
-      const reportedErrors=new Set();
-      const inspect=async(key,work)=>{try{await work();reportedErrors.delete(key);}catch(error){if(error?.projectStateRead)return;if(!reportedErrors.has(key)){reportedErrors.add(key);if(alive(serial,target))report(Error('原任务状态查询暂不可用：'+error.message+'；其他任务仍在独立查询，不会重新提交收费请求。'));}}};
+      const reportedErrors=new Set(),inFlight=new Set();
+      const inspect=async(key,work)=>{
+        if(inFlight.has(key))return;
+        inFlight.add(key);
+        try{await work();reportedErrors.delete(key);}
+        catch(error){if(!error?.projectStateRead&&!reportedErrors.has(key)){reportedErrors.add(key);if(alive(serial,target))report(Error('原任务状态查询暂不可用：'+error.message+'；其他任务仍在独立查询，不会重新提交收费请求。'));}}
+        finally{inFlight.delete(key);}
+      };
       const work = (async () => {
         while (alive(serial, target)) {
           const current = stateOf(target);
           if (!current.activeTask && !Object.keys(current.mediaTasks || {}).length) break;
           const textIds=Object.keys(current.textTasks||{}).length?Object.keys(current.textTasks):current.activeTask?[current.activeTask]:[];
-          await Promise.all([...textIds.map(id=>inspect('text:'+id,()=>target.pollOnce(id))),...Object.keys(current.mediaTasks||{}).map(key=>inspect('media:'+key,()=>target.pollMediaOnce(key)))]);
-          if (!alive(serial, target)) break;
+          textIds.forEach(id=>inspect('text:'+id,()=>target.pollOnce(id)));
+          Object.keys(current.mediaTasks||{}).forEach(key=>inspect('media:'+key,()=>target.pollMediaOnce(key)));
           const after = stateOf(target);
           if (!after.activeTask && !Object.keys(after.mediaTasks || {}).length) break;
           await delay();
@@ -385,14 +485,14 @@
     async function perform(work, scope=null) {
       if (destroyed || !controller) throw Error('请先读取项目。');
       if (operation || [...localOperations.values()].some(row=>scopeOverlap(row,scope)&&!(scope?.kind==='detach'&&row.kind==='observe'))) throw Error('本卡操作仍在提交，请勿重复点击；其他卡片可以继续操作。');
-      if(scope?.kind!=='regroup')regroupError='';
+      if(scope?.kind!=='regroup'){regroupError='';regroupCapacity284=null;}
       const target = controller, serial = generation;
       const token=Symbol('operation');if(scope)localOperations.set(token,scope);else operation=true;
       // Paint only the clicked card before parsing/mounting a large script.
       if(scope&&$('cards').querySelectorAll&&win.document?.createElement){const card=[...$('cards').querySelectorAll('.video-card')].find(node=>node.dataset.segment===scope.id&&Number(node.dataset.card)===scope.number);if(card){const wait=win.document.createElement('div');wait.className='card-text-wait';wait.dataset.localFeedback='1';wait.setAttribute('role','status');wait.innerHTML='<i class="video-generation-spinner" aria-hidden="true"></i><strong>正在准备本卡任务…</strong>';card.querySelector('.shot-list')?.prepend(wait);}}
       await frame();if(!alive(serial,target)){localOperations.delete(token);return;}render(stateOf(target));
       try { return await work(target, serial); }
-      catch (error) { if (alive(serial, target)&&(!scope||localOperations.has(token))) {if(!error?.projectStateRead)regroupError=error.message||String(error);report(error);} throw error; }
+      catch (error) { if (alive(serial, target)&&(!scope||localOperations.has(token))) {if(!error?.projectStateRead){regroupError=error.message||String(error);regroupCapacity284=shared.capacityFailure284(error);}report(error);} throw error; }
       finally { if (alive(serial, target)) { localOperations.delete(token);if(!scope)operation = false;render(stateOf(target)); } }
     }
     async function confirmThenPerform(title, work, scope=null, confirmOptions) {
@@ -439,7 +539,7 @@
       if (!sameProject) {
         shared.clearMediaCache231?.($('cards'));
         generation++; stopWait();stopReads(); controller?.dispose(); controller = null;localOperations.clear();
-        projectId = nextId; selected = null; operation = false; loadPromise = null; watchPromise = null; lastSnapshot = ''; openReferences.clear();openSources.clear();fillModes.clear();regroupLimits.clear();regroupError='';
+        projectId = nextId; selected = null; operation = false; loadPromise = null; watchPromise = null; lastSnapshot = ''; openReferences.clear();openSources.clear();fillModes.clear();regroupLimits.clear();regroupError='';regroupCapacity284=null;
         shownOnce=false;resumePromise=null;catalogPromise=null;catalogIdentity232='';reconnectPromise=null;lastResumeAt=0;confirmationPending=false;automaticPipelineReads.clear();
         // Remove old-project details before load() emits, so old keys cannot return.
         if($('cards').replaceChildren)$('cards').replaceChildren();else $('cards').innerHTML='';$('cards')._macroChildren=[];
@@ -449,7 +549,7 @@
       pendingProjectIdentity = identity; projectNeedsRefresh = true;
       if (!shared.projectIdValid(nextId)) { projectNeedsRefresh = false; render({snapshot:{},message:'请先选择一个已保存项目。'}); return; }
       const serial = generation;
-      if (!sameProject) controller = shared.createController({projectId:nextId,initialSnapshot:settings.initialSnapshot, request, onChange:next => { if (serial === generation) render(next); }});
+      if (!sameProject) controller = shared.createController({projectId:nextId,seriesManaged:Boolean(project.seriesProjectId),initialSnapshot:settings.initialSnapshot, request, onChange:(next,draft,progressOnly) => { if (serial === generation) render(next,progressOnly); }});
       const target = controller;
       root.hidden=false;render(stateOf(target));
       loadPromise = (async () => { try { await readSaved(target, serial);if(!alive(serial,target))return;lastResumeAt=Date.now();catalog(target,serial,true).catch(report);reconnect(target,serial).catch(error=>{if(alive(serial,target))report(error);});return stateOf(target).snapshot; }
@@ -484,8 +584,10 @@
     async function start(policy,startOptions={}) {
       root.hidden = false;
       const work=async (target, serial) => {
-        // Reload the server's saved source. Never substitute an unsaved editor value.
-        await readSaved(target, serial); if (!alive(serial, target)) return;
+        // setProject already read the saved source. Only refresh stale views;
+        // quote/submit also validate the exact inputs on the server.
+        if(!stateOf(target).loaded||projectNeedsRefresh||stateOf(target).projectReadError)await readSaved(target, serial);
+        if (!alive(serial, target)) return;
         if (rows(stateOf(target).snapshot).length&&!startOptions.rerun) { await catalog(target, serial); return clone(stateOf(target).snapshot); }
         if(!startOptions.scope)assertWritable(target);
         const scopedStart=startOptions.rerun===true&&['current','all'].includes(startOptions.scope);
@@ -555,15 +657,65 @@
       }
       return view.snapshot || {};
     }
+    const unsavedReturns = new Map();
     function handleReturnInput(event){
       const editor=event.target.closest?.('[data-return-editor]');
-      if(editor&&root.contains(editor))controller?.updateReturnedDraft(editor.dataset.segment,editor.dataset.returnHash,editor.value);
+      if(editor&&root.contains(editor)){
+        unsavedReturns.set(JSON.stringify([editor.dataset.segment,editor.dataset.returnHash]),editor.value);
+        controller?.updateReturnedDraft(editor.dataset.segment,editor.dataset.returnHash,editor.value);
+      }
     }
     function handleClick(event) {
+      const partButton=event.target.closest('[data-part-action]');
+      if(partButton&&partsPanel?.contains(partButton)&&!partButton.disabled){
+        const id=selected,requestHash=partButton.dataset.requestHash,action=partButton.dataset.partAction;
+        perform(async(target,serial)=>{
+          const part=shared.scenePart286(stateOf(target).snapshot,id,requestHash,action);
+          if(!part||selected!==id)return;
+          if(action==='inspect_return'){
+            const result=await target.readPipelineReturn({segmentId:id,requestHash});
+            if(!alive(serial,target)||selected!==id||result?.stale)return;
+            displayedSceneReturn279={sceneId:id,part,text:result.rawResponse};
+            renderSceneReturn279(stateOf(target).snapshot,id);
+            $('scene-return').scrollIntoView?.({block:'nearest'});
+            $('scene-return').querySelector('button').focus({preventScroll:true});
+            return;
+          }
+          if(action==='recover_original'){
+            await target.recover(part.claimId,part.stageClaimId);
+            if(alive(serial,target))watch(target,serial).catch(report);
+            return;
+          }
+          if(action!=='retry_part')return;
+          assertWritable(target);
+          editors?.capture();
+          if(editors?.unsavedScene?.(id)?.sourceCards.length)
+            throw Error('本场有未保存的原文修改，请先保存并核对分镜。');
+          const quote=await target.quote('plan_resume',undefined,undefined,{retryPart286:{sceneId:id,requestHash}});
+          if(!quote||!alive(serial,target))return;
+          const title=`补做第 ${part.partNumber} 段`;
+          if(!await ask(quoteMessage(quote,title),{quote:true})||selected!==id){
+            target.cancelQuote();return;
+          }
+          return confirmAndRun(target,serial,quote,title,false);
+        },{id,kind:action==='inspect_return'?'observe':'text'}).catch(()=>{});
+        return;
+      }
+      const resetVideo=event.target.closest('[data-media-reset-settings]');
+      if(resetVideo&&root.contains(resetVideo)&&!resetVideo.disabled&&controller){
+        if(readOnly(controller)){report(Error(staleMessage));return;}
+        controller.resetVideoCardSettings(resetVideo.dataset.segment,Number(resetVideo.dataset.card)).catch(report);
+        return;
+      }
       const saveReturn=event.target.closest('[data-return-save]');
       if(saveReturn&&root.contains(saveReturn)&&!saveReturn.disabled){
         const article=saveReturn.closest('.scene-return-editor'),editor=article?.querySelector('[data-return-editor]');
-        if(editor){const id=saveReturn.dataset.segment,hash=saveReturn.dataset.returnHash,text=editor.value,revision=Number(saveReturn.dataset.draftRevision||0);perform(target=>target.saveReturnedDraft(id,hash,text,revision),{id,kind:'edit'}).catch(()=>{});}return;
+        if(editor){
+          const id=saveReturn.dataset.segment,hash=saveReturn.dataset.returnHash,text=editor.value,revision=Number(saveReturn.dataset.draftRevision||0);
+          const key=JSON.stringify([id,hash]);
+          perform(async target=>{await target.saveReturnedDraft(id,hash,text,revision);if(unsavedReturns.get(key)===text)unsavedReturns.delete(key);},{id,kind:'edit'}).catch(()=>{});
+        }
+        return;
       }
       const cardTab=event.target.closest('[data-inline-card-select]');
       if(cardTab&&root.contains(cardTab)){selectCard(cardTab.dataset.segment,Number(cardTab.dataset.card));return;}
@@ -669,7 +821,7 @@
         }
         else if(name==='regroup'){
           const sceneId=selected,maxSeconds=regroupLimit(stateOf(controller).snapshot,sceneId),clickedController=controller,clickedGeneration=generation;
-          regroupError='';
+          regroupError='';regroupCapacity284=null;
           const assertClean=()=>{const unsaved=editors?.unsavedScene?.(sceneId);if(unsaved?.sourceCards.length||unsaved?.storyboardCards.length)throw Error('本场有未保存的原文或分镜修改，请先保存后再重新组卡；草稿未丢弃。');};
           perform(async(target,serial)=>{
             assertWritable(target);assertClean();
@@ -680,7 +832,7 @@
             const applied=await target.applyRegroup(preview);if(!applied||!alive(serial,target))return;
             await target.load({background:true});
             if(alive(serial,target)){editors?.clearScene?.(sceneId);selected=sceneId;render(stateOf(target));}
-          },{id:sceneId,kind:'regroup'}).catch(error=>{if(alive(clickedGeneration,clickedController)&&!error?.projectStateRead){regroupError=error.message;render(stateOf(clickedController));}});
+          },{id:sceneId,kind:'regroup'}).catch(error=>{if(alive(clickedGeneration,clickedController)&&!error?.projectStateRead){regroupError=error.message;regroupCapacity284=shared.capacityFailure284(error);render(stateOf(clickedController));}});
         }
         else if (name === 'resume') perform(async (target, serial) => {
           assertWritable(target);
@@ -689,7 +841,14 @@
           if(!await ask(quoteMessage(quote,'继续未完成场次'),{quote:true})){target.cancelQuote();return;}
           await confirmAndRun(target,serial,quote,'继续未完成场次',false);
         }).catch(()=>{});
-        else if(name==='arrange'&&compactHeader){if(!readOnly())Promise.resolve(options.onCompleteScope()).catch(report);}
+        else if(name==='arrange'&&compactHeader){
+          if(readOnly())return;
+          const clickedGeneration=generation,clickedController=controller;
+          action.disabled=true;action.textContent='正在准备…';
+          Promise.resolve().then(()=>alive(clickedGeneration,clickedController)?options.onCompleteScope():null).catch(report).finally(()=>{
+            if(alive(clickedGeneration,clickedController)&&action.isConnected)render(stateOf(clickedController));
+          });
+        }
         else if (name === 'arrange') {const sceneId=selected,completionMode=fillModes.get(selected)||'missing';perform(async (target, serial) => {
           assertWritable(target);
           editors?.capture();
@@ -709,11 +868,11 @@
         const id = media.dataset.segment, number = Number(media.dataset.card);
         await target.observeMedia(id, number); watch(target, serial).catch(report);
       },{id:media.dataset.segment,number:Number(media.dataset.card),kind:'observe'}).catch(() => {});
-      // perform() takes the card's synchronous lock before its first await,
-      // and redraws the scoped state in finally. An extra DOM-only disabled
-      // flag can survive a fast failed quote which finishes before a paint.
       else if(media&&root.contains(media)&&!media.disabled){
         const displayedCredits=Number(media.dataset.publishedCredits),catalogPending=stateOf(controller).catalogRefreshPending251===true;
+        const initialLabel=media.textContent;
+        const sourceController=controller;
+        media.disabled=true;media.textContent='正在准备…';
         perform(async(target,serial)=>{
         const id=media.dataset.segment,number=Number(media.dataset.card);
         assertWritable(target);editors?.capture();if(editors?.sourceDraft(id,number)?.dirty)throw Error('本卡原文有未保存修改，请先保存原文并补齐本卡分镜。');editors?.assertReferencesReady233?.(id,number);await editors?.save(id,number);if(!alive(serial,target))return;
@@ -722,7 +881,11 @@
         if(!quote||!alive(serial,target))return;
         if((!directSubmit||shared.mediaQuoteNeedsConfirmation251(quote,displayedCredits,catalogPending))&&!await ask(quoteMessage(quote,action==='video'?'生成本卡视频':'生成本卡首帧'),{quote:true})){target.cancelQuote();return;}
         await confirmAndRun(target,serial,quote,action==='frame'?'生成本卡首帧':'生成本卡视频',true);
-      },{id:media.dataset.segment,number:Number(media.dataset.card),kind:'media'}).catch(()=>{});}
+      },{id:media.dataset.segment,number:Number(media.dataset.card),kind:'media'}).catch(()=>{}).finally(()=>{
+        if(controller===sourceController&&media.isConnected&&media.textContent==='正在准备…'){
+          media.textContent=initialLabel;media.disabled=false;render(stateOf(controller));
+        }
+      });}
     }
     function handleChange(event) {
       if (event.target === $('selector')) { try { select(event.target.value); } catch (error) { report(error); } return; }
@@ -743,7 +906,9 @@
         patch = {referenceAssetIds:[...references]};
         editors?.synchronizeReferences(id,number,patch.referenceAssetIds);
       } else patch = {[param]:param==='tailFrameContinuation'?input.checked:param==='duration'?Number(input.value):input.value};
-      try { controller.updateMediaDraft(id, number, action, patch); } catch (error) { report(error); }
+      const target=controller;
+      try { Promise.resolve(target.updateMediaDraft(id,number,action,patch)).catch(error=>{if(controller===target)report(error);}); }
+      catch (error) { report(error); }
     }
     function handleToggle(event) {
       const node = event.target;
@@ -787,6 +952,7 @@
     }
     render({snapshot:{},message:'请先选择一个项目。'});
     return {setProject, refreshMediaDefaults232, refreshMediaPrices156, needsMediaPricesRefresh251, start, show, refresh, destroy, isBusy,select,selection:()=>selected,
+      hasUnsavedDrafts:()=>editors?.hasUnsavedDrafts?.()===true||unsavedReturns.size>0,
       hasSceneHeader:id=>compactHeader&&!destroyed&&String(id||'')===projectId&&!root.hidden&&rows(view.snapshot).some(row=>idOf(row)===selected),
       canSelect:id=>!!controller&&(id==='all'||rows(stateOf(controller)?.snapshot).some(row=>idOf(row)===id))};
   }

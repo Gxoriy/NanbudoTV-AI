@@ -54,6 +54,8 @@
   function bulk(section, kind) {
     const actions = section.querySelector('.visual-section-actions'); if (!actions) return;
     actions.classList.add('compact-asset-bulk205');
+    const series=document.body.dataset.seriesWorkspace==='1',generateSelected=actions.querySelector('.batch-assets');
+    if(generateSelected)generateSelected.textContent=series?'生成选中缺失图':'生成选中';
     section.querySelector('.visual-section-title > div:first-child')?.classList.add('compact-asset-legacy-title205');
     const all = actions.querySelector('.select-all-assets');
     if (all && !actions.querySelector('.compact-asset-select-all205')) {
@@ -83,7 +85,7 @@
     const menu = more.querySelector('.compact-asset-menu205');
     for (const selector of ['.batch-assets-all', '.download-all-assets', '.delete-selected-assets']) {
       const button = actions.querySelector(selector); if (!button) continue;
-      if (selector === '.batch-assets-all') button.textContent = '全部生成';
+      if (selector === '.batch-assets-all') button.textContent = series?'生成全部缺失图':'全部生成';
       if (button.parentElement !== menu) menu.append(button);
     }
   }

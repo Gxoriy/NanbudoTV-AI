@@ -3,6 +3,8 @@ const PRODUCT_NAME = "NanbudoTV·AI";
 const state = { videoId: "", videoName: "", activeResult: "structure", result: null, busy: false, generationMode: "", provider: "qwen", profiles: {}, textModels: [], textPricing: [], asrReady: false, speechBusy: false, licenseNotice: "", licenseExitTimer: null, watchRecording: false, watchFinishing: false, watchPoll: null, watchRecognition: null, linkMedia: null, hallMedia: null, hallWorks: [], hallAllWorks: [], hallPage: 1, hallRenderTypes: [], hallRenderMessage: "", hallRenderProgress: null, hallContextWork: null, hallPreviewCache: {}, hallEpisodeCache: {}, hallEpisodes: [], hallEpisodeIndex: 0, hallCurrentWork: null, hallHoverTimer: null, hallPrewarmId: 0, hallLoadingTypes: {}, hallView: "channel", hallFavorites: [], hallDownloads: [], historyRecords: [], historySelection: new Set(), historyRetention: -1, workMode: "rewrite", rewriteFormat: "ultra_commerce", originalType: "emotional_commerce", rewriteProductEnabled: false, originalProductEnabled: true, sourceAnalysis: null, sourceAnalysisSignature: "", assetConfirmationKey: "", confirmedAssetText: "", rewriteProposals: [], selectedProposalId: "", proposalTextSnapshot: "", proposalSkipped: false, proposalDecisionMade: false, savedRewriteConfig: null, savedRewriteConfigText: "", rewriteConfigConfirmed: false, rewriteConfigKey: "", rewriteCallPending: false, rewriteProjectId: "", rewriteProjects: [], clientConfig: null, clientUpdateFile: "", clientUpdateBusy: false, features: ["rewrite", "original", "workflow"], visualProject: null, visualProfile: null, visualTasks: {}, marketingMode: "remix", marketingVideoId: "", marketingReferenceName: "", marketingReferenceAnalysis: "", marketingReferenceDuration: 0, marketingPreviewObjectUrl: "", storePersonaId: "preset-owner-female", storeFiles: {persona:[], scenes:[], products:[], voice:null} };
 
 state.sourceScriptKey = "";
+state.clientUpdateCanApplyOnline = false;
+state.clientUpdateApplying = false;
 state.textButtonBindings = {};
 state.creationTasks = {rewrite: null, original: null};
 state.creationBusy = {rewrite: false, original: false};
@@ -972,6 +974,13 @@ async function pollRuntimeLicense() {
   } catch (_) { /* local server shutdown is handled by the desktop shell */ }
 }
 
+function pendingOnlineUpdateNotice292(config) {
+  const notice = typeof config?.onlineUpdateNotice === "string" ? config.onlineUpdateNotice.trim() : "";
+  if (!notice || state.onlineUpdateNoticeShown292) return "";
+  try { if (sessionStorage.getItem("ntv-online-update-notice292") === "1") return ""; } catch (_) { /* Page-local fallback. */ }
+  return notice;
+}
+
 function renderClientConfig(config) {
   state.clientConfig = config || {};
   renderTextModelSelector(config || {});
@@ -980,13 +989,14 @@ function renderClientConfig(config) {
     ? config.announcements
     : [{ slot: 1, title: "公告1", text: config?.announcement || "", mediaUrl: config?.announcementMediaUrl || "", mediaType: config?.announcementMediaType || "" }];
   const hasUpdate = Boolean(config?.updateAvailable && config?.downloadUrl && config?.sha256);
+  const onlineNotice = pendingOnlineUpdateNotice292(config);
   const panel = $("clientNotice");
-  const hasPublishedContent = Boolean(hasUpdate || announcements.some(item => String(item?.text || "").trim() || String(item?.mediaUrl || "").trim()));
+  const hasPublishedContent = Boolean(onlineNotice || hasUpdate || announcements.some(item => String(item?.text || "").trim() || String(item?.mediaUrl || "").trim()));
   const announcementSignature = announcements.map(item => `${item?.title || ""}:${item?.text || ""}:${item?.mediaUrl || ""}`).join("|");
   const dismissedKey = `drama-client-notice-${config?.latestVersion || "announcement"}-${announcementSignature.slice(0, 300)}`;
   const announceButton = $("openClientNotice");
   announceButton?.classList.toggle("hidden", !hasPublishedContent);
-  if (!hasPublishedContent || (!config?.mandatory && (sessionStorage.getItem(dismissedKey) === "1" || localStorage.getItem(dismissedKey) === "1"))) {
+  if (!hasPublishedContent || (!onlineNotice && !config?.mandatory && (sessionStorage.getItem(dismissedKey) === "1" || localStorage.getItem(dismissedKey) === "1"))) {
     panel.classList.add("hidden");
     $("clientNoticeBackdrop")?.classList.add("hidden");
     return;
@@ -1023,12 +1033,27 @@ function renderClientConfig(config) {
     }
     list.append(card);
   });
+  if (onlineNotice) {
+    const card = document.createElement("article");
+    card.id = "onlineUpdateNotice292";
+    card.className = "client-announcement-card";
+    const title = document.createElement("b");
+    title.textContent = "在线更新说明";
+    const copy = document.createElement("p");
+    copy.textContent = onlineNotice;
+    card.append(title, copy);
+    list.append(card);
+    state.onlineUpdateNoticeShown292 = true;
+    try { sessionStorage.setItem("ntv-online-update-notice292", "1"); } catch (_) { /* Keep the in-page guard. */ }
+  }
   $("clientVersionBadge").classList.toggle("hidden", !hasUpdate);
   $("clientVersionBadge").textContent = hasUpdate ? `当前 ${config.currentVersion} → 新版 ${config.latestVersion}` : "";
   $("clientUpdateNotes").classList.toggle("hidden", !notes);
   $("clientUpdateNotes").textContent = notes;
   $("clientUpdateBtn").classList.toggle("hidden", !hasUpdate);
-  $("clientUpdateBtn").textContent = state.clientUpdateFile ? "打开安装包位置" : (config?.mandatory ? "下载更新包" : "下载新版本");
+  if (!state.clientUpdateBusy && !state.clientUpdateApplying) {
+    $("clientUpdateBtn").textContent = clientUpdateActionLabel292(config);
+  }
   $("dismissClientNotice").classList.toggle("hidden", !hasPublishedContent || Boolean(config?.mandatory && hasUpdate));
   $("clientNoticeRememberWrap").classList.toggle("hidden", Boolean(config?.mandatory && hasUpdate));
 }
@@ -1065,42 +1090,61 @@ async function pollClientUpdate(taskId) {
   }
 }
 
+function clientUpdateActionLabel292(config = state.clientConfig) {
+  if (state.clientUpdateFile) return state.clientUpdateCanApplyOnline === true ? "安装更新并重启" : "打开安装包位置";
+  return config?.mandatory ? "下载更新包" : "下载新版本";
+}
+
 async function handleClientUpdate() {
-  if (state.clientUpdateBusy) return;
+  if (state.clientUpdateBusy || state.clientUpdateApplying) return;
   state.clientUpdateBusy = true;
-  if (state.clientUpdateFile) {
-    try {
-      if (!await studioConfirm("更新包已通过完整性校验。现在打开安装包所在文件夹吗？请手动检查并双击安装包。")) return;
-      $("clientUpdateBtn").disabled = true;
-      const result = await postJson("/api/update/reveal", { fileName: state.clientUpdateFile });
-      $("clientUpdateMessage").textContent = result.message || "已打开安装包位置，请手动完成安装。";
-      $("clientUpdatePercent").textContent = "100%";
-      $("clientUpdateBar").style.width = "100%";
-    } catch (error) {
-      toast(error.message, true);
-    } finally {
-      state.clientUpdateBusy = false;
-      $("clientUpdateBtn").disabled = false;
-    }
-    return;
-  }
-  $("clientUpdateBtn").disabled = true;
-  $("clientUpdateBtn").textContent = "正在下载…";
+  const button = $("clientUpdateBtn");
+  button.disabled = true;
   try {
+    if (state.clientUpdateFile) {
+      if (state.clientUpdateCanApplyOnline === true) {
+        if (!await studioConfirm("请确认当前编辑已保存。应用更新后软件将重启。")) return;
+        button.textContent = "正在启动更新…";
+        const result = await postJson("/api/update/apply-online", { fileName: state.clientUpdateFile });
+        if (result.ok !== true) throw new Error(result.error || result.message || "未能启动更新，请稍后重试。");
+        state.clientUpdateApplying = true;
+        button.textContent = "正在安装并重启…";
+        $("clientUpdateProgress").classList.remove("hidden");
+        $("clientUpdateMessage").textContent = result.message || "更新已启动，安装完成后软件会自动重新打开。";
+        toast($("clientUpdateMessage").textContent);
+      } else {
+        if (!await studioConfirm("更新包已通过完整性校验。现在打开安装包所在文件夹吗？请手动检查并双击安装包。")) return;
+        button.textContent = "正在打开安装包位置…";
+        const result = await postJson("/api/update/reveal", { fileName: state.clientUpdateFile });
+        $("clientUpdateProgress").classList.remove("hidden");
+        $("clientUpdateMessage").textContent = result.message || "已打开安装包位置，请手动完成安装。";
+        $("clientUpdatePercent").textContent = "100%";
+        $("clientUpdateBar").style.width = "100%";
+      }
+      return;
+    }
+    button.textContent = "正在下载…";
     const started = await postJson("/api/update/download", {});
     const result = await pollClientUpdate(started.taskId);
-    state.clientUpdateFile = result.fileName || "";
-    $("clientUpdateBtn").textContent = "打开安装包位置";
-    $("clientUpdateBtn").disabled = false;
-    toast("新版本已下载并通过完整性校验，点击“打开安装包位置”后手动安装。");
+    if (typeof result.fileName !== "string" || !result.fileName.trim()) {
+      throw new Error("没有收到已校验的安装包记录，请继续下载或重试。");
+    }
+    state.clientUpdateFile = result.fileName;
+    state.clientUpdateCanApplyOnline = result.canApplyOnline === true;
+    const ready = state.clientUpdateCanApplyOnline
+      ? "新版已下载并通过完整性校验。点击“安装更新并重启”即可安装，软件将自动重新打开。"
+      : "新版已下载并通过完整性校验。此安装包需手动安装，请点击“打开安装包位置”。";
+    $("clientUpdateMessage").textContent = ready;
+    toast(ready);
   } catch (error) {
-    $("clientUpdateBtn").textContent = "继续下载 / 重试";
-    $("clientUpdateBtn").disabled = false;
+    button.textContent = state.clientUpdateFile ? clientUpdateActionLabel292() : "继续下载 / 重试";
     $("clientUpdateProgress").classList.remove("hidden");
     $("clientUpdateMessage").textContent = error.message;
     toast(error.message, true);
   } finally {
     state.clientUpdateBusy = false;
+    button.disabled = Boolean(state.clientUpdateApplying);
+    if (state.clientUpdateFile && !state.clientUpdateApplying) button.textContent = clientUpdateActionLabel292();
   }
 }
 

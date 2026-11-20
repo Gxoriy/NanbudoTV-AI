@@ -116,7 +116,7 @@ $('processingMode').onchange=async()=>{
 $('refresh').onclick=()=>Promise.all([library(),...(cloud245()?[ensureCapabilities245(true)]:[])]).catch(error=>status(error.message,true));
 $('detect').onclick=()=>run('detect');
 $('quote').onclick=()=>{if(!cloud245())return;try{applyRegion(draft().region,false);if(schemaReady244())run('quote',draft());}catch(error){status(error.message,true);}};
-$('submit').onclick=async()=>{if(!cloud245()||busy||!schemaReady244()||!regions.quoted(record?.quote)||quoteDraft!==JSON.stringify(draft()))return;const original=record.id,quote=record.quote.quoteId,confirmedDraft=JSON.stringify(draft());const yes=await confirmProcessing(`本次云端去字幕${cost245(record.quote.estimatedPoints)}。选区：${regionText244(draft().region)}。只处理此区域，原片保留。确定开始？`);if(yes&&cloud245()&&record?.id===original&&record.quote?.quoteId===quote&&confirmedDraft===JSON.stringify(draft())&&schemaReady244())run('submit',{...draft(),quoteId:quote,confirmed:true});};
+$('submit').onclick=async()=>{if(!cloud245()||busy||!schemaReady244()||!regions.quoted(record?.quote)||quoteDraft!==JSON.stringify(draft()))return;const original=record.id,quote=record.quote.quoteId,confirmedDraft=JSON.stringify(draft());const yes=await confirmProcessing(`本次云端去字幕预计 ${record.quote.estimatedPoints} 积分。选区：${regionText244(draft().region)}。只处理此区域，原片保留。确定开始？`);if(yes&&cloud245()&&record?.id===original&&record.quote?.quoteId===quote&&confirmedDraft===JSON.stringify(draft())&&schemaReady244())run('submit',{...draft(),quoteId:quote,confirmed:true});};
 $('localStart245').onclick=async()=>{
   if(!record||cloud245()||busy||working245())return;
   try{

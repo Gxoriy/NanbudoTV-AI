@@ -18,7 +18,7 @@
   let lastEntry = '';
   const deletedIds261=new Set(),lifecycleKey261='ecommerce-project-lifecycle261';
   const marketDefaults260={CN:['zh-Hans','普通话','简体中文'],HK:['yue-Hant','粤语','繁体中文'],TW:['zh-Hant','台湾普通话','繁体中文'],US:['en','美式英语','英语'],RU:['ru','俄语','俄文'],JP:['ja','日语','日文'],KR:['ko','韩语','韩文'],GB:['en','英式英语','英语'],FR:['fr','法语','法文'],DE:['de','德语','德文']};
-  const languageDefaults260={'zh-Hans':['普通话','简体中文'],'zh-Hant':['普通话','繁体中文'],'yue-Hant':['粤语','繁体中文'],en:['英语','英语'],ru:['俄语','俄文'],ja:['日语','日文'],ko:['韩语','韩文'],fr:['法语','法文'],de:['德语','德文'],es:['西班牙语','西班牙文'],pt:['葡萄牙语','葡萄牙文'],ar:['阿拉伯语','阿拉伯文']};
+  const languageDefaults260={'zh-Hans':['普通话','简体中文'],'zh-Hant':['普通话','繁体中文'],'yue-Hant':['粤语','繁体中文'],en:['英语','英语'],ru:['俄语','俄文'],ja:['日语','日文'],ko:['韩语','韩文'],fr:['法语','法文'],de:['德语','德文'],es:['西班牙语','西班牙文'],pt:['葡萄牙语','葡萄牙文'],ar:['阿拉伯语','阿拉伯文'],th:['泰语','泰文'],vi:['越南语','越南文'],ms:['马来语','马来文'],id:['印度尼西亚语','印度尼西亚文'],fil:['菲律宾语','菲律宾文'],hi:['印地语','印地文'],it:['意大利语','意大利文'],nl:['荷兰语','荷兰文']};
   const videoFields260=['presenter','personFile','presenterDirection','speech','sceneFiles','versionCount'];
   const imageFields260=['background','targetLanguage','replacementText'];
   const imageMarkets263={CN:['中国大陆','zh-Hans'],HK:['中国香港','zh-Hant'],TW:['中国台湾','zh-Hant'],JP:['日本','ja'],MY:['马来西亚','ms'],TH:['泰国','th'],US:['美国','en'],SG:['新加坡','en'],GB:['英国','en'],AU:['澳大利亚','en'],RU:['俄罗斯','ru'],custom:['自定义地区','zh-Hans']};
@@ -27,9 +27,24 @@
   const imageDefaults263=()=>({imageDesignVersion:265,designMode:'redraw',imageMarket:'CN',customImageMarket:'',headline:'',sellingPoints:'',layoutStyle:'auto',detailInsets:false});
   let imageDesignStates264=new Map(),imageDesignRead264=0,imagePlanDirty264=false,imagePlanEditorKey264='';
   const localeDefaults260=()=>({schemaVersion:260,targetMarket:'CN',customMarket:'',outputLanguage:'zh-Hans',customLanguage:'',voiceAccent:'普通话',textScript:'简体中文',speechPolicy:'translate'});
-  let videoLocaleActive260=true;
-  const emptyForm=(forMode=mode,locale=true)=>({productFiles:[],description:'',...(forMode==='video'?{presenter:false,personFile:'',presenterDirection:'',speech:'',sceneFiles:[],versionCount:3,...(locale?localeDefaults260():{})}:{background:'',textMode:'keep',targetLanguage:'zh-Hans',replacementText:'',...(locale?imageDefaults263():{})})});
+  const voiceModes288={showcase:{minDuration:8,maxDuration:15},voiceover:{minDuration:15,maxDuration:30}};
+  let videoLocaleActive260=true,videoVoiceMode288='showcase';
+  let videoAccentEdited288=false,videoLanguageEdited288=false;
+  let videoHelp288=null,videoHelpTimer288=null;
+  const legacyVideoProjects288=new Set();
+  const defaultVideoPlatforms288=[
+    ['general','通用电商'],['taobao','淘宝 / 天猫'],['jd','京东'],['pinduoduo','拼多多'],
+    ['douyin','抖音电商'],['kuaishou','快手电商'],['wechat','微信视频号 / 微信小店'],
+    ['xiaohongshu','小红书'],['amazon','Amazon'],['tiktok-shop','TikTok Shop'],['shopee','Shopee'],
+    ['lazada','Lazada'],['ebay','eBay'],['rakuten','Rakuten'],['coupang','Coupang'],['etsy','Etsy'],
+    ['mercado-libre','Mercado Libre'],['independent','独立站'],['custom','自定义平台'],
+  ].map(([id,name])=>({id,name}));
+  const emptyForm=(forMode=mode,locale=true)=>({productFiles:[],description:'',...(forMode==='video'?{presenter:false,personFile:'',presenterDirection:'',speech:'',sceneFiles:[],versionCount:3,...(locale?{...localeDefaults260(),videoVoiceMode:'showcase',salesPlatform:'general'}:{})}:{background:'',textMode:'keep',targetLanguage:'zh-Hans',replacementText:'',...(locale?imageDefaults263():{})})});
   const state=()=>doc?.ecommerce259, busy=()=>working||analysisPending||!!doc?.generation;
+  const directVideo288=()=>mode==='video'&&Object.hasOwn(voiceModes288,videoVoiceMode288);
+  const productCount288=()=>state()?.form?.productFiles?.length||0;
+  const videoProductLimit288=()=>directVideo288()?catalog.limits?.videoProductImages||5:catalog.limits?.productImages||8;
+  const videoProfile288=()=>({visualModels:catalog.models,visualCatalogPublished:true,videoRouteGroups:catalog.videoRouteGroups,videoPricing:catalog.videoPricing||[],videoSkuPricing172:catalog.videoSkuPricing172});
   const media=(file,download=false)=>'/api/ecommerce/media?'+new URLSearchParams({id:doc.id,file,...(download?{download:'1'}:{})});
   const status=(text,error=false)=>ModelActivity.text($('status'),text,error);
   async function api(action,body){const response=await fetch('/api/ecommerce/'+action,{cache:'no-store',...(body===undefined?{signal:AbortSignal.timeout(20000)}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)})});const value=await response.json();if(!response.ok||value.ok===false)throw Error(value.error||'本次操作未完成');return value;}
@@ -114,6 +129,7 @@
     $('restoreProject261').disabled=lifecycleBusy261||!rows.length;
   }
   function clearProject261(id){
+    resetVideoHelp288();
     ++navigation;++epoch;++listRead261;clearTimeout(saveTimer);clearTimeout(pollTimer);clearTimeout(batchPoll260);batchRead260++;batchReadFlight260=null;
     if(localStorage.getItem('ecommerce259-'+mode)===id)localStorage.removeItem('ecommerce259-'+mode);
     doc=null;catalog={};chosen='';working=false;analysisPending=false;batch260=null;batchRevision260=-1;selectedImages260=new Set();knownImages260=new Set();selectedResults265=new Set();deletionBusy265=false;activeImage260='';overrideDirty260=false;detailsOpen260=false;uploadJobs260=[];uniformDirty260=false;
@@ -154,6 +170,7 @@
   async function runPaidAction260(action){
     if(paidActionActive260())return;
     const flight={navigation};paidActionFlight260=flight;lock();
+    ModelActivity.set($('status'),{state:'pending',message:'正在准备当前任务并核对费用…'});
     try{await action();}
     finally{if(paidActionFlight260===flight){paidActionFlight260=null;lock();}}
   }
@@ -541,7 +558,10 @@
       !modelRows().some(m=>m.model===$('model').value)||['model','resolution','ratio','duration'].some(id=>!$(id).value||$(id).selectedOptions[0]?.disabled);
     const selected=imageItems260().filter(item=>selectedImages260.has(item.id));
     const count=batchMode260()?selected.filter(eligibleImage260).length:Number(Boolean($('products').files.length||state()?.form?.productFiles?.length));
-    $('generate').disabled=block||batchLocked||invalid||(mode==='video'?!chosen:!count);
+    const direct=directVideo288();
+    const pricing=direct?videoPrice288():null;
+    const hasProducts=productCount288()>0&&productCount288()<=videoProductLimit288();
+    $('generate').disabled=block||batchLocked||invalid||(mode==='video'?(direct?!hasProducts||!pricing||!!videoHelp288:!chosen):!count);
     $('generate').textContent=batchMode260()?'核对总价并生成 '+count+' 张':'核对费用并生成';
     if(imageSettings){
       $('preferencesHint260').textContent=sharedImageDefaults260.fee(catalog,imageSettings,count);
@@ -553,6 +573,11 @@
     $('deleteProject261').disabled=lifecycleBusy261||paidActionActive260()||!doc;$('deletedProjects261').disabled=lifecycleBusy261||paidActionActive260();$('projects').disabled=lifecycleBusy261;
     document.querySelectorAll('[data-mode]').forEach(button=>button.disabled=lifecycleBusy261);
     $('chooseCharacter260').disabled=block||batchLocked;
+    for(const button of document.querySelectorAll('[data-video-voice288],#legacyVideoMode288'))button.disabled=block||batchLocked;
+    $('products').disabled=block||batchLocked||(direct&&productCount288()>=videoProductLimit288());
+    if(direct)paintVideoFee288(pricing,invalid);
+    if(mode==='video')$('duration').disabled=block||batchLocked||$('duration').options.length<2;
+    paintVideoHelp288(block||batchLocked);
     for(const id of ['applySelected260','applyAll260'])$(id).disabled=block||batchLocked||!batchMode260();
     $('selectAllImages260').disabled=working;
     document.querySelectorAll('[data-image-select]').forEach(control=>control.disabled=false);
@@ -582,8 +607,14 @@
       }
     }else{
       for(const key of ['presenterDirection','speech'])base[key]=$(key).value;
+      if(videoHelp288?.lastShown===base.speech)base.speech=videoHelp288.original;
       base.presenter=$('presenter').checked;base.versionCount=Number($('versionCount').value);
       if(videoLocaleActive260)Object.assign(base,{schemaVersion:260,targetMarket:$('videoMarket260').value,customMarket:$('videoMarket260').value==='custom'?$('customMarket260').value:'',outputLanguage:$('videoLanguage260').value,customLanguage:$('videoLanguage260').value==='custom'?$('customLanguage260').value:'',voiceAccent:$('voiceAccent260').value,textScript:$('textScript260').value,speechPolicy:$('speechPolicy260').value});
+      if(directVideo288())Object.assign(base,{
+        videoVoiceMode:videoVoiceMode288,
+        salesPlatform:$('salesPlatform288').value||'general',
+        customSalesPlatform:$('salesPlatform288').value==='custom'?$('customSalesPlatform288').value:'',
+      });
     }
     return base;
   }
@@ -593,10 +624,17 @@
     for(const key of ['description','presenterDirection','speech','background','targetLanguage','replacementText'])$(key).value=Object.hasOwn(next,key)?next[key]:key==='targetLanguage'?'zh-Hans':'';
     applyImageProfile263(mode==='image'?raw:{});
     $('presenter').checked=!!next.presenter;$('versionCount').value=next.versionCount||3;
-    videoLocaleActive260=mode==='video'&&raw.schemaVersion===260;
+    videoVoiceMode288=mode==='video'&&Object.hasOwn(voiceModes288,raw.videoVoiceMode)?raw.videoVoiceMode:'';
+    if(mode==='video'&&doc&&!videoVoiceMode288)legacyVideoProjects288.add(doc.id);
+    videoLocaleActive260=mode==='video'&&(raw.schemaVersion===260||directVideo288());
     const locale=videoLocaleActive260?{...localeDefaults260(),...raw}:{};
-    for(const [id,key] of [['videoMarket260','targetMarket'],['videoLanguage260','outputLanguage'],['customMarket260','customMarket'],['customLanguage260','customLanguage'],['voiceAccent260','voiceAccent'],['textScript260','textScript']])$(id).value=locale[key]||'';
+    paintLocale288(locale.targetMarket||'',locale.outputLanguage||'',raw.salesPlatform||'general');
+    for(const [id,key] of [['customMarket260','customMarket'],['customLanguage260','customLanguage'],['voiceAccent260','voiceAccent'],['textScript260','textScript']])$(id).value=locale[key]||'';
+    $('customSalesPlatform288').value=raw.customSalesPlatform||'';
     $('speechPolicy260').value=locale.speechPolicy||'translate';
+    videoLanguageEdited288=!!locale.outputLanguage&&locale.outputLanguage!==marketLanguage288(locale.targetMarket);
+    videoAccentEdited288=!!locale.voiceAccent&&locale.voiceAccent!==(marketDefaults260[locale.targetMarket]?.[1]||languageDefaults260[locale.outputLanguage]?.[0]);
+    paintAccent288();
   }
   function enableVideoLocale260(){
     if(mode!=='video')return;
@@ -621,7 +659,7 @@
     if(owner!==epoch||mode!==requestedMode||revisionBefore!==revision)return;
     const settings=saved.settings||{};
     if(!settings.model)throw Error('还没有保存'+(mode==='video'?'视频':'图片')+'常用设置。');
-    $('route').value=settings.route||'all';renderModels(false);
+    renderModels(false, restoredVideoRoute(settings));
     const modelAvailable=modelRows().some(row=>row.model===settings.model);
     if(!modelAvailable){
       const option=document.createElement('option');option.value=settings.model;option.textContent='常用模型当前不可用，请重新选择';option.disabled=true;$('model').append(option);$('model').value=settings.model;
@@ -630,6 +668,7 @@
     $('model').value=settings.model;renderSpecs(false);
     const invalid=[];
     for(const key of ['resolution','ratio',...(mode==='video'?['duration']:[])]){
+      if(key==='duration'&&directVideo288())renderVideoDurations288(settings.duration);
       if(settings[key]==null)continue;
       if(![...$(key).options].some(option=>option.value===String(settings[key])&&!option.disabled)){
         const option=document.createElement('option');option.value=String(settings[key]);option.textContent=String(settings[key])+' · 当前不支持，请重选';option.disabled=true;$(key).append(option);invalid.push(key);
@@ -641,7 +680,7 @@
   }
   function collectVersions(){return (state()?.versions||[]).map(row=>{const card=$('ideas').querySelector('[data-version="'+row.id+'"]');if(!card)return row;const result={...row};card.querySelectorAll('[data-field]').forEach(el=>result[el.dataset.field]=el.value);return result;});}
   async function save(redraw=false){if(!doc||busy())return;if(saveFlight){await saveFlight;return save(redraw);}clearTimeout(saveTimer);const owner=epoch,canvasId=doc.id,rev=revision,payload={canvasId,name:$('projectName').value||doc.name,form:form(redraw),versions:collectVersions()};saveFlight=api('save',payload);try{const response=await saveFlight;if(owner!==epoch||doc?.id!==canvasId)return;doc=response.document;if(mode==='image'&&!batchMode260()&&state()?.imagePlan264)await refreshImageDesignStates264();if(owner===epoch&&doc?.id===canvasId)lock();if(owner===epoch&&doc?.id===canvasId&&rev===revision)status('项目已保存。');}finally{saveFlight=null;}if(owner===epoch&&rev!==revision&&!busy())await save();}
-  function changed(uniform=true){revision++;if(mode==='image'&&!batchMode260()&&uniform&&state()?.imagePlan264){imageDesignStates264=new Map();state().imagePlanStatus264='stale';}if(batchMode260()&&uniform)markUniformDirty260(true);clearTimeout(saveTimer);status('有修改，正在保存…');if(doc)saveTimer=setTimeout(()=>safe(save)(),700);}
+  function changed(uniform=true){if(videoHelp288)resetVideoHelp288('输入已变更，原帮写仍可查询。');revision++;if(mode==='image'&&!batchMode260()&&uniform&&state()?.imagePlan264){imageDesignStates264=new Map();state().imagePlanStatus264='stale';}if(batchMode260()&&uniform)markUniformDirty260(true);clearTimeout(saveTimer);status('有修改，正在保存…');if(doc)saveTimer=setTimeout(()=>safe(save)(),700);}
   async function confirm(title,text,batch=false){$('confirmTitle').textContent=title;$('confirmText').textContent=text;if(!batch)$('batchQuoteRows260').hidden=true;const dialog=$('confirmDialog');dialog.returnValue='';dialog.showModal();return await new Promise(resolve=>dialog.addEventListener('close',()=>resolve(dialog.returnValue==='ok'),{once:true}));}
   function photos(){
     for(const [container,key] of [['productThumbs','productFiles'],['personThumbs','personFile'],['sceneThumbs','sceneFiles']]){
@@ -649,7 +688,7 @@
       const value=state()?.form?.[key],files=Array.isArray(value)?value:value?[value]:[];
       $(container).innerHTML=files.map(file=>'<div class="thumb"><img src="'+esc(media(file))+'" alt="'+esc(doc.uploads[file]?.name||'参考图')+'"><small>'+esc(doc.uploads[file]?.name||'参考图')+'</small><button type="button" data-remove-file="'+esc(file)+'" data-role="'+key+'" aria-label="移除这张参考图">×</button></div>').join('');
     }
-    if(mode==='video')$('productCount260').textContent=(state()?.form?.productFiles||[]).length+' / 8';
+    if(mode==='video')$('productCount260').textContent=productCount288()+' / '+videoProductLimit288();
     renderCharacterBinding260();
   }
   function renderVersions(){const versions=state()?.versions||[];if(!versions.some(row=>row.id===chosen))chosen=versions[0]?.id||'';$('ideas').innerHTML=versions.length?versions.map((v,i)=>'<article class="idea '+(v.id===chosen?'selected':'')+'" data-version="'+esc(v.id)+'"><div class="idea-head"><input type="radio" name="idea" value="'+esc(v.id)+'" '+(v.id===chosen?'checked':'')+' aria-label="选择创意 '+(i+1)+'"><b>'+esc(v.title||'创意 '+(i+1))+'</b><span class="muted">0'+(i+1)+'</span></div><p class="idea-preview">'+esc(v.concept)+'</p><details><summary>编辑这一版的文案与镜头</summary>'+[['title','标题',100],['concept','创意方向',2000],['visualPlan','镜头与画面',4000],['prompt','完整视频描述词',8000],['voiceover','角色口播',2000]].map(([key,label,max])=>'<label class="field">'+label+'<textarea data-field="'+key+'" maxlength="'+max+'" rows="'+(key==='prompt'?6:2)+'">'+esc(v[key]||'')+'</textarea></label>').join('')+'</details></article>').join(''):'<div class="empty"><span>✦</span><h3>好创意，从看懂产品开始</h3><p>上传产品图后点击“生成创意”，这里会显示不同创意方向。</p></div>';const summary=state()?.summary;$('analysisSummary').hidden=!summary;$('analysisSummary').textContent=summary||'';if(summary&&state()?.uncertainties?.length){const details=document.createElement('details'),title=document.createElement('summary'),p=document.createElement('p');title.textContent='这些产品信息还不能确认';p.textContent=state().uncertainties.join('；');details.append(title,p);$('analysisSummary').append(details);}$('selectionHint').textContent=mode==='image'?'选中图片，核对各图报价与总价，再确认开始。':chosen?'已选：'+(versions.find(v=>v.id===chosen)?.title||'创意版本'):'先生成并选中一个创意版本。';}
@@ -790,6 +829,7 @@
     if(working||requesting||lifecycleBusy261||paidActionActive260()||uploadFlight260||deletionBusy265){
       throw Error('当前工作台正在处理操作，请稍后再切换创作类型。');
     }
+    resetVideoHelp288();
     const ticket=++navigation;
     if(next===mode){
       if(initial&&!doc){applyForm260(emptyForm());syncMode();}
@@ -830,19 +870,43 @@
       }else{
         renderModels(false);
         if(initial&&mode==='video')$('analyze').disabled=false;
-        status(mode==='video'?'先上传产品图，主播图和环境图可以选填。':'先上传产品图，然后开始主图重绘。');
+        status(mode==='video'?'上传商品图后，选择视频类型与时长。':'先上传产品图，然后开始主图重绘。');
       }
     }
     if(ticket===navigation)workspaceReady=true;
   }
   function syncMode(){
-    const video=mode==='video';document.body.classList.toggle('is-image260',!video);
+    const video=mode==='video',direct=directVideo288(),voiceover=videoVoiceMode288==='voiceover';
+    document.body.classList.toggle('is-image260',!video);
     for(const id of ['route','model','resolution'])$(id).closest('label').hidden=!video;
     for(const id of ['itemModel260','itemResolution260'])$(id).closest('label').hidden=true;
     $('savePreferences260').closest('.preferences-actions').hidden=!video;
     $('videoMarketPanel260').hidden=!video;$('customMarketField260').hidden=!video||$('videoMarket260').value!=='custom';$('customLanguageField260').hidden=!video||$('videoLanguage260').value!=='custom';
     document.querySelectorAll('[data-mode]').forEach(el=>el.setAttribute('aria-selected',String(el.dataset.mode===mode)));
-    for(const id of ['videoOptions','ideasPanel','durationField','personPanel260','scenePanel260'])$(id).hidden=!video;
+    for(const id of ['videoModes288','durationField','scenePanel260'])$(id).hidden=!video;
+    $('legacyVideoMode288').hidden=!video||!(legacyVideoProjects288.has(doc?.id)||state()?.versions?.length);
+    $('legacyVideoMode288').setAttribute('aria-pressed',String(video&&!direct));
+    for(const button of document.querySelectorAll('[data-video-voice288]'))button.setAttribute('aria-pressed',String(videoVoiceMode288===button.dataset.videoVoice288));
+    $('ideasPanel').hidden=!video||direct;
+    $('videoOptions').hidden=!video||direct&&!voiceover;
+    $('personPanel260').hidden=!video||direct&&!voiceover;
+    $('videoOptionsTitle288').textContent=direct?'口播稿':'给创意一点方向';
+    $('legacyVideoTip288').hidden=direct;
+    $('legacyVersionCount288').hidden=direct;
+    $('legacyVideoAnalysis288').hidden=direct;
+    $('videoSpeechPanel288').hidden=direct?!voiceover:!$('presenter').checked;
+    $('speechLabel288').textContent=direct?'补充卖点 / 口播稿':'希望说的口播（选填）';
+    $('speech').placeholder=direct?'可填商品卖点或直接编辑口播稿。只上传图片也可以用 AI 帮写。':'填入后作为口播要求；可选择翻译或逐字保留。';
+    $('videoPlatformOptions288').hidden=!direct;
+    $('customPlatformField288').hidden=$('salesPlatform288').value!=='custom';
+    $('voiceLanguageOptions288').hidden=direct&&!voiceover;
+    $('textScriptField288').hidden=direct;
+    $('accentPresetField288').hidden=!direct;
+    $('videoLanguageLabel288').textContent=direct?'口播语言':'输出语言';
+    $('videoMarketHeading288').textContent=direct&&!voiceover?'销售市场':'市场与语言';
+    $('videoLocaleHint260').textContent=direct?(voiceover?'方言和口音会写入生成要求，实际发音取决于所选模型。':'生成要求保留商品包装文字，避免添加字幕与屏幕文案。'):'地区带出默认语言后仍可修改。已有创意不会自动改写。';
+    $('speechPolicy260').querySelector('[value="translate"]').textContent=direct?'整理卖点，按所选语言口播':'翻译到输出语言，保留原意';
+    $('speechPolicy260').querySelector('[value="verbatim"]').textContent=direct?'按稿口播':'保留已填写原文，不翻译';
     $('imageOptions').hidden=video;$('imageSelectionBar260').hidden=video;$('concurrencyField260').hidden=video;
     if($('concurrencyField260').parentElement!==$('imageSelectionBar260'))$('imageSelectionBar260').append($('concurrencyField260'));
     const ratioField=$('ratio').closest('label');
@@ -855,18 +919,71 @@
     const toggle=$('toggleImageGeneration268');
     toggle.hidden=video;
     $('imageGenerationBody268').hidden=!video&&toggle.getAttribute('aria-expanded')!=='true';
-    $('generationStep').textContent=video?'04':'03';$('generationTitle').textContent=video?'把选中的创意拍出来':'批量主图生成';
-    $('workspaceTitle260').textContent=video?'让产品，讲出自己的故事。':'让一整组主图，整齐出片。';
-    $('workspaceSubtitle260').textContent=video?'产品、主播和环境分别管理，先看创意，再决定生成哪一版。':'最多100张图片，每张独立处理；统一要求可应用后再逐图微调。';
+    $('generationStep').textContent=direct?'':video?'04':'03';$('generationStep').hidden=direct;
+    $('generationTitle').textContent=direct?'生成视频':video?'把选中的创意拍出来':'批量主图生成';
+    $('workspaceTitle260').textContent=video?'电商视频':'让一整组主图，整齐出片。';
+    $('workspaceSubtitle260').textContent=video?(direct?'用同一商品的参考图制作产品展示或口播视频。':'产品、主播和环境分别管理，先看创意，再决定生成哪一版。'):'最多100张图片，每张独立处理；统一要求可应用后再逐图微调。';
     $('projectCount260').textContent=video?'视频创作':'批量主图工厂 · 最多100张';
     $('productsTitle260').textContent=video?'产品图':'主图素材';
     if(!video)$('selectionHint').textContent='选中图片，核对各图报价与总价，再确认开始。';
-    $('productHint').textContent=video?'必选 · 1–8张同一产品的不同角度、包装与细节。':'最多100张，支持一次多选上传；每张拥有独立设置和结果。';
+    $('productHint').textContent=video?'上传 1–'+videoProductLimit288()+' 张同一商品的不同角度、包装或使用参考图。':'最多100张，支持一次多选上传；每张拥有独立设置和结果。';
     $('products').multiple=true;$('presenterOptions').hidden=!$('presenter').checked;
     syncImageProfile263();
     renderBatchStatus260();renderImageInspector260(false);
   }
   function setOptions(el,rows,current){el.innerHTML=rows.map(r=>'<option value="'+esc(r.value)+'">'+esc(r.label)+'</option>').join('');if(rows.some(r=>String(r.value)===String(current)))el.value=current;}
+  const fallbackLocale288={
+    markets:[...$('videoMarket260').options].map(({value:id,textContent:name})=>({id,name})),
+    languages:[...$('videoLanguage260').options].map(({value:id,textContent:name})=>({id,name})),
+    accents:[
+      {id:'普通话',name:'普通话'},
+      {id:'粤语',name:'粤语'},
+      {id:'闽南语',name:'闽南语'},
+      {id:'川普',name:'川普（川渝普通话）'},
+    ],
+  };
+  function paintLocale288(market=$('videoMarket260').value,language=$('videoLanguage260').value,platform=$('salesPlatform288').value){
+    const locale=catalog.videoLocale||{};
+    for(const [id,rows,current] of [
+      ['videoMarket260',locale.markets||fallbackLocale288.markets,market],
+      ['videoLanguage260',locale.languages||fallbackLocale288.languages,language],
+    ]){
+      const options=[...rows];
+      if(!options.some(row=>row.id===''))options.unshift({id:'',name:'未设置 · 沿用旧项目'});
+      if(current&&!options.some(row=>row.id===current))options.push({id:current,name:current});
+      setOptions($(id),options.map(row=>({value:row.id,label:row.name})),current);
+    }
+    const recommended=new Set(locale.markets?.find(row=>row.id===market)?.recommendedPlatforms||[]);
+    const platforms=[...(locale.platforms||defaultVideoPlatforms288)];
+    if(platform&&!platforms.some(row=>row.id===platform))platforms.push({id:platform,name:platform});
+    setOptions($('salesPlatform288'),platforms.map(row=>({value:row.id,label:row.name+(recommended.has(row.id)?' · 常用':'')})),platform||'general');
+    paintAccent288();
+  }
+  function marketLanguage288(market){
+    return catalog.videoLocale?.markets?.find(row=>row.id===market)?.recommendedLanguage||marketDefaults260[market]?.[0]||'';
+  }
+  function paintAccent288(){
+    const accents=catalog.videoLocale?.accents||fallbackLocale288.accents;
+    setOptions($('voiceAccentPreset288'),[{value:'',label:'请选择'},...accents.map(row=>({value:row.id,label:row.name}))],$('voiceAccent260').value);
+  }
+  function applySpeechLanguage288(language,market){
+    const locale=marketDefaults260[market];
+    const accent=(locale?.[0]===language?locale.slice(1):languageDefaults260[language]);
+    if(!accent)return;
+    if(!directVideo288()||!videoAccentEdited288)$('voiceAccent260').value=accent[0];
+    $('textScript260').value=accent[1];
+  }
+  function selectVideoMode288(value){
+    if(mode!=='video'||busy()||videoVoiceMode288===value)return;
+    videoVoiceMode288=value;
+    if(directVideo288())enableVideoLocale260();
+    paintLocale288();
+    syncMode();
+    photos();
+    renderVersions();
+    changed();
+    renderSpecs();
+  }
   function imageRatios260(){
     const ratios=['9:16','16:9','1:1'],supported=imageDefaults260().model?.supportedAspectRatios;
     return supported?.length?ratios.filter(value=>supported.includes(value)):ratios;
@@ -875,27 +992,34 @@
     if(!value||[...control.options].some(option=>option.value===value))return;
     const option=new Option(value+' · 当前不支持',value);option.disabled=true;control.add(option);control.value=value;
   }
-  function modelRows(){return (catalog.models||[]).filter(m=>m.media===mode&&($('route').value==='all'||ModelPresentation.routeForModel({visualModels:catalog.models},mode,m.model)===$('route').value));}
+  function modelRows(){return (catalog.models||[]).filter(m=>m.media===mode&&($('route').value==='all'||ModelPresentation.routeForModel(videoProfile288(),mode,m.model)===$('route').value));}
+  function restoredVideoRoute(settings) {
+    const saved = settings.route || 'all';
+    if (saved === 'all' || !Array.isArray(catalog.videoRouteGroups)) return saved;
+    return ModelPresentation.routeForModel(videoProfile288(),'video',settings.model,saved);
+  }
   function retainUnavailableModel(model){
     if(!model||[...$('model').options].some(option=>option.value===model))return;
     const option=new Option('原选模型当前不可用，请重新选择',model);
     option.disabled=true;$('model').add(option);$('model').value=model;
   }
   function restoreSettings(){
-    const binding=state()?.bindings?.[mode==='image'?'image':chosen];
+    const key=mode==='image'?'image':directVideo288()?'direct-video-288':chosen;
+    const binding=state()?.bindings?.[key];
     const settings=batchMode260()?batch260.shared?.settings:doc?.graph?.nodes?.find(n=>n.id===binding?.nodeId)?.settings;
     if(mode==='image'){
       if(settings?.ratio){preserveImageRatio260($('ratio'),settings.ratio);$('ratio').value=settings.ratio;}
       lock();return;
     }
     if(!settings?.model)return;
-    $('route').value=settings.route||'all';renderModels(false);
+    renderModels(false, restoredVideoRoute(settings));
     retainUnavailableModel(settings.model);
     $('model').value=settings.model;renderSpecs(false);
-    for(const key of ['resolution','ratio','duration'])if([...$(key).options].some(o=>o.value===String(settings[key])))$(key).value=settings[key];
+    for(const key of ['resolution','ratio'])if([...$(key).options].some(o=>o.value===String(settings[key])))$(key).value=settings[key];
+    renderVideoDurations288(settings.duration);
     lock();
   }
-  function renderModels(preserve=true){
+  function renderModels(preserve=true, requestedRoute=$('route').value){
     if(mode==='image'){
       const ratio=preserve?$('ratio').value:'';
       setOptions($('ratio'),imageRatios260().map(value=>({value,label:value})),ratio);
@@ -905,13 +1029,59 @@
     $('preferencesHint260').removeAttribute('data-error');
     $('preferencesHint260').textContent='视频的模型、线路和输出参数可保存为常用设置。';
     const current=preserve?$('model').value:'';
-    const routes=ModelPresentation.availableRoutes({visualModels:catalog.models,visualCatalogPublished:true},mode);
-    setOptions($('route'),[{value:'all',label:routes.length?'全部线路':'暂无已发布线路'},...routes.map(([value,label])=>({value,label}))],$('route').value);
+    const routes=ModelPresentation.availableRoutes(videoProfile288(),mode);
+    if (current && selectedVideoModel288()) requestedRoute=restoredVideoRoute({route:requestedRoute,model:current});
+    setOptions($('route'),[{value:'all',label:routes.length?'全部线路':'暂无已发布线路'},...routes.map(([value,label])=>({value,label}))],requestedRoute);
     const rows=modelRows();setOptions($('model'),rows.map(m=>({value:m.model,label:m.displayName})),current);
     retainUnavailableModel(current);
     renderSpecs(preserve);$('analysisModel').textContent=catalog.analysis?'产品分析：'+catalog.analysis.modelName+' · 一次 '+catalog.analysis.estimatedPoints+' 积分':catalog.analysisError||'后台尚未配置可用的产品分析模型与价格。';lock();
   }
-  function renderSpecs(preserve=true){const model=(catalog.models||[]).find(m=>m.model===$('model').value),currentResolution=preserve?$('resolution').value:'',currentRatio=preserve?$('ratio').value:'',currentDuration=preserve?Number($('duration').value):0;const prices=(mode==='video'?catalog.videoPricing:catalog.imagePricing)||[];const resolutions=[...new Set(prices.filter(p=>p.model===model?.model).map(p=>p.resolution).concat(model?.supportedResolutions||[]).filter(value=>value&&(mode==='video'||['1k','2k'].includes(value))))];setOptions($('resolution'),resolutions.map(value=>({value,label:value.toUpperCase()})),currentResolution);const ratios=model?.supportedAspectRatios?.length?model.supportedAspectRatios:['9:16','16:9','1:1'];setOptions($('ratio'),ratios.map(value=>({value,label:({'9:16':'竖屏 9:16','16:9':'横屏 16:9','1:1':'方图 1:1'})[value]||value})),currentRatio);if(mode==='video'){const profile={visualModels:catalog.models,visualVideoPricing:catalog.videoPricing},info=ModelPresentation.videoDurationInfo(profile,model?.model);const min=Number(model?.minDurationSeconds)||1,max=Number(model?.maxDurationSeconds)||30;const durations=info.fixed?[info.fixed]:Array.isArray(model?.supportedDurations)&&model.supportedDurations.length?model.supportedDurations:[5,10,15,20,30].filter(v=>v>=min&&v<=max);setOptions($('duration'),durations.map(value=>({value,label:value+'秒'+(info.fixed?'（固定）':'')})),currentDuration||15);$('duration').disabled=busy()||!!info.fixed;}}
+  function selectedVideoModel288(){
+    return (catalog.models||[]).find(row=>row.model===$('model').value&&row.media==='video');
+  }
+  function videoPrice288(duration=Number($('duration').value)){
+    if(!duration||!$('model').value||!$('resolution').value||!$('ratio').value)return null;
+    const profile=videoProfile288();
+    if(ModelPresentation.isLiveQuote(profile,'video',$('model').value))return {live:true};
+    const quote=ModelPresentation.quote(profile,$('model').value,$('resolution').value,duration,'economy',$('ratio').value);
+    return Number(quote?.points)>0?quote:null;
+  }
+  function paintVideoFee288(price,invalid){
+    const fields=form();
+    const model=selectedVideoModel288();
+    const references=productCount288()+fields.sceneFiles.length+Number(videoVoiceMode288==='voiceover'&&fields.presenter&&!!fields.personFile);
+    let note='';
+    if(!productCount288())note='请选择同一商品的参考图。';
+    else if(productCount288()>videoProductLimit288())note='此类型最多使用 '+videoProductLimit288()+' 张商品图，请移除多余图片后继续。';
+    else if(!model||invalid)note='当前模型没有此类型可用的规格，请更换模型、分辨率或画幅。';
+    else if(references>model.referenceImageLimit)note='当前模型最多接收 '+model.referenceImageLimit+' 张参考图，请减少参考图或更换模型。';
+    else if(price)note=model.displayName+' · '+$('duration').value+' 秒 · '+(price.live?'提交前实时核价':'预计 '+price.points+' 积分');
+    $('selectionHint').textContent=note;
+    if(references>model?.referenceImageLimit)$('generate').disabled=true;
+  }
+  function renderVideoDurations288(preferred=$('duration').value){
+    if(mode!=='video')return;
+    const model=selectedVideoModel288();
+    const info=ModelPresentation.videoDurationInfo(videoProfile288(),model?.model);
+    const bounds=voiceModes288[videoVoiceMode288];
+    const durations=!model?[]:directVideo288()
+      ?info.durations.filter(value=>value>=bounds.minDuration&&value<=bounds.maxDuration&&videoPrice288(value))
+      :info.fixed?[info.fixed]:model.supportedDurations?.length?info.durations
+      :[5,10,15,20,30].filter(value=>value>=info.minimum&&value<=info.maximum);
+    const selected=durations.includes(Number(preferred))?Number(preferred):15;
+    setOptions($('duration'),durations.map(value=>({value,label:value+' 秒'+(info.fixed?'（固定）':'')})),selected);
+  }
+  function renderSpecs(preserve=true){
+    const model=(catalog.models||[]).find(row=>row.model===$('model').value);
+    const currentDuration=preserve?$('duration').value:'';
+    const prices=(mode==='video'?catalog.videoPricing:catalog.imagePricing)||[];
+    const resolutions=[...new Set(prices.filter(row=>row.model===model?.model).map(row=>row.resolution).concat(model?.supportedResolutions||[]).filter(value=>value&&(mode==='video'||['1k','2k'].includes(value))))];
+    setOptions($('resolution'),resolutions.map(value=>({value,label:value.toUpperCase()})),preserve?$('resolution').value:'');
+    const ratios=model?.supportedAspectRatios?.length?model.supportedAspectRatios:['9:16','16:9','1:1'];
+    setOptions($('ratio'),ratios.map(value=>({value,label:({'9:16':'竖屏 9:16','16:9':'横屏 16:9','1:1':'方图 1:1'})[value]||value})),preserve?$('ratio').value:'');
+    renderVideoDurations288(currentDuration);
+    lock();
+  }
   async function list(){
     const owner=epoch,requestedMode=mode,ticket=++listRead261;
     const value=await api('list?includeDeleted=1'),rows=value.projects||[];
@@ -932,7 +1102,7 @@
     const [value]=await Promise.all([api('catalog',{canvasId:id}),mode==='image'?sharedImageDefaults260.load():null]);
     if(owner!==epoch||doc?.id!==id||read!==catalogRead)return;
     if(value.catalogError)throw Error('后台模型目录同步失败，请稍后重试。');
-    catalog=value;renderModels(preserve);
+    catalog=value;paintLocale288();renderModels(preserve);syncMode();photos();
     if(!preserve)restoreSettings();
     else if(detailsOpen260)renderItemRatio260({ratio:$('itemRatio260').value});
   }
@@ -947,6 +1117,7 @@
   }
   async function open(value){
     if(value.deleted||deletedIds261.has(value.id))throw Error('此项目已删除，请从“已删除项目”中恢复后再打开。');
+    resetVideoHelp288();
     clearTimeout(pollTimer);clearTimeout(saveTimer);clearTimeout(batchPoll260);batchRead260++;batchReadFlight260=null;
     epoch++;revision=0;doc=value;mode=state().mode;chosen='';working=false;analysisPending=false;
     resetImagePlans264();
@@ -967,7 +1138,8 @@
   async function upload(files,role){
     if(!files.length)return;const requestedMode=mode;await ensureDocument();if(mode!==requestedMode)return;if(busy()||batchPending260())throw Error('原任务尚在处理中，请完成或查询原任务后再更换素材。');
     const existing=mode==='image'?imageItems260().length:(state()?.form?.productFiles||[]).length;
-    if(role==='product'&&existing+files.length>(mode==='image'?100:8))throw Error(mode==='image'?'一个批次最多100张主图，请减少选择或新建项目。':'视频产品参考最多8张，请减少选择。');
+    if(role==='product'&&existing+files.length>(mode==='image'?100:videoProductLimit288()))throw Error(mode==='image'?'一个批次最多100张主图，请减少选择或新建项目。':'此类型最多 '+videoProductLimit288()+' 张商品图，请减少选择。');
+    if(videoHelp288)resetVideoHelp288('素材已变更，原帮写仍可查询。');
     if(mode==='image'&&role==='product'&&(batchMode260()||existing+files.length>1)){await uploadBatch260(files.map(file=>({id:uid(),file,state:'ready',error:''})));return;}
     await save();const owner=epoch,id=doc.id;working=true;lock();let presenterChanged=false;
     try{for(const file of files){if(file.size>12*1024*1024)throw Error('单张图片最多12MB，请压缩后再上传。');status('正在上传 '+file.name+'…');const response=await fetch('/api/ecommerce/upload',{method:'POST',headers:{'X-Canvas-Id':id,'X-Filename':encodeURIComponent(file.name),'X-Image-Role':role,'Content-Type':file.type||'application/octet-stream'},body:file,signal:AbortSignal.timeout(45000)}),value=await response.json();if(!response.ok)throw Error(value.error||'图片上传失败');if(!owner260(id,owner))return;doc=value.document;if(role==='person'&&mode==='video'){$('presenter').checked=true;state().form.presenter=true;presenterChanged=true;syncMode();}photos();}status('产品素材已保存。');}
@@ -984,17 +1156,167 @@
   }
   async function navigate(loader){
     if(imagePlanDirty264)throw Error('本图方案有未保存的修改，请先保存或撤销后再切换项目。');
+    resetVideoHelp288();
     const ticket=++navigation;++epoch;clearTimeout(pollTimer);clearTimeout(saveTimer);clearTimeout(batchPoll260);batchRead260++;
     await save();if(ticket!==navigation)return;
     working=true;lock();
     try{const value=await loader();if(ticket===navigation)await open(value.document||value);}
     finally{if(ticket===navigation){working=false;lock();}}
   }
+  const helpKey288=id=>'ecommerce-video-help-receipt-'+id;
+  function savedVideoHelp288(){
+    if(!doc)return null;
+    try{return JSON.parse(localStorage.getItem(helpKey288(doc.id))||'null');}
+    catch(_){return null;}
+  }
+  function markVideoHelp288(message='',error=false){
+    const statusLine=$('videoHelpStatus288');
+    if(statusLine.textContent!==message)statusLine.textContent=message;
+    statusLine.toggleAttribute('data-error',error);
+  }
+  function paintVideoHelp288(blocked){
+    const show=directVideo288()&&videoVoiceMode288==='voiceover';
+    const button=$('videoHelp288'),observe=$('observeVideoHelp288');
+    const saved=savedVideoHelp288();
+    button.hidden=!show;
+    button.disabled=blocked||!!videoHelp288||!!saved||productCount288()<1||productCount288()>videoProductLimit288()||!$('duration').value||!catalog.analysis;
+    observe.hidden=!show||!saved||!!videoHelp288;
+    observe.disabled=blocked;
+    $('speech').readOnly=!!videoHelp288;
+  }
+  function resetVideoHelp288(message='',error=false){
+    clearTimeout(videoHelpTimer288);
+    if(videoHelp288&&$('speech').value===videoHelp288.lastShown)$('speech').value=videoHelp288.original;
+    videoHelp288=null;
+    $('speech').readOnly=false;
+    markVideoHelp288(message,error);
+  }
+  const ownsVideoHelp288=session=>videoHelp288===session&&owner260(session.projectId,session.epoch)&&session.revision===revision&&videoVoiceMode288==='voiceover';
+  async function observeVideoHelp288(session,localOnly=true){
+    try{
+      const value=await api('video-help-observe',{projectId:session.projectId,receiptId:session.receiptId,localOnly});
+      if(!ownsVideoHelp288(session))return;
+      if(session.duration!==Number($('duration').value)){
+        resetVideoHelp288('当前时长已变更。切回 '+session.duration+' 秒可查询原帮写。',true);
+        lock();return;
+      }
+      const result=value.receipt||value;
+      if(result.status==='pending'){
+        if(typeof result.draftText==='string'&&result.draftText.length<=2000&&result.draftText!==session.lastShown&&result.canApplyToCurrentInputs===true){
+          session.lastShown=result.draftText;
+          $('speech').value=session.lastShown;
+          $('speech').scrollTop=$('speech').scrollHeight;
+        }
+        markVideoHelp288(session.lastShown===session.original?'正在识别商品并准备口播…':'正在写入口播稿…');
+        videoHelpTimer288=setTimeout(()=>observeVideoHelp288(session),400);
+        return;
+      }
+      if(result.status==='returned'&&result.result?.applicable&&result.canApplyToCurrentInputs===true&&typeof result.result.text==='string'&&result.result.text.trim()&&result.result.text.length<=2000){
+        resetVideoHelp288();
+        localStorage.removeItem(helpKey288(session.projectId));
+        $('speech').value=result.result.text;
+        $('speechPolicy260').value='verbatim';
+        changed();
+        markVideoHelp288(result.result.reviewNote||'口播稿已填入，可以继续编辑。');
+        lock();
+        await save().catch(error=>{
+          if(owner260(session.projectId,session.epoch))markVideoHelp288('口播稿已填入，保存失败。'+error.message,true);
+        });
+        return;
+      }
+      if(!['unknown','not_called','pending'].includes(result.status))localStorage.removeItem(helpKey288(session.projectId));
+      const message=result.status==='returned'?'素材或补充内容已变化，已保留当前输入。':
+        [result.error||'原帮写尚无可用正文，已保留原稿。',result.result?.reviewNote].filter(Boolean).join(' ');
+      resetVideoHelp288(message,true);
+      lock();
+    }catch(error){
+      if(!ownsVideoHelp288(session))return;
+      resetVideoHelp288('查询暂时中断，原帮写记录可继续查询。',true);
+      lock();
+    }
+  }
+  function beginVideoHelp288(record,id,owner){
+    const original=$('speech').value;
+    videoHelp288={...record,projectId:id,epoch:owner,revision,original,lastShown:original};
+    markVideoHelp288('正在识别商品并准备口播…');
+    lock();
+    return videoHelp288;
+  }
+  async function requestVideoHelp288(){
+    if(videoVoiceMode288!=='voiceover'||videoHelp288||savedVideoHelp288())return;
+    await ensureDocument();
+    await save();
+    const owner=epoch,id=doc.id,rev=revision,duration=Number($('duration').value);
+    const quote=await api('video-help-quote',{projectId:id,duration});
+    if(!owner260(id,owner))return;
+    const price=Number(quote.estimatedPoints);
+    if(!Number.isFinite(price)||price<=0||!quote.quoteId||!quote.inputHash)throw Error('当前帮写报价不可用，请稍后再试。');
+    const accepted=await confirm('AI 帮写口播稿',quote.modelName+' · '+duration+' 秒\n本次 '+price+' 积分。');
+    if(!accepted||!owner260(id,owner))return;
+    if(revision!==rev||duration!==Number($('duration').value)||videoVoiceMode288!=='voiceover')throw Error('内容已变化，请重新核对帮写。');
+    const record={receiptId:uid(),duration};
+    localStorage.setItem(helpKey288(id),JSON.stringify(record));
+    const session=beginVideoHelp288(record,id,owner);
+    try{
+      await api('video-help-start',{projectId:id,quoteId:quote.quoteId,inputHash:quote.inputHash,receiptId:record.receiptId,expectedPoints:price,billingConfirmed:true});
+    }catch(error){
+      if(!ownsVideoHelp288(session))return;
+      resetVideoHelp288('提交状态待核对。'+error.message,true);
+      lock();return;
+    }
+    if(ownsVideoHelp288(session))await observeVideoHelp288(session);
+  }
+  async function resumeVideoHelp288(){
+    const record=savedVideoHelp288();
+    if(!record||videoHelp288||videoVoiceMode288!=='voiceover')return;
+    if(record.duration!==Number($('duration').value)){
+      markVideoHelp288('请先将时长切回 '+record.duration+' 秒，再查询原帮写。',true);
+      return;
+    }
+    const id=doc.id,owner=epoch;
+    await save();
+    if(!owner260(id,owner))return;
+    const session=beginVideoHelp288(record,id,owner);
+    await observeVideoHelp288(session,false);
+  }
   async function analyze(){await ensureDocument();await save();const owner=epoch,id=doc.id,rev=revision;working=true;lock();try{const quote=await api('analyze-quote',{canvasId:id,form:form()});if(epoch!==owner||id!==doc?.id)return;const accepted=await confirm('分析产品图，生成 '+$('versionCount').value+' 版创意',quote.modelName+'\n本次一次产品分析：'+quote.estimatedPoints+' 积分。\n仅返回创意，不会自动生成图片或视频。');if(!accepted)return;if(rev!==revision||owner!==epoch)throw Error('确认期间内容已变化，请重新核对；未调用模型。');await api('analyze-start',{canvasId:id,quoteId:quote.quoteId,inputHash:quote.inputHash,receiptId:uid(),billingConfirmed:true,expectedCredits:quote.estimatedPoints});await readAnalysis(true);}catch(error){if(epoch===owner){$('observeAnalysis').hidden=false;throw error;}}finally{if(epoch===owner){working=false;lock();}}}
-  async function pollGeneration(taskId,id,owner){if(epoch!==owner||doc?.id!==id)return;try{const response=await fetch('/api/tasks/'+encodeURIComponent(taskId),{cache:'no-store',signal:AbortSignal.timeout(20000)}),body=await response.json();if(!response.ok)throw Error(body.error||'查询原任务失败');if(epoch!==owner||doc?.id!==id)return;const task=body.task||body;ModelActivity.task($('generationStatus'),task,{success:'生成结果已返回。'});$('generationProgress').hidden=false;$('generationProgress').value=Number(task.progress)||0;if(['queued','running'].includes(task.state)){working=true;lock();pollTimer=setTimeout(()=>safe(()=>pollGeneration(taskId,id,owner))(),1800);return;}const updated=await api('document?id='+encodeURIComponent(id));if(epoch!==owner)return;doc=updated.document;working=false;results();lock();$('generationProgress').hidden=true;if(task.state!=='done')status(task.error||'本次任务未完成，原记录保留。',true);else status('生成结果已保存，可以预览或下载。');}catch(error){if(epoch===owner){working=false;lock();$('observeVideo').hidden=false;$('generationStatus').textContent='查询暂时中断，原任务已保留。请继续查询，不会自动重发。';}throw error;}}
+  async function pollGeneration(taskId,id,owner){
+    if(!owner260(id,owner))return;
+    try{
+      const response=await fetch('/api/tasks/'+encodeURIComponent(taskId),{cache:'no-store',signal:AbortSignal.timeout(20000)});
+      const body=await response.json();
+      if(!response.ok)throw Error(body.error||'查询原任务失败');
+      if(!owner260(id,owner))return;
+      const task=body.task||body;
+      const progress=$('generationProgress'),indicator=$('generationStatus');
+      progress.hidden=false;progress.value=Number(task.progress)||0;
+      if(['queued','running'].includes(task.state)){
+        ModelActivity.task(indicator,task);
+        working=true;lock();
+        pollTimer=setTimeout(()=>safe(()=>pollGeneration(taskId,id,owner))(),1800);
+        return;
+      }
+      const done=task.state==='done';
+      const failure=task.error||'本次任务未完成，原记录保留。';
+      const syncing=done?'生成结果已返回，正在同步到项目…':failure;
+      ModelActivity.set(indicator,{state:done?'pending':'error',message:syncing});
+      ModelActivity.set($('status'),{state:done?'pending':'error',message:syncing});
+      const updated=await api('document?id='+encodeURIComponent(id));
+      if(!owner260(id,owner))return;
+      doc=updated.document;working=false;results();lock();progress.hidden=true;
+      ModelActivity.task(indicator,task,{success:'生成结果已保存。'});
+      status(done?'生成结果已保存，可以预览或下载。':failure,!done);
+    }catch(error){
+      if(owner260(id,owner)){
+        working=false;lock();$('observeVideo').hidden=false;
+        $('generationStatus').textContent='查询暂时中断，原任务已保留。请继续查询，不会自动重发。';
+        throw error;
+      }
+    }
+  }
   async function generate(){
     await ensureDocument();
-    const image=mode==='image';
+    const image=mode==='image',direct=directVideo288();
     if(image&&imagePlanDirty264)throw Error('请先保存本图方案的修改。');
     await save(image);if(busy())throw Error('请先继续查询原任务。');
     const owner=epoch,id=doc.id,rev=revision;
@@ -1008,18 +1330,18 @@
     try{
       const settings=currentSettings();
       const defaults=image?{useImageDefaults:true,imageDefaults:{model:shared.model.model,resolution:shared.resolution,route:shared.route}}:{};
-      const prepared=await api('prepare',{canvasId:id,versionId:chosen,settings,...defaults});if(!owner260(id,owner))return;
+      const prepared=await api('prepare',{canvasId:id,...(direct?{}:{versionId:chosen}),settings,...defaults});if(!owner260(id,owner))return;
       doc=prepared.document;
       const plan=await api('quote',{canvasId:id,nodeId:prepared.nodeId});if(!owner260(id,owner))return;
       const receipt=plan.quote;ModelPresentation.quoteReceiptFields(receipt);
-      const accepted=await confirm('确认生成'+(image?'电商主图':'当前创意视频'),plan.modelName+'\n'+
-        (image?plan.resolution+' · ':plan.duration+'秒 · ')+ModelPresentation.quoteText(receipt)+'\n只生成这一次，其他创意和历史结果保留。');
+      const label=image?'电商主图':direct?(videoVoiceMode288==='voiceover'?'卖点介绍视频':'产品展示视频'):'当前创意视频';
+      const accepted=await confirm('确认生成'+label,plan.modelName+'\n'+
+        (image?plan.resolution+' · ':plan.duration+'秒 · ')+ModelPresentation.quoteText(receipt));
       if(!accepted)return;
       if(!owner260(id,owner)||rev!==revision||JSON.stringify(settings)!==JSON.stringify(currentSettings()))throw Error('确认期间内容已变化，请重新核对；未提交模型。');
       const result=await api('generate',{canvasId:id,nodeId:prepared.nodeId,billingConfirmed:true,...ModelPresentation.quoteReceiptFields(receipt)});
       if(!owner260(id,owner))return;
-      const fetched=await api('document?id='+id);if(!owner260(id,owner))return;
-      doc=fetched.document;await pollGeneration(result.taskId,id,owner);
+      await pollGeneration(result.taskId,id,owner);
     }catch(error){
       if(owner===epoch){
         try{const fetched=await api('document?id='+id);if(owner260(id,owner))doc=fetched.document;}catch(_){}
@@ -1039,12 +1361,40 @@
     const value=$('itemMarket263').value;
     if(value!=='custom'&&imageMarkets263[value])$('itemLanguage260').value=imageMarkets263[value][1];
   });
-  document.querySelectorAll('.input-column input:not([type=file]):not([data-image-select]),.input-column textarea,.input-column select,#imageOptions input,#imageOptions textarea,#imageOptions select,#projectName').forEach(el=>el.addEventListener('input',event=>{if(['selectAllImages260','selectAllResults265','ratio','batchConcurrency260'].includes(event.target.id)||event.target.matches('[data-result-select265]'))return;syncMode();changed(event.target.id!=='projectName');}));
+  document.querySelectorAll('.input-column input:not([type=file]):not([data-image-select]),.input-column textarea,.input-column select,#imageOptions input,#imageOptions textarea,#imageOptions select,#projectName').forEach(el=>el.addEventListener('input',event=>{if(['selectAllImages260','selectAllResults265','ratio','batchConcurrency260'].includes(event.target.id)||event.target.matches('[data-result-select265]'))return;syncMode();changed(event.target.id!=='projectName');if(directVideo288())lock();}));
   document.querySelectorAll('.thumbs').forEach(el=>el.onclick=safe(async event=>{const button=event.target.closest('[data-remove-file]');if(!button||busy())return;await save();const key=button.dataset.role,file=button.dataset.removeFile;if(key==='personFile')state().form[key]='';else state().form[key]=state().form[key].filter(f=>f!==file);revision++;photos();await save();}));
   $('ideas').onchange=e=>{const radio=e.target.closest('input[type=radio]');if(!radio)return;chosen=radio.value;$('ideas').querySelectorAll('.idea').forEach(el=>el.classList.toggle('selected',el.dataset.version===chosen));$('selectionHint').textContent='已选：'+(state().versions.find(v=>v.id===chosen)?.title||'创意');lock();};$('ideas').oninput=e=>{if(e.target.matches('textarea'))changed();};
-  $('videoMarket260').onchange=()=>{if(mode!=='video'||!$('videoMarket260').value)return;enableVideoLocale260();const preset=marketDefaults260[$('videoMarket260').value];if(preset){$('videoLanguage260').value=preset[0];$('voiceAccent260').value=preset[1];$('textScript260').value=preset[2];}syncMode();changed();};
-  $('videoLanguage260').onchange=()=>{if(mode!=='video'||!$('videoLanguage260').value)return;enableVideoLocale260();let preset=languageDefaults260[$('videoLanguage260').value];if($('videoLanguage260').value==='en'&&['US','GB'].includes($('videoMarket260').value))preset=marketDefaults260[$('videoMarket260').value].slice(1);if(preset){$('voiceAccent260').value=preset[0];$('textScript260').value=preset[1];}syncMode();changed();};
-  for(const id of ['customMarket260','customLanguage260','voiceAccent260','textScript260','speechPolicy260'])$(id).addEventListener('input',()=>{if(mode==='video'){enableVideoLocale260();changed();}});
+  $('videoMarket260').onchange=()=>{
+    const market=$('videoMarket260').value;
+    if(mode!=='video'||!market)return;
+    enableVideoLocale260();
+    const language=marketLanguage288(market);
+    if(language&&(!directVideo288()||!videoLanguageEdited288)){
+      $('videoLanguage260').value=language;
+      applySpeechLanguage288(language,market);
+    }
+    paintLocale288();syncMode();changed();lock();
+  };
+  $('videoLanguage260').onchange=()=>{
+    if(mode!=='video'||!$('videoLanguage260').value)return;
+    enableVideoLocale260();videoLanguageEdited288=true;
+    applySpeechLanguage288($('videoLanguage260').value,$('videoMarket260').value);
+    paintAccent288();syncMode();changed();lock();
+  };
+  $('voiceAccentPreset288').onchange=()=>{
+    if(!$('voiceAccentPreset288').value)return;
+    $('voiceAccent260').value=$('voiceAccentPreset288').value;
+    videoAccentEdited288=true;enableVideoLocale260();changed();lock();
+  };
+  for(const id of ['customMarket260','customLanguage260','voiceAccent260','textScript260','speechPolicy260','salesPlatform288','customSalesPlatform288'])$(id).addEventListener('input',()=>{
+    if(mode!=='video')return;
+    if(id==='voiceAccent260'){videoAccentEdited288=true;paintAccent288();}
+    enableVideoLocale260();syncMode();changed();lock();
+  });
+  for(const button of document.querySelectorAll('[data-video-voice288]'))button.onclick=()=>selectVideoMode288(button.dataset.videoVoice288);
+  $('legacyVideoMode288').onclick=()=>selectVideoMode288('');
+  $('videoHelp288').onclick=safe(()=>runPaidAction260(requestVideoHelp288));
+  $('observeVideoHelp288').onclick=safe(()=>runPaidAction260(resumeVideoHelp288));
   $('savePreferences260').onclick=safe(savePreferences260);$('applyPreferences260').onclick=safe(applyPreferences260);$('route').onchange=()=>renderModels(false);$('model').onchange=()=>renderSpecs(false);$('saveProject').onclick=safe(async()=>{await ensureDocument();await save();await list();});$('refreshProjects').onclick=safe(async()=>{await list();await loadCatalog();if(batchMode260())await observeBatch260(false);});$('analyze').onclick=safe(()=>runPaidAction260(analyze));$('generate').onclick=safe(()=>runPaidAction260(async()=>{if(batchMode260())await generateBatch260();else await generate();}));$('observeAnalysis').onclick=safe(()=>readAnalysis(true));$('observeVideo').onclick=safe(async()=>{if(!doc)return;const id=doc.id,owner=epoch;working=true;lock();try{const result=await api('reconcile',{canvasId:id});if(owner===epoch)await pollGeneration(result.taskId,id,owner);}finally{if(owner===epoch){working=false;lock();}}});
   $('projects').onchange=safe(async()=>{const id=$('projects').value;if(!id)return;await navigate(()=>api('document?id='+encodeURIComponent(id)));});
   $('newProject').onclick=safe(async()=>{if(requesting)return;requesting=true;lock();const requestedMode=mode;try{await navigate(()=>api('create',{name:'我的电商'+(requestedMode==='video'?'视频':'主图'),mode:requestedMode}));status('新项目已创建，原项目保留。');}finally{requesting=false;lock();}});
@@ -1092,7 +1442,15 @@
   $('reconcileBatch260').onclick=safe(async()=>{if(!batchMode260()||working)return;const id=doc.id,owner=epoch;working=true;lock();try{const itemIds=batch260.items.filter(item=>item.status==='unknown'||item.canReconcile).map(item=>item.id);applyBatch260(await api('batch/reconcile',{canvasId:id,itemIds}),id,owner);await observeBatch260(true);}finally{if(owner260(id,owner)){working=false;lock();}}});
   $('uploadFailures260').onclick=safe(async event=>{if(event.target.id==='retryUploads260')await uploadBatch260(uploadJobs260);});
   $('retryOriginalUpload260').onchange=safe(async event=>{const file=event.target.files[0],itemId=retryUploadItem260;event.target.value='';retryUploadItem260='';if(!file||!batchMode260()||!batch260.items.some(item=>item.id===itemId&&item.status==='upload_failed'))return;await uploadBatch260([{id:itemId,file,state:'ready',error:''}]);});
-  document.querySelectorAll('.settings select,#batchConcurrency260').forEach(control=>control.addEventListener('input',()=>{revision++;batchQuote260=null;if(batchMode260()&&control.id!=='batchConcurrency260')markUniformDirty260(true);}));
+  document.querySelectorAll('.settings select,#batchConcurrency260').forEach(control=>control.addEventListener('input',()=>{
+    if(videoHelp288)resetVideoHelp288('输出设置已变更，原帮写仍可查询。');
+    revision++;batchQuote260=null;
+    if(batchMode260()&&control.id!=='batchConcurrency260')markUniformDirty260(true);
+    if(directVideo288()){
+      if(['resolution','ratio'].includes(control.id))renderVideoDurations288();
+      lock();
+    }
+  }));
   $('openCanvas').onclick=safe(async()=>{if(!doc)return;await save();localStorage.setItem('dramaVideoCanvas',doc.id);if(parent!==window)parent.postMessage({type:'ecommerce-open-canvas259',canvasId:doc.id},location.origin);else location.href='/static/video_canvas.html';});
   $('results').addEventListener('click',safe(async event=>{
     const remove=event.target.closest('[data-delete-result265]');if(remove){await deleteResults265([remove.dataset.deleteResult265]);return;}
@@ -1103,10 +1461,11 @@
     const result=await desktop.save_download(url.pathname+url.search,name,'ecommerce');
     if(result.ok)status('已保存到 '+result.path);else if(!result.canceled)throw Error(result.error||'下载未完成');
   }));
-  window.addEventListener('pagehide',()=>{clearTimeout(saveTimer);clearTimeout(pollTimer);clearTimeout(batchPoll260);document.querySelectorAll('video').forEach(el=>el.pause());});
+  window.addEventListener('pagehide',()=>{resetVideoHelp288();clearTimeout(saveTimer);clearTimeout(pollTimer);clearTimeout(batchPoll260);document.querySelectorAll('video').forEach(el=>el.pause());});
   window.addEventListener('storage',event=>{if(event.key!==lifecycleKey261||!event.newValue)return;try{const change=JSON.parse(event.newValue);if(!change.canvasId||!['delete','restore'].includes(change.action))return;if(change.action==='delete'){deletedIds261.add(change.canvasId);if(doc?.id===change.canvasId){clearProject261(change.canvasId);status('此项目已在另一窗口删除，可在“已删除项目”中恢复。');}}else deletedIds261.delete(change.canvasId);++listRead261;safe(list)();}catch(_){}});
   function showCommerceLanding(restoreFocus=false){
     entryTicket++;
+    resetVideoHelp288();lock();
     $('commerceWorkspace').querySelectorAll('video').forEach(video=>video.pause());
     imageWorkbench?.deactivate();
     $('commerceWorkspace').hidden=true;
@@ -1187,6 +1546,7 @@
       if(event.data?.type==='ecommerce-showcase-open')showCommerceLanding();
       else if(event.data?.type==='ecommerce-showcase-hide'){
         entryTicket++;
+        resetVideoHelp288();lock();
         showcase?.setActive(false);
         imageWorkbench?.deactivate();
       }

@@ -640,6 +640,12 @@
         helpEditor(state)?.focus();
         return;
       }
+      if (action === 'generate') {
+        if (state.busy || button.disabled) return;
+        button.disabled = true;
+        button.textContent = '正在准备并核对费用…';
+        notify(state,'正在准备生成并核对费用…');
+      }
       if (!button.dataset.ecwAction) {
         Promise.resolve(tool.action?.(action,context(state),event)).catch(error => notify(state,error.message,true));
         return;

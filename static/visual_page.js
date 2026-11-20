@@ -334,7 +334,7 @@
   const macroSnapshots = new Map();
   const sceneStartLocks206 = new Map();
   const topSceneDirectory=window.WorkflowSceneDirectory?.create({root:$('workflowSceneDirectory'),shared:window.MacroArrangement,
-    onSelect:(scene)=>{renderPreparedScene(scene);legacyCardsView231?.selectScene(scene);if(scene?.macroId&&macroInlineView?.canSelect(scene.macroId))macroInlineView.select(scene.macroId);}});
+    onSelect:()=>syncTopScenes()});
   if(topSceneDirectory)document.body.dataset.topSceneDirectory='1';
   function sceneNavigation206(snapshot){
     const projectId=state.project?.id,shared=window.MacroArrangement,start=sceneStartLocks206.get(projectId);
@@ -363,6 +363,18 @@
     const start=$('workflowSceneStart');if(start)start.hidden=!state.project?.workflowPreparedScript||inlineHeader;
     const startTitle=$('workflowSceneStartTitle');if(startTitle)startTitle.textContent=scene?`第 ${scene.number} 场 · ${scene.title}`:'分镜与视频卡';
     const startButton=$('startPreparedSceneShots');if(startButton){const locked=sceneNavigation206(snapshot).locked;startButton.disabled=locked;startButton.setAttribute('aria-busy',String(locked));}
+    renderSceneSourceFallback284(scene,snapshot);
+  }
+  function renderSceneSourceFallback284(scene=topSceneDirectory?.current(),snapshot=macroSnapshots.get(state.project?.id)||state.project?.macroArrangement||{}){
+    const panel=$('workflowSceneSource284'),text=$('workflowSceneSourceText284');if(!panel||!text)return;
+    const source=String(scene?.sourceText||''),owned=snapshot.projectId===state.project?.id;
+    const planned=owned&&scene?.macroId?(snapshot.plan?.segments||[]).find(row=>String(row.segmentId||row.id||'')===scene.macroId):null;
+    const existingBody=planned&&(String(planned.sourceText||'').trim()||window.MacroArrangement?.readSceneCards(snapshot,planned).length);
+    const oldCardsVisible=legacyCardsView231?.hasSceneHeader?.(state.project?.id)===true;
+    panel.hidden=state.workflowStage!==3||!state.project?.id||!source.trim()||oldCardsVisible||Boolean(existingBody&&!$('macroInlineWorkspace')?.hidden);
+    if(panel.hidden){text.textContent='';delete panel.dataset.sceneId;return;}
+    panel.dataset.sceneId=scene.id;panel.dataset.projectId=state.project.id;
+    if(text.textContent!==source)text.textContent=source;
   }
   function renderPreparedScene(scene=topSceneDirectory?.current()){
     const preparation=state.project?.workflowPreparedScript,panel=$('workflowPreparedReview');if(!panel)return;
@@ -549,7 +561,6 @@
         macroSnapshots.set(snapshot.projectId,snapshot);
         if (snapshot.plan || snapshot.sourceLocked || snapshot.active?.claimId) state.macroViewingId=snapshot.projectId;
         syncMacroWorkspace();
-        syncTopScenes(snapshot);
       },
       onError:message=>{if(state.project?.id===ownerProjectId)toast(message,true);},
     }); }
@@ -613,18 +624,23 @@
       return toast('当前共享剧本操作尚未完成，请稍后重试；其他卡片任务不受影响。',true);
     const sourceText=String($('visualSource').value||'');
     if(!sourceText.trim())return toast('请先输入完整剧本；未调用模型。',true);
-    if(!await prepareVisualScript())return;
-    if(needsAIDirectory()){setWorkflowStage(1,{scroll:true});return toast('请先完成提取大纲，再进行资产提取并补齐整场分镜。',true);}
-    // Opening settings is local and immediate, including scripts with old
-    // 15s markers. Only explicit selection may enter the legacy import path.
-    const selectedScene=topSceneDirectory?.current();
-    state.timelineModelApproval={projectId:project.id,sourceText,segmentId:selectedScene?.id||'',sceneNumber:selectedScene?.number||1};
-    openCutModeDialog();
+    state.timelineEntryBusy=true;
+    try{
+      if(!await prepareVisualScript()||state.project?.id!==project.id||String($('visualSource').value||'')!==sourceText)return;
+      if(needsAIDirectory()){setWorkflowStage(1,{scroll:true});return toast('请先完成提取大纲，再进行资产提取并补齐整场分镜。',true);}
+      if(!await checkWorkflowScript286({onlyIssues:true}))return;
+      // Opening settings is local and immediate, including scripts with old
+      // 15s markers. Only explicit selection may enter the legacy import path.
+      const selectedScene=topSceneDirectory?.current();
+      state.timelineModelApproval={projectId:project.id,sourceText,segmentId:selectedScene?.id||'',sceneNumber:selectedScene?.number||1};
+      openCutModeDialog();
+    }catch(error){if(state.project?.id===project.id)toast(error.message,true);}
+    finally{state.timelineEntryBusy=false;}
   }
   async function startMacroFromSettings() {
     const choice=cutDurationChoice();
     if(choice.error)return toast(choice.error,true);
-    if(state.sourceSaveBusy||state.pendingCut||state.storyboardBusy||state.macroBusy)return toast('当前共享剧本操作尚未完成，未新增模型调用。',true);
+    if(state.sourceSaveBusy||state.pendingCut||state.storyboardBusy||state.macroBusy||sceneStartLocks206.has(state.project?.id))return toast('当前共享剧本操作尚未完成，未新增模型调用。',true);
     let project=state.project;
     if(!project?.id)return toast('请先打开项目。',true);
     const normalizeSource=value=>String(value??'').replace(/\r\n?/g,'\n').trim();
@@ -636,6 +652,7 @@
     }
     closeDialog('visualCutModeDialog');
     let startResult, attemptedStart=false;
+    sceneStartLocks206.set(project.id,{sceneId:topSceneDirectory?.current()?.id||''});
     try {
       // Ask before the first state/catalog request so a slow server cannot
       // delay visible feedback after the user's Next click.
@@ -1106,7 +1123,7 @@
   }
   function routeOptions234(media,value,settings=state.project?.settings||{}) {
     return ModelPresentation.availableRoutes(state.profile,media,settings)
-      .map(([id,name])=>`<option value="${id}" ${id===value?'selected':''}>${name}</option>`).join('')
+      .map(([id,name])=>`<option value="${esc(id)}" ${id===value?'selected':''}>${esc(name)}</option>`).join('')
       || '<option value="" disabled>暂无已发布线路</option>';
   }
   function modelRoute234(media, model, fallback) { return ModelPresentation.routeForModel(state.profile,media,model,fallback); }
@@ -1317,7 +1334,7 @@
   function workflowImageCredit(button) {
     const episodeId=button.closest('.visual-episode-card')?.dataset.episode,recoveryUrl=button.id==='generateVisualCover'?'/api/visual/cover/generate':episodeId?'/api/visual/episode/frame':'';
     if(ModelPresentation.pendingImageRecovery(state.project,recoveryUrl,{episodeId}))return CreditGate.FREE;
-    const model = button.closest('.visual-card')?.querySelector('.asset-image-model')?.value
+    const model = (!state.project?.seriesProjectId && button.closest('.visual-card')?.querySelector('.asset-image-model')?.value)
       || (button.id === 'generateVisualCover' ? $('coverImageModel')?.value : '') || selectedModel('image');
     if(ModelPresentation.isLiveQuote(state.profile,'image',model))return CreditGate.QUOTE;
     return ModelPresentation.imageQuote(state.profile || {},model,$('visualImageResolution').value,1)?.points ?? null;
@@ -1343,7 +1360,7 @@
     // An executing episode is already reserved and must not count again when
     // the user adds other selected episodes to the concurrent queue.
     if (video && !cards.length) return CreditGate.FREE;
-    const costs = cards.map(node => video ? workflowVideoCredit(node.querySelector('.video-generate')) : workflowImageCredit(node.querySelector('.asset-generate')));
+    const costs = cards.map(node => video ? workflowVideoCredit(node.querySelector('.video-generate')) : state.project?.seriesProjectId && state.project.assets?.[node.dataset.kind]?.some(item=>item.id===node.dataset.id&&item.imageFile) ? CreditGate.FREE : workflowImageCredit(node.querySelector('.asset-generate')));
     const blockedCard=video && cards.find(node=>node.querySelector('.video-generate')?.dataset.creditReason);
     if (blockedCard) button.dataset.creditReason=`所选视频卡尚不能生成：第${blockedCard.dataset.cutNumber || '?'}集${blockedCard.querySelector('.video-generate').dataset.creditReason}`;
     else delete button.dataset.creditReason;
@@ -1505,7 +1522,7 @@
     select.disabled = actual != null || Boolean(info.fixed);
     let note = select.parentElement.querySelector('.video-duration-notice');
     if (!note) { note = document.createElement('small'); note.className = 'video-duration-notice'; note.setAttribute('aria-live','polite'); select.insertAdjacentElement('afterend',note); }
-    note.textContent = actual != null ? `${actual !== output ? `本卡剧情实际${actual}秒，生成${output}秒；原镜头时长不变，末镜既有落幅保持${output-actual}秒。` : `本卡按剧情实际${actual}秒生成，时长已锁定，不拉长凑满。`}${issue ? `${issue} 请更换支持${output}秒的模型。` : ![15,30].includes(output) ? '仅可使用支持此秒数的按秒计费模型。' : ''}` : issue || (info.fixed ? `该模型固定生成${info.fixed}秒。` : '');
+    note.textContent = actual != null ? `${actual !== output ? `本卡剧情实际${actual}秒，生成${output}秒；原镜头时长不变，末镜既有落幅保持${output-actual}秒。` : `本卡按剧情实际${actual}秒生成，时长已锁定，不拉长凑满。`}${issue ? `${issue} 请更换支持${output}秒的模型。` : ''}` : issue || (info.fixed ? `该模型固定生成${info.fixed}秒。` : '');
     note.hidden = !note.textContent;
     let apply = select.parentElement.querySelector('.video-duration-adopt');
     if (!apply) {
@@ -1535,7 +1552,7 @@
     syncResolutionOptions(resolutionSelect, model, oldResolution);
     if (state.project) updateEstimate();
   }
-  function projectSettings() { const style = $("visualStyle").value; return { creationMode: state.project?.settings?.creationMode || "asset_first", continuity: false, style, styleSpec: state.styles.find(item => item.id === style) || state.project?.settings?.styleSpec, roleLayout: $("visualRoleLayout").value, sceneLayout: $("visualSceneLayout").value, eyeMask: $("visualEyeMask").checked, eyeMaskMode: $("visualEyeMaskMode")?.value || "white", imageRouteType: $("visualImageRouteType").value, imageTier: selectedTier("image"), imageModel: selectedModel("image"), imageResolution: $("visualImageResolution").value, videoRouteType: $("visualVideoRouteType").value, videoTier: selectedTier("video"), videoModel: selectedModel("video"), videoDuration: configuredVideoDuration($("visualVideoDuration")), resolution: $("visualResolution").value, ratio: $("visualVideoRatio").value }; }
+  function projectSettings() { const style = $("visualStyle").value, videoModel = selectedModel("video"); return { creationMode: state.project?.settings?.creationMode || "asset_first", continuity: false, style, styleSpec: state.styles.find(item => item.id === style) || state.project?.settings?.styleSpec, roleLayout: $("visualRoleLayout").value, sceneLayout: $("visualSceneLayout").value, eyeMask: $("visualEyeMask").checked, eyeMaskMode: $("visualEyeMaskMode")?.value || "white", imageRouteType: $("visualImageRouteType").value, imageTier: selectedTier("image"), imageModel: selectedModel("image"), imageResolution: $("visualImageResolution").value, videoRouteType: ModelPresentation.legacyRouteForModel(state.profile,"video",videoModel,$("visualVideoRouteType").value), videoTier: selectedTier("video"), videoModel, videoDuration: configuredVideoDuration($("visualVideoDuration")), resolution: $("visualResolution").value, ratio: $("visualVideoRatio").value }; }
   function imageModelOptions(selected = "", explicitRoute = null) {
     const chosen=selected || (explicitRoute ? '' : selectedModel('image'));
     const route=activeRoute234('image',explicitRoute || modelRoute234('image',chosen,$('visualImageRouteType')?.value));
@@ -1969,6 +1986,12 @@
     const values = exact || Array.from({length:Math.max(0,Math.min(3600,info.maximum-info.minimum+1))},(_,index)=>info.minimum+index);
     return [...new Set(values.filter(value=>Number.isInteger(value) && !ModelPresentation.videoDurationIssue(state.profile,model,value)))].sort((a,b)=>a-b);
   }
+  function declaresVideoDuration(ability, duration) {
+    const {supportedDurations, minDurationSeconds, maxDurationSeconds} = ability;
+    if (Array.isArray(supportedDurations) && supportedDurations.length) return supportedDurations.includes(duration);
+    return Number.isFinite(minDurationSeconds) && Number.isFinite(maxDurationSeconds)
+      && minDurationSeconds <= duration && duration <= maxDurationSeconds;
+  }
   function adaptiveVideoIssue(item, model, duration, resolution) {
     const actual = adaptiveEpisodeDuration(item);
     if (actual == null) return '';
@@ -1976,10 +1999,12 @@
     if (Number(duration) !== output) return `本卡实际${actual}秒，生成时长已锁定；不能改为${duration}秒或拉长凑满。`;
     const durationIssue = ModelPresentation.videoDurationIssue(state.profile,model,output);
     if (durationIssue) return `本卡须精确生成${output}秒。${durationIssue} 请更换模型，不自动改为更长档位。`;
-    if (actual !== output && !(ability.supportedDurations?.includes(output)
-        || Number.isFinite(ability.minDurationSeconds) && Number.isFinite(ability.maxDurationSeconds))) return `所选模型未明确发布生成${output}秒的能力。`;
-    const price = ModelPresentation.quote(state.profile,model,resolution,output,"economy",episodeVideoSettings(item).ratio);
-    if (price?.billingMode === 'flat' && ![15,30].includes(output)) return `本卡实际${actual}秒，生成${output}秒只能使用按秒计费模型；请更换模型，不自动拉长。`;
+    if (declaresVideoDuration(ability, output)) return '';
+    if (actual !== output) return `所选模型未明确发布生成${output}秒的能力。`;
+    if (![15,30].includes(output)) {
+      const price = ModelPresentation.quote(state.profile,model,resolution,output,"economy",episodeVideoSettings(item).ratio);
+      if (price?.billingMode === 'flat') return `所选按次模型未明确发布生成${output}秒的能力，请更换支持该时长的模型。`;
+    }
     return '';
   }
   function adaptiveModelIssue(item, model) {
@@ -1988,11 +2013,12 @@
     const output = adaptiveGenerationDuration(item), ability = videoCapability(model);
     const durationIssue = ModelPresentation.videoDurationIssue(state.profile,model,output);
     if (durationIssue) return `不支持本卡生成${output}秒`;
-    if (actual !== output && !(ability.supportedDurations?.includes(output)
-        || Number.isFinite(ability.minDurationSeconds) && Number.isFinite(ability.maxDurationSeconds))) return `未发布生成${output}秒能力`;
+    if (declaresVideoDuration(ability, output)) return '';
+    if (actual !== output) return `未发布生成${output}秒能力`;
+    if ([15,30].includes(output)) return '';
     const prices = [...new Set((state.profile.videoPricing ?? state.profile.visualVideoPricing ?? []).map(row=>String(row.resolution).toLowerCase()))]
       .map(resolution=>ModelPresentation.quote(state.profile,model,resolution,output,"economy",episodeVideoSettings(item).ratio)).filter(Boolean);
-    if (![15,30].includes(output) && prices.length && prices.every(row=>row.billingMode==='flat')) return '本卡仅可用按秒模型';
+    if (prices.length && prices.every(row=>row.billingMode==='flat')) return `按次模型未发布生成${output}秒能力`;
     return '';
   }
   function episodeCompatibleVideoChoices(item, ratio = episodeVideoSettings(item).ratio) {
@@ -2012,21 +2038,23 @@
     });
   }
   function episodeVideoSettings(item) {
-    const global = state.project?.settings || {}, saved = item.videoSettings || {};
+    const global = state.project?.settings || {};
+    const series=Boolean(state.project?.seriesProjectId),saved=series?{}:item.videoSettings||{};
     const catalog = ModelPresentation.catalog(state.profile, "video", global);
     const fallbackModel = selectedModel("video") || catalog[0]?.id || "";
-    const model = String(saved.videoModel || item.videoModel || global.videoModel || fallbackModel);
+    const model = String(saved.videoModel || (!series&&item.videoModel) || global.videoModel || fallbackModel);
     const matched = catalog.find(value => value.id === model);
     return {
       model,
-      tier: String(saved.videoTier || item.videoTier || global.videoTier || matched?.tier || selectedTier("video") || "economy"),
-      resolution: String(saved.resolution || item.resolution || global.resolution || $("visualResolution").value || "480p").toLowerCase(),
-      duration: adaptiveGenerationDuration(item) ?? Number(saved.duration || item.duration || item.durationSeconds || global.videoDuration || $("visualVideoDuration").value || 15),
-      ratio: String(saved.ratio || item.ratio || global.ratio || $("visualVideoRatio").value || "9:16"),
+      tier: String(saved.videoTier || (!series&&item.videoTier) || global.videoTier || matched?.tier || selectedTier("video") || "economy"),
+      resolution: String(saved.resolution || (!series&&item.resolution) || global.resolution || $("visualResolution").value || "480p").toLowerCase(),
+      duration: adaptiveGenerationDuration(item) ?? Number(saved.duration || (!series&&item.duration) || item.durationSeconds || global.videoDuration || $("visualVideoDuration").value || 15),
+      ratio: String(saved.ratio || (!series&&item.ratio) || global.ratio || $("visualVideoRatio").value || "9:16"),
     };
   }
   function episodeModelOptions(item, explicitRoute = null) {
-    const settings = episodeVideoSettings(item), route = activeRoute234('video',explicitRoute || modelRoute234("video",settings.model,item.videoSettings?.videoRouteType || state.project?.settings?.videoRouteType)), catalog = ModelPresentation.routeModels(state.profile, "video", route, state.project?.settings || {});
+    const ownRoute=state.project?.seriesProjectId?'':item.videoSettings?.videoRouteType;
+    const settings = episodeVideoSettings(item), route = activeRoute234('video',explicitRoute || modelRoute234("video",settings.model,ownRoute || state.project?.settings?.videoRouteType)), catalog = ModelPresentation.routeModels(state.profile, "video", route, state.project?.settings || {});
     if(explicitRoute)settings.model="";
     const choices = episodeCompatibleVideoChoices(item), actual = adaptiveEpisodeDuration(item);
     const retired = settings.model && !catalog.some(value=>value.id===settings.model)
@@ -2476,6 +2504,7 @@
     captureAssetDrafts();
     assetCardNodes231.clear();
     projectReadEpoch++;state.project=project;localStorage.setItem('dramaVisualProjectId',project.id);
+    syncSeriesContext282(project);
     for(const [id,kind] of [['visualPeople','people'],['visualScenes','scenes'],['visualProps','props']]){
       const signature=JSON.stringify([project.id,project.assets[kind],project.settings,kind==='people'?[...characterVariantSelection].filter(([key])=>key.startsWith(project.id+':')):null]);
       setSectionMarkup251($(id),signature,()=>kind==='people'?characterRoots(project).map(characterCard).join(''):(project.assets[kind]||[]).map(item=>card(item,kind)).join(''));
@@ -2494,6 +2523,7 @@
     $('visualStudioControls').classList.remove('hidden');
     enhanceAssetHistory(project);
     window.CompactAssets205?.enhance(project);
+    assetTools283.syncSelection();
     updateSourceSaveState();
   }
   function projectThumbnail233(item) {
@@ -2513,10 +2543,118 @@
     preview.querySelector('figcaption span').textContent='预览暂不可用';image.hidden=true;
   },true);
   function projectCard(item) {
-    const count=item.cardCount??item.episodeCount??0,progress=item.videoCount?`已生成 ${item.videoCount}/${count} 个视频`:item.imageCount?`已生成 ${item.imageCount} 张参考图`:'等待生成参考图';
-    return `<article class="visual-project-card" data-project-id="${esc(item.id)}">${projectThumbnail233(item)}<div class="visual-project-info233"><span>${esc(item.style || 'live_action')}</span><b>${esc(item.projectName)}</b><small>${esc(item.updatedAt || item.createdAt || '')}</small></div><p>${item.macroSceneCount?`${item.macroSceneCount}场 · `:''}${count}张视频卡 · ${item.peopleCount}人 · ${item.sceneCount}景 · ${item.propCount}物</p><div class="visual-project-progress"><i style="width:${count?Math.round(item.videoCount/count*100):0}%"></i></div><footer><span>${progress}</span><div class="visual-project-actions"><button type="button" class="secondary-btn open-visual-project">继续制作</button><button type="button" class="primary-btn project-cover-action">${item.hasCover?'查看／重做海报':'一键生成海报'}</button><button type="button" class="ghost-btn edit-visual-project">编辑设置</button><button type="button" class="danger-outline-btn delete-visual-project">删除</button></div></footer></article>`;
+    const series=item.seriesManaged===true;
+    const count=item.cardCount??item.episodeCount??0,progress=item.videoCount?`已生成 ${item.videoCount}/${count} 个视频`:item.imageCount?`已生成 ${item.imageCount} 张参考图`:series?'等待制作':'等待生成参考图';
+    const location=series?`${item.episodeTotal||0} 集 · `:item.macroSceneCount?`${item.macroSceneCount}场 · `:'';
+    return `<article class="visual-project-card" data-project-id="${esc(item.id)}" data-series-managed="${series}">${projectThumbnail233(item)}<div class="visual-project-info233"><span>${esc(item.style || 'live_action')}</span><b>${esc(item.projectName)}</b><small>${esc(item.updatedAt || item.createdAt || '')}</small></div><p>${location}${count}张视频卡 · ${item.peopleCount||0}人 · ${item.sceneCount||0}景 · ${item.propCount||0}物</p><div class="visual-project-progress"><i style="width:${count?Math.round(item.videoCount/count*100):0}%"></i></div><footer><span>${progress}</span><div class="visual-project-actions"><button type="button" class="secondary-btn open-visual-project">${series?'管理剧集':'继续制作'}</button>${series?'':'<button type="button" class="ghost-btn convert-visual-project">转为多剧集</button>'}${series?'':`<button type="button" class="primary-btn project-cover-action">${item.hasCover?'查看／重做海报':'一键生成海报'}</button>`}<button type="button" class="ghost-btn edit-visual-project">${series?'整剧设置':'编辑设置'}</button><button type="button" class="danger-outline-btn delete-visual-project">${series?'移除':'删除'}</button></div></footer></article>`;
+  }
+  const seriesView282=window.WorkflowSeries282.create({
+    root:$('visualSeries282'),dialog:$('visualSeriesEpisodeDialog282'),request:seriesRequest282,
+    openWorkspace:openSeriesEpisode282,showDialog:()=>showDialog('visualSeriesEpisodeDialog282'),
+    closeDialog:()=>closeDialog('visualSeriesEpisodeDialog282'),editSettings:editSeriesSettings282,
+    back:()=>setProjectCenter(true),confirm:(...args)=>studioConfirm(...args),notify:toast,changed:()=>loadProjects()
+  });
+  const seriesAssets282=window.WorkflowSeries282.createAssetSelection({
+    root:$('visualSeriesAssets282'),
+    save:(project,referenceAssetIds)=>saveSeriesAssets282(project,'assets',{referenceAssetIds}),
+    resolve:(project,choices)=>saveSeriesAssets282(project,'assets/resolve',{choices,sourceHash:project.episodeAssetPendingSourceHash282})
+  });
+  const assetTools283=window.AssetTools283.create({
+    project:()=>state.project,request:async(url,body)=>{
+      try{return await seriesRequest282(url,body);}
+      catch(error){if(error instanceof SyntaxError)throw Error('资产操作接口暂不可用，请刷新或更新客户端后重试。');throw error;}
+    },notify:toast,
+    media:(file,id)=>'/api/visual/media?'+new URLSearchParams({projectId:id,file}).toString(),
+    isBusy:(kind,id)=>Boolean(state.activeAssetJobs.get(kind+':'+id)?.active),
+    beforeMerge:async(kind,ids)=>{
+      if(macroInlineView?.hasUnsavedDrafts?.()){toast('当前分镜或引用有未保存修改，请先保存后合并资产。',true);return false;}
+      const changed=ids.some(id=>{
+        const node=[...document.querySelectorAll('.visual-card')].find(row=>row.dataset.kind===kind&&row.dataset.id===id);
+        const item=state.project?.assets?.[kind]?.find(row=>row.id===id);if(!node||!item)return true;
+        if(String(node.querySelector('.visual-asset-prompt')?.value||'')!==String(item.prompt||''))return true;
+        const speech=kind==='people'?characterSpeech248(item):null;
+        return speech&&Object.entries(speechFields251).some(([key,selector])=>{const field=node.querySelector(selector);return field&&String(field.value).trim()!==String(speech[key]||'').trim();});
+      });
+      if(changed){toast('所选资产有未保存的描述词或声音设定，请先在编辑区保存后合并。',true);return false;}
+      return await flushSourceAutosave();
+    },
+    refresh:async id=>{
+      if(state.project?.id!==id)return;
+      await reloadProject();
+      if(state.project?.id===id&&!macroInlineView?.hasUnsavedDrafts?.())await macroInlineView?.refresh?.().catch(error=>toast('资产已保存，分镜引用显示稍后刷新：'+error.message,true));
+    }
+  });
+  let seriesNavigation282=0,projectListRead282=0,seriesSettingsTarget282=null;
+  let deletedSeries282=[],deletedSeriesBusy282=false;
+  const seriesHandoffs282=new Map();
+  const seriesHandoffKey282=id=>'visualSeriesHandoff282:'+id;
+  async function seriesRequest282(url,body){
+    if(url==='/api/visual/series/episode/delete'&&body?.episodeId===state.project?.id){
+      if(!canLeaveWorkspace282('')||!await confirmDiscardSource())throw Error('请先保存本集修改，再移除剧集。');
+    }
+    const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(body===undefined?20000:45000),
+      ...(body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});
+    const data=await response.json();
+    if(!response.ok||data.ok===false)throw Error(data.error||'剧集操作暂未完成，请稍后重试。');
+    if(url==='/api/visual/series/episode/delete'&&body?.episodeId===state.project?.id)releaseSeriesWorkspace282();
+    return data;
+  }
+  function releaseSeriesWorkspace282(){
+    const id=state.project?.id;
+    sourceReadEpoch++;projectReadEpoch++;sourceBindingEpoch226++;clearTimeout(sourceAutosaveTimer);
+    if(id)sourceAutosavePending.delete(id);
+    macroInlineView?.destroy();macroInlineView=null;state.macroViewingId='';
+    legacyCardsView231?.destroy();legacyCardsView231=null;
+    state.project=null;state.sourceProjectId='';state.sourceBaseline='';$('visualSource').value='';
+    localStorage.removeItem('dramaVisualProjectId');$('visualStudioControls').classList.add('hidden');
+    $('workflowSceneStart').hidden=true;$('macroInlineWorkspace').hidden=true;topSceneDirectory?.setData(null,{});
+    syncSeriesContext282(null);
+  }
+  function paintSeriesAssets282(project){seriesAssets282.paint(project);}
+  async function saveSeriesAssets282(project,action,selection){
+    if(state.project?.id!==project.id||!await flushSourceAutosave()||state.project?.id!==project.id)return false;
+    const context=sourceEditorContext();
+    const sourceText=storedProjectSource(state.project);
+    if(!sourceText.trim())throw Error('请先填写并保存本集原稿。');
+    const data=await seriesRequest282('/api/visual/series/episode/'+action,{projectId:project.id,sourceText,...selection});
+    if(!sameSourceEditor(context))return false;
+    if(data.project?.id!==project.id||data.project.seriesProjectId!==project.seriesProjectId)throw Error('资产返回与本集不一致。');
+    render(data.project);
+    return true;
+  }
+  function syncSeriesContext282(project){
+    const seriesId=project?.seriesProjectId;
+    document.body.dataset.seriesWorkspace=seriesId?'1':'0';
+    $('visualSeriesContext282').hidden=!seriesId;
+    $('visualSeriesEpisodeName282').textContent=seriesId
+      ? (project.seriesProjectName||project.projectName)+' · 第 '+project.seriesEpisodeNumber+' 集'+(project.seriesEpisodeTitle?' · '+project.seriesEpisodeTitle:''):'';
+    const sourceLabel=seriesId?'本集原稿':'全剧原稿';
+    $('visualScriptLabel282').textContent=sourceLabel;
+    $('visualSource').setAttribute('aria-label',sourceLabel);
+    $('visualSource').placeholder=seriesId?'请输入或粘贴本集剧本，原稿自动保存。':'请直接输入或粘贴完整剧本；原稿自动保存，点击“提取大纲”后开始规划故事主题。';
+    const allScope=document.querySelector('input[name="storyboardScope"][value="all"]')?.closest('label');
+    if(allScope){allScope.querySelector('b').textContent=seriesId?'补齐本集所有场次':'补齐整部剧';allScope.querySelector('small').textContent=seriesId?'仅处理当前剧集，按场次顺序补齐；其他剧集分别制作':'按剧集顺序逐集补齐；每集完成立即显示，再继续下一集';}
+    paintSeriesAssets282(project);
+  }
+  async function showSeries282(project,data){
+    const ticket=++seriesNavigation282;
+    if(!canLeaveWorkspace282('')||!await confirmDiscardSource()||ticket!==seriesNavigation282)return false;
+    for(const video of document.querySelectorAll('#macroInlineWorkspace video,#visualEpisodes video'))try{video.pause();}catch(_){}
+    document.body.classList.remove('visual-center-view');
+    document.body.classList.add('visual-series-view282');
+    $('visualProjectCenter').classList.add('hidden');
+    $('visualProjectCoverEditor').classList.add('hidden');
+    const heading=document.querySelector('.visual-studio-intro');
+    heading.querySelector('h1').textContent='剧集管理';
+    heading.querySelector('p').textContent='各集独立制作，共用整剧设置和人物、场景、物品。';
+    if(window.parent!==window)window.parent.postMessage({type:'visual-center-state',open:true},location.origin);
+    window.scrollTo({top:0,behavior:'smooth'});
+    return seriesView282.show(project,data);
   }
   function setProjectCenter(open) {
+    seriesNavigation282++;
+    seriesView282.clear();
+    document.body.classList.remove('visual-series-view282');
     if(open)for(const video of document.querySelectorAll('#macroInlineWorkspace video,#visualEpisodes video'))try{video.pause();}catch(_){}
     document.body.classList.toggle("visual-center-view", open);
     $("visualProjectCenter").classList.toggle("hidden", !open);
@@ -2557,8 +2695,22 @@
     for(const node of Array.from(list.children))if(!kept.has(node))node.remove();
     list._projectMarkup233=signature;
   }
-  function renderProjects(confirmedProjectList) { const items = state.projects || []; const totalEpisodes = items.reduce((sum, item) => sum + (item.cardCount??item.episodeCount??0), 0); const active = items.filter(item => item.videoCount < (item.cardCount??item.episodeCount??0)).length; const stats=`<span><b>${items.length}</b> 个项目</span><span><b>${totalEpisodes}</b> 张视频卡</span><span><b>${active}</b> 个制作中</span>`;if($('visualProjectStats')._projectMarkup233!==stats){$('visualProjectStats').innerHTML=stats;$('visualProjectStats')._projectMarkup233=stats;}renderProjectCards233(items,confirmedProjectList); }
-  async function loadProjects() { try { const response = await fetch("/api/visual/projects", { cache: "no-store" }); const data = await response.json(); if (!response.ok) throw new Error(data.error || "无法读取短剧项目"); state.projects = data.projects || []; renderProjects(Array.isArray(data.projects)); } catch (error) { const list=$("visualProjectList");list._projectMarkup233=null;list.innerHTML = `<div class="visual-empty">${esc(error.message)}</div>`; } }
+  function renderProjects(confirmedProjectList) { const items = state.projects || []; const totalEpisodes = items.reduce((sum, item) => sum + (item.cardCount??item.episodeCount??0), 0); const seriesEpisodes=items.reduce((sum,item)=>sum+(item.seriesManaged?Number(item.episodeTotal)||0:0),0);const active = items.filter(item => item.videoCount < (item.cardCount??item.episodeCount??0)).length; const stats=`<span><b>${items.length}</b> 个项目</span>${items.some(item=>item.seriesManaged)?`<span><b>${seriesEpisodes}</b> 集</span>`:''}<span><b>${totalEpisodes}</b> 张视频卡</span><span><b>${active}</b> 个制作中</span>`;if($('visualProjectStats')._projectMarkup233!==stats){$('visualProjectStats').innerHTML=stats;$('visualProjectStats')._projectMarkup233=stats;}renderProjectCards233(items,confirmedProjectList);$('visualDeletedSeries282').hidden=!deletedSeries282.length; }
+  async function loadProjects() {
+    const ticket=++projectListRead282;
+    try {
+      const response=await fetch('/api/visual/projects',{cache:'no-store'});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||'无法读取短剧项目');
+      if(ticket!==projectListRead282)return;
+      state.projects=Array.isArray(data.projects)?data.projects:[];
+      deletedSeries282=Array.isArray(data.deletedSeries)?data.deletedSeries:[];
+      renderProjects(Array.isArray(data.projects));
+    }catch(error){
+      if(ticket!==projectListRead282)return;
+      const list=$('visualProjectList');list._projectMarkup233=null;list.innerHTML=`<div class="visual-empty">${esc(error.message)}</div>`;
+    }
+  }
   async function readProject223(id) {
     const abort=new AbortController();let timer;
     const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{abort.abort();reject(new Error('项目读取暂时超时，当前已打开的内容仍保留，请稍后重试。'));},20000);});
@@ -2572,21 +2724,87 @@
     try{return await Promise.race([read,timeout]);}finally{clearTimeout(timer);}
   }
   async function openProject(id) {
-    if(!await confirmDiscardSource('打开其他项目'))return;
+    return openWorkspace282(id);
+  }
+  function canLeaveWorkspace282(id) {
+    if(state.project?.id===id || !macroInlineView?.hasUnsavedDrafts?.())return true;
+    toast('当前集有未保存的分镜、引用或卡片原文，请先在对应卡片保存。',true);
+    return false;
+  }
+  async function openWorkspace282(id,{seriesId='',stage,current=()=>true}={}) {
+    if(!canLeaveWorkspace282(id)||!await confirmDiscardSource('打开其他项目')||!current())return false;
     const context=sourceEditorContext(),epoch=++sourceReadEpoch;
     try {
       await settingsSaveQueue.catch(() => {});
       const data = await readProject223(id);
-      if(sourceReadEpoch!==epoch || context.sourceText!==String($('visualSource').value||''))return;
-      try { activateProject(data.project); }
-      catch (error) { toast('已读取项目，打开界面时出错：'+error.message,true); return; }
-      $("visualSourceHint").textContent = `已打开项目：${data.project.projectName}`;
+      if(!current()||sourceReadEpoch!==epoch||context.sourceText!==String($('visualSource').value||''))return false;
+      if(seriesId&&data.project.seriesProjectId!==seriesId)throw Error('剧集归属与当前项目不一致，未切换。');
+      if(!canLeaveWorkspace282(id))return false;
+      const handoff=seriesId&&storedProjectSource(data.project)===''?readSeriesHandoff282(seriesId):null;
+      try {activateProject(data.project,{stage,draft:handoff||null});}
+      catch(error){throw Error('已读取项目，打开界面时出错：'+error.message);}
+      if(handoff&&persistSourceDraft())clearSeriesHandoff282(seriesId);
+      $("visualSourceHint").textContent=seriesId?`已打开第 ${data.project.seriesEpisodeNumber} 集。`:`已打开项目：${data.project.projectName}`;
       setProjectCenter(false);
       $("visualWorkflowSteps").scrollIntoView({behavior:"smooth",block:"start"});
-    } catch (error) { if(sourceReadEpoch===epoch&&context.sourceText===String($('visualSource').value||''))toast(error.message, true); }
+      return true;
+    }catch(error){
+      if(!current()||sourceReadEpoch!==epoch||context.sourceText!==String($('visualSource').value||''))return false;
+      if(seriesId)throw error;
+      toast(error.message,true);
+      return false;
+    }
+  }
+  function readSeriesHandoff282(id){
+    if(seriesHandoffs282.has(id))return seriesHandoffs282.get(id);
+    try {
+      const data=JSON.parse(localStorage.getItem(seriesHandoffKey282(id))||'null');
+      if(typeof data?.sourceText==='string'&&data.sourceText.trim())return data;
+    }catch(_){}
+    return null;
+  }
+  function clearSeriesHandoff282(id){
+    seriesHandoffs282.delete(id);
+    try{localStorage.removeItem(seriesHandoffKey282(id));}catch(_){}
+  }
+  function openSeriesEpisode282(project,row,sharedAssets,current){
+    return openWorkspace282(row.id,{seriesId:project.id,stage:sharedAssets?2:undefined,current});
+  }
+  async function convertSeries282(id){
+    const ticket=++seriesNavigation282;
+    if(!await studioConfirm('将此项目转为多剧集？现有原稿、分镜、视频和任务记录会保留为第 1 集。',{title:'转为多剧集'}))return;
+    if(ticket!==seriesNavigation282||!canLeaveWorkspace282('')||!await confirmDiscardSource())return;
+    try{
+      const data=await seriesRequest282('/api/visual/series/convert',{projectId:id});
+      if(ticket===seriesNavigation282)await showSeries282(data.project,data);
+      void loadProjects();
+    }catch(error){if(ticket===seriesNavigation282)toast(error.message,true);}
+  }
+  async function removeSeries282(id){
+    if(!await studioConfirm('移除这个项目及其剧集？原稿、视频和任务记录保留，可从“已移除项目”恢复。',{title:'移除项目'}))return;
+    if(state.project?.seriesProjectId===id&&(!canLeaveWorkspace282('')||!await confirmDiscardSource()))return;
+    try{
+      await seriesRequest282('/api/visual/series/delete',{projectId:id});
+      if(state.project?.seriesProjectId===id){
+        releaseSeriesWorkspace282();setProjectCenter(true);
+      }
+      await loadProjects();
+      toast('项目已移除，可随时恢复。');
+    }catch(error){toast(error.message,true);}
+  }
+  function showDeletedSeries282(){
+    const list=$('visualDeletedSeriesList282');
+    list.replaceChildren(...deletedSeries282.map(item=>{
+      const row=document.createElement('article');row.className='series-episode282';
+      const info=document.createElement('strong');info.textContent=item.projectName+' · '+(item.episodeTotal||0)+' 集';
+      const button=document.createElement('button');button.type='button';button.className='secondary-btn';button.textContent='恢复';button.dataset.seriesRestore=item.id;
+      row.append(info,button);return row;
+    }));
+    if(!deletedSeries282.length)list.textContent='暂无已移除项目。';
+    showDialog('visualDeletedSeriesDialog282');
   }
   async function openCoverEditor(id) {
-    if(!await confirmDiscardSource('打开项目海报'))return;
+    if(!canLeaveWorkspace282(id)||!await confirmDiscardSource('打开项目海报'))return;
     const context=sourceEditorContext(),epoch=++sourceReadEpoch;
     try {
       await settingsSaveQueue.catch(() => {});
@@ -2750,6 +2968,7 @@
     CreditGate.recalculate?.();
   }
   function renderScriptAlignment(project) {
+    if(scriptReview286&&!sameSourceEditor(scriptReview286.context))hideScriptReview286();
     const panel=$('visualScriptAlignment');if(!panel)return;
     const record=project?.workflowScriptAlignment;
     panel.hidden=!record?.executionSource;if(panel.hidden)return;
@@ -2759,8 +2978,69 @@
     $('visualScriptAlignmentSummary').textContent=current?`${summary.speakers||0}个说话人 · ${summary.utterances||0}段台词${summary.reviewCount?` · 待确认原稿第${(record.reviewLines||[]).join('、')}行`:''}`:'原稿已修改，下面仅为上次执行稿';
     $('visualScriptAlignmentText').value=record.executionSource;
   }
+  let scriptReview286 = null;
+  const reviewLabels286 = {heading:'集场标题',metadata:'背景与制作说明',action:'动作与叙述',
+    dialogue:'人物对白',voice:'旁白或画外音',screen:'画面文字',review:'待确认'};
+  function hideScriptReview286(){scriptReview286=null;$('workflowScriptReview286').hidden=true;}
+  function renderScriptReview286(data,context){
+    scriptReview286={data,context};
+    const counts=Object.entries(data.counts||{}).map(([type,count])=>`${reviewLabels286[type]} ${count} 行`).join(' · ');
+    const status=data.unmappedCount?'有歧义行无法定位到原稿，请先补充明确标签。':
+      data.unresolvedCount?`有 ${data.unresolvedCount} 行要确认。标注仅用于分镜，原稿保留。`:'格式检查通过。下面是各类内容的原稿示例。';
+    $('workflowScriptReviewSummary286').textContent=[counts,status].filter(Boolean).join('。');
+    $('workflowScriptReviewRows286').innerHTML=data.rows.map(row=>{
+      const line=`第 ${esc(row.line)} 行`,choiceLabels={voice:'系统播报（画外音）',screen:'屏幕文字',dialogue:'人物对白',action:'动作与叙述'};
+      return `<div class="workflow-script-line286"><div><b>${line} · ${esc(row.decision?'已确认':reviewLabels286[row.type])}</b><p>${esc(row.text)}</p>${row.choices?`<button class="ghost-btn" type="button" data-review-locate286="${esc(row.line)}">定位原稿</button>`:''}</div>${row.choices?`<select name="${esc(row.line)}" aria-label="${line}的内容类型" required><option value="">请选择</option>${row.choices.map(choice=>`<option value="${esc(choice)}" ${row.decision===choice?'selected':''}>${esc(choiceLabels[choice])}</option>`).join('')}</select>`:''}</div>`;
+    }).join('');
+    $('saveWorkflowScriptReview286').hidden=!!data.unmappedCount||!data.rows.some(row=>row.choices);
+    $('workflowScriptReview286').hidden=false;
+  }
+  async function checkWorkflowScript286({onlyIssues=false}={}){
+    if(!await flushSourceAutosave())return false;
+    const context=sourceEditorContext();
+    if(!context.projectId||!context.sourceText.trim())throw Error('请先保存剧本，再检查格式。');
+    const response=await fetch('/api/visual/project/script-review?'+new URLSearchParams({projectId:context.projectId}),
+      {cache:'no-store',signal:AbortSignal.timeout(20000)});
+    const data=await response.json();
+    if(!sameSourceEditor(context))return false;
+    if(!response.ok)throw Error(data.error||'暂时无法检查剧本格式。');
+    const ready=!data.unresolvedCount&&!data.unmappedCount;
+    if(onlyIssues&&ready)return true;
+    setWorkflowStage(1,{scroll:true});
+    renderScriptReview286(data,context);
+    $('workflowScriptReviewTitle286').focus();
+    return ready;
+  }
+  $('checkWorkflowScript286')?.addEventListener('click',event=>workflowAction(event.currentTarget,()=>checkWorkflowScript286()));
+  $('closeWorkflowScriptReview286')?.addEventListener('click',hideScriptReview286);
+  $('workflowScriptReviewRows286')?.addEventListener('click',event=>{
+    const number=Number(event.target.closest('[data-review-locate286]')?.dataset.reviewLocate286);
+    if(!number||!scriptReview286||!sameSourceEditor(scriptReview286.context))return;
+    const input=$('visualSource'),lines=input.value.split('\n');
+    const offset=lines.slice(0,number-1).reduce((count,line)=>count+line.length+1,0);
+    input.focus();input.setSelectionRange(offset,offset+(lines[number-1]?.length||0));
+    const lineHeight=parseFloat(getComputedStyle(input).lineHeight)||24;
+    input.scrollTop=Math.max(0,lineHeight*(number-2));
+  });
+  $('workflowScriptReviewForm286')?.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const current=scriptReview286;
+    if(!current||!sameSourceEditor(current.context))return hideScriptReview286();
+    const button=$('saveWorkflowScriptReview286');if(button.disabled)return;
+    const decisions=Object.fromEntries(new FormData(event.currentTarget));
+    button.disabled=true;
+    try{
+      const data=await post('/api/visual/project/script-review',{
+        projectId:current.context.projectId,reviewId:current.data.reviewId,decisions});
+      if(scriptReview286===current&&sameSourceEditor(current.context)){
+        renderScriptReview286(data,current.context);
+        toast('格式确认已保存，可以继续补齐分镜。');
+      }
+    }catch(error){if(sameSourceEditor(current.context))toast(error.message,true);}
+    finally{button.disabled=false;}
+  });
   $('visualSource').addEventListener('paste',()=>{const input=$('visualSource');if(!input.value.trim()||(input.selectionStart===0&&input.selectionEnd===input.value.length))markSourceReplacement();});
-  $('visualSource').addEventListener('input',()=>{sourceReadEpoch++;if(!state.sourceProjectId)state.sourceUnassignedOwned269=true;if(state.project?.id)outlineReceipts206.delete(state.project.id);state.timelineModelApproval=null;renderScriptAlignment(state.project);sceneChoiceFinish?.('cancel');scheduleSourceAutosave();});
+  $('visualSource').addEventListener('input',()=>{sourceReadEpoch++;hideScriptReview286();if(!state.sourceProjectId)state.sourceUnassignedOwned269=true;if(state.project?.id)outlineReceipts206.delete(state.project.id);state.timelineModelApproval=null;renderScriptAlignment(state.project);sceneChoiceFinish?.('cancel');scheduleSourceAutosave();});
   $('visualSource').addEventListener('blur',()=>{if(sourceIsDirty())queueSourceAutosave();});
   window.addEventListener('pagehide',persistSourceDraft);
   window.addEventListener('beforeunload',event=>{persistSourceDraft();if(sourceIsDirty()){event.preventDefault();event.returnValue='';}});
@@ -2847,7 +3127,7 @@
     $("cutCustomDurationFields").classList.toggle("hidden", !custom || preset !== "custom");
     $("cutTargetMinutes").disabled = $("cutTargetSeconds").disabled = !custom || preset !== "custom";
     const choice = cutDurationChoice();
-    $('confirmCutModeDialog').textContent=choice.scope==='all'?'开始逐集补齐整部剧':'开始补齐当前集';
+    $('confirmCutModeDialog').textContent=choice.scope==='all'?(state.project?.seriesProjectId?'补齐本集所有场次':'开始逐集补齐整部剧'):(state.project?.seriesProjectId?'补齐当前场次':'开始补齐当前集');
     $("cutDurationSummary").textContent = choice.error || '';
     $("cutDurationSummary").hidden = !choice.error;
     $("cutDurationSummary").classList.toggle("hidden", !choice.error);
@@ -3223,12 +3503,12 @@
     };
     setTimeout(run,500);
   }
-  function freezeAssetRequest(node) {
+  function freezeAssetRequest(node, regenerate = false) {
     const project=state.project,kind=node.dataset.kind,assetId=node.dataset.id;
     if(!project?.id || (node.dataset.projectId && node.dataset.projectId!==project.id))throw Error('素材不属于当前项目，未提交生成。');
     const item=project.assets?.[kind]?.find(value=>value.id===assetId);
     if(!item)throw Error('素材已不存在，未提交生成。');
-    const imageControl=node.querySelector('.asset-image-model'),imageModel=imageControl?imageControl.value:selectedModel('image');
+    const imageControl=project.seriesProjectId?null:node.querySelector('.asset-image-model'),imageModel=imageControl?imageControl.value:selectedModel('image');
     if(imageControl && (!imageControl.value || imageControl.selectedOptions[0]?.disabled))throw Error('当前图片线路没有可用模型，请重新选择；未提交生成。');
     const model=ModelPresentation.catalog(state.profile,'image',project.settings || {}).find(value=>value.id===imageModel);
     if(!model)throw Error('本项图片模型已下架或未配置，请重新选择；未提交生成。');
@@ -3239,11 +3519,11 @@
       size:assetSize(kind),ratio:assetRatio(kind),layout:assetPrompt(kind),assetEyeMask,
       eyeMask:kind==='people' && (Boolean($('visualEyeMask').checked)||assetEyeMask),eyeMaskMode:$('visualEyeMaskMode')?.value || 'white',
       appearanceType:node.querySelector('.asset-appearance-type')?.value || item.generationSettings?.appearanceType || 'auto',
-      ...(styleSnapshot?{styleSnapshot}:{}),
+      ...(styleSnapshot?{styleSnapshot}:{}),...(regenerate?{regenerate:true}:{}),
     }));
   }
   async function assetGenerate(node, shouldRender = true, suppressEyePrompt = false, expectedToken = "", frozenRequest = null, frozenAsset = null) {
-    const request=frozenRequest || freezeAssetRequest(node);
+    const request=frozenRequest || freezeAssetRequest(node,Boolean(state.project?.seriesProjectId && state.project.assets?.[node.dataset.kind]?.find(value=>value.id===node.dataset.id)?.imageFile));
     const {kind,projectId,assetId}=request,jobKey=`${kind}:${assetId}`;
     if(state.project?.id!==projectId&&!frozenAsset)return {cancelled:true};
     const jobs=state.project?.id===projectId?state.activeAssetJobs:workFor(projectId).activeAssetJobs;
@@ -3263,6 +3543,19 @@
     try {
       const {scriptGenerationId230:_scriptIdentity,...generationRequest}=request;
       const data = await post("/api/visual/asset/generate", generationRequest);
+      if(data.reused===true){
+        const saved=data.project?.id===projectId?data.project.assets?.[kind]?.find(value=>value.id===assetId):null;
+        if(!saved?.imageFile||Number(data.chargedPoints)!==0)throw Error('已有图片复用回执无效，请刷新项目核对。');
+        if(isCurrent()){
+          const live=state.project?.id===projectId?state.project.assets?.[kind]?.find(value=>value.id===assetId):null;
+          if(live&&String(state.project.scriptGenerationId||'')===scriptId&&(!live.imageFile||live.imageFile===previousFile)){
+            for(const field of assetResultFields230)if(Object.hasOwn(saved,field))live[field]=saved[field];
+            showSavedAssetImage230(kind,live);
+          }
+          update({active:false,phase:'done',message:'已复用项目图片，本次未扣积分'});
+        }
+        return data;
+      }
       if (!data.taskId) { const error = new Error("提交回执尚未确认，请稍后刷新项目核对。请勿重复提交。"); error.assetPaused = true; throw error; }
       taskId = data.taskId;generationId=String(data.generationId||data.requestId||'');
       if(!isCurrent())return {detached:true,projectId,requestId:generationId};
@@ -3378,9 +3671,12 @@
     if (item?.status==='video_failed' && job?.taskId && item.localVideoTaskId===job.taskId) return false;
     return pendingVideoEpisode(item);
   }
+  function videoLoadingLabel(job) {
+    return {queued:'视频任务排队中',submitting:'正在提交视频任务',reconnecting:'正在查询原视频任务',
+      saving:'视频已返回，正在保存和同步'}[job?.phase] || '视频正在生成';
+  }
   function videoAnimationMarkup(job) {
-    const label = job?.phase === 'queued' ? '视频任务排队中' : job?.phase === 'submitting' ? '正在提交视频任务' : job?.phase === 'reconnecting' ? '正在查询原视频任务' : '视频正在生成';
-    return `<div class="episode-video-loading" data-model-activity="pending" role="status" aria-live="polite"><i class="episode-video-loading-spinner" aria-hidden="true"></i><b class="episode-video-loading-title">${esc(label)}</b><small>成品显示或任务明确失败后停止</small></div>`;
+    return `<div class="episode-video-loading" data-model-activity="pending" role="status" aria-live="polite"><i class="episode-video-loading-spinner" aria-hidden="true"></i><b class="episode-video-loading-title">${esc(videoLoadingLabel(job))}</b><small>成品显示或任务明确失败后停止</small></div>`;
   }
   function videoResultReady(item,job) {
     if (!item?.videoFile || pendingVideoEpisode(item)) return false;
@@ -3406,7 +3702,7 @@
     }
     if (indicator) {
       const title=indicator.querySelector('.episode-video-loading-title');
-      if (title) title.textContent=job?.phase==='queued' ? '视频任务排队中' : job?.phase==='submitting' ? '正在提交视频任务' : job?.phase==='reconnecting' ? '正在查询原视频任务' : '视频正在生成';
+      if (title) title.textContent=videoLoadingLabel(job);
     }
     node.dataset.videoPending=busy ? '1' : '0';
     output?.setAttribute('aria-busy',String(busy));
@@ -3433,7 +3729,8 @@
     if (task) {
       job.progress = Math.max(job.progress || 0, Math.max(0, Math.min(100, Number(task.progress || 0))));
       job.message = task.state === "queued" ? "排队等待执行，尚未提交模型…" : task.message || "正在等待上游完成…";
-      job.phase = task.state === "queued" ? "queued" : task.reconnecting ? "reconnecting" : "waiting";
+      const saving=task.state==='done'||task.phase==='saving'||String(task.message||'').startsWith('上游已完成生成，正在保存');
+      job.phase = task.state === "queued" ? "queued" : task.reconnecting ? "reconnecting" : saving ? "saving" : "waiting";
     }
     const node = currentVideoCard(job);
     if (!node) return;
@@ -3443,10 +3740,10 @@
     if (button) {
       button.disabled = busy;
       button.dataset.busy = busy ? "1" : "0";
-      button.textContent = busy ? job.phase === "queued" ? "排队中…" : job.phase === "submitting" ? "正在提交…" : job.phase === "reconnecting" || !job.active ? "自动查询原任务…" : `视频生成中 ${job.progress || 0}%` : pendingVideoEpisode(item) ? "继续查询原任务" : item?.videoFile ? "重新生成视频" : "生成视频";
+      button.textContent = busy ? job.phase === "queued" ? "排队中…" : job.phase === "submitting" ? "正在提交…" : job.phase === "saving" ? "正在保存和同步…" : job.phase === "reconnecting" || !job.active ? "自动查询原任务…" : `视频生成中 ${job.progress || 0}%` : pendingVideoEpisode(item) ? "继续查询原任务" : item?.videoFile ? "重新生成视频" : "生成视频";
     }
     if(button) window.ModelActivity?.set(button,{state:busy?"pending":"",preserve:true});
-    if (status) { status.classList.toggle("is-generating",busy); window.ModelActivity?.set(status,{state:busy?"pending":job.error?"error":item?.videoFile?"success":"",message:busy?"":job.message||item?.error||""}); }
+    if (status) { status.classList.toggle("is-generating",busy); window.ModelActivity?.set(status,{state:busy?"pending":job.error?"error":item?.videoFile?"success":"",message:job.message||item?.error||""}); }
     node.querySelectorAll(".frame-generate,.episode-video-route,.episode-video-model,.episode-video-resolution,.episode-video-duration,.episode-video-ratio,.episode-tail-continuation,.episode-reference,.episode-reference-upload,.episode-reference-remove").forEach(control => control.disabled = busy);
     const durationControl = node.querySelector('.episode-video-duration');
     if (durationControl?.dataset.fixedDuration || durationControl?.dataset.adaptiveDuration) durationControl.disabled = true;
@@ -3642,7 +3939,7 @@
           result = videoTaskResult240(job,await waitTask(job.taskId, task => updateVideoJob(job, task), {retryReads:true, shouldStop:() => job.cancelled, onMissing:() => reconnectVideoJob(job)}));
         }
         if (job.cancelled) { const error = new Error("原视频任务已解除。"); error.videoDetached = true; throw error; }
-        job.progress = 100; job.phase = "waiting"; job.message = "视频已保存，正在同步最新成品…"; updateVideoJob(job);
+        job.progress = 100; job.phase = "saving"; job.message = "视频已保存，正在同步最新成品…"; updateVideoJob(job);
         // Fetch the latest project, rather than applying an earlier worker's full snapshot.
         const project = await refreshCompletedVideoProject(job); result = videoTaskResult240(job,result,project);
         if (job.cancelled) { const error = new Error("原视频任务已解除。"); error.videoDetached = true; throw error; }
@@ -3674,7 +3971,11 @@
   }
   // 视频只使用本集分镜与已勾选参考图；每个排队任务保存独立且固定的输入。
   async function videoGenerate(node, shouldRender = true, queuedJob = null) {
-    if(!queuedJob)await flushEpisodeReferenceSaves(node);
+    const clickedProject=state.project?.id,clickedRevision=cutRevision(state.project);
+    if(!queuedJob){
+      await flushEpisodeReferenceSaves(node);
+      if(!sameCut(clickedProject,clickedRevision)||!node.isConnected)throw new Error('项目或视频卡已变化，请重新选择后生成。');
+    }
     const project = state.project;
     const item = project?.episodes?.find(value => value.id === node.dataset.episode);
     if (!item && !queuedJob) throw new Error("本集已不在当前项目中。");
@@ -3704,7 +4005,7 @@
     try {
       button.disabled = true;
       if(!sameCut(projectId,revision))return;
-      const data = await post("/api/visual/episode/settings/apply-all", { projectId,cutRevisionId:revision, settings: { videoRouteType: modelRoute234("video",model,$("visualVideoRouteType").value), videoModel: model, videoTier: selectedTier("video"), resolution, duration, ratio: $("visualVideoRatio").value } });
+      const data = await post("/api/visual/episode/settings/apply-all", { projectId,cutRevisionId:revision, settings: { videoRouteType: ModelPresentation.legacyRouteForModel(state.profile,"video",model,$("visualVideoRouteType").value), videoModel: model, videoTier: selectedTier("video"), resolution, duration, ratio: $("visualVideoRatio").value } });
       if(canApplyCutResponse(projectId,revision,data.project)){render(data.project); toast(data.message || "已同步到全部分镜。");}
     } catch (error) { toast(error.message, true); }
     finally { button.disabled = false; }
@@ -3719,7 +4020,7 @@
     if (issue) return toast(issue,true);
     refreshEpisodeTail239(node,item);
     const selected = modelSelect.selectedOptions[0];
-    const data = await post("/api/visual/episode/settings", { projectId,cutRevisionId:revision, episodeId: item.id, settings: { videoRouteType: modelRoute234("video",modelSelect.value,node.querySelector(".episode-video-route")?.value), videoModel: modelSelect.value, videoTier: selected?.dataset.tier || "economy", resolution: resolutionSelect.value, duration: chosenEpisodeDuration(item, node), ratio: chosenEpisodeRatio(item, node), tailFrameContinuation: node.querySelector('.episode-tail-continuation')?.checked===true, tailFrameMode: node.querySelector('.episode-tail-continuation')?.dataset.tailMode||'first-frame' } });
+    const data = await post("/api/visual/episode/settings", { projectId,cutRevisionId:revision, episodeId: item.id, settings: { videoRouteType: ModelPresentation.legacyRouteForModel(state.profile,"video",modelSelect.value,node.querySelector(".episode-video-route")?.value), videoModel: modelSelect.value, videoTier: selected?.dataset.tier || "economy", resolution: resolutionSelect.value, duration: chosenEpisodeDuration(item, node), ratio: chosenEpisodeRatio(item, node), tailFrameContinuation: node.querySelector('.episode-tail-continuation')?.checked===true, tailFrameMode: node.querySelector('.episode-tail-continuation')?.dataset.tailMode||'first-frame' } });
     if(!canApplyCutResponse(projectId,revision,data.project))return;
     state.project = data.project;
     updateEstimate();
@@ -3773,14 +4074,18 @@
     if (state.assetQueueKinds.has(kind)) return toast(`已有${{people:"人物",scenes:"场景",props:"物品"}[kind]}队列在执行；其他类别仍可独立提交。`, true);
     const selected = [...document.querySelectorAll(`.visual-card[data-kind="${kind}"]`)].filter(node => node.querySelector(".asset-select")?.checked);
     if (!selected.length) return toast("请先选择要生成的参考图。", true);
-    const nodes = selected.filter(node => !node.querySelector(".asset-generate")?.disabled);
-    const recoveries = selected.filter(node => node.querySelector(".asset-generate")?.disabled && node.querySelector('.asset-observe:not(:disabled)'))
+    const reused=state.project?.seriesProjectId?selected.filter(node=>state.project.assets?.[kind]?.some(item=>item.id===node.dataset.id&&item.imageFile)):[];
+    const missing=selected.filter(node=>!reused.includes(node));
+    if(!missing.length)return toast(`已复用 ${reused.length} 张项目已有图片，本次未扣积分。`);
+    const nodes = missing.filter(node => !node.querySelector(".asset-generate")?.disabled);
+    const recoveries = missing.filter(node => node.querySelector(".asset-generate")?.disabled && node.querySelector('.asset-observe:not(:disabled)'))
       .map(node => ({kind, assetId:node.dataset.id, name:state.project?.assets?.[kind]?.find(item=>item.id===node.dataset.id)?.name||'素材'}));
-    const busyCount = selected.length - nodes.length - recoveries.length;
+    const busyCount = missing.length - nodes.length - recoveries.length;
     if (!nodes.length && !recoveries.length) return toast(`已选${selected.length}张参考图仍在处理或查询中；未重复提交。`, true);
     // Freeze every card before the first await. Earlier completions can
     // rebuild the DOM while later cards are still waiting for a worker.
     let requests=nodes.map(node=>freezeAssetRequest(node));const projectId=state.project.id;
+    if(reused.length)toast(`复用 ${reused.length} 张已有图片，仅生成 ${nodes.length} 张缺失图片。`);
     const jobs=state.activeAssetJobs,queueKinds=state.assetQueueKinds,items=nodes.map(node=>({...state.project.assets[kind].find(item=>item.id===node.dataset.id)}));
     if (kind === "people") {
       const masked = requests.filter(request=>request.eyeMask);
@@ -3872,7 +4177,7 @@
       const unsubmitted = Math.max(0, nodes.length - done - failed);
       const recoveryText=recoveries.length?`原图片接回${recovered}张${refunded?`，已退款${refunded}张（可再次点击生成）`:''}${recoveryPending?`，结果未明确${recoveryPending}张`:''}${recoveryFailed?`，接回失败${recoveryFailed}张`:''}；未对这些卡重新生成。`:'';
       const generatedText=nodes.length?`图片并发批次结束：成功${done}张，失败${failed}张${unsubmitted ? `，${unsubmitted}张未提交` : ""}。`:'';
-      toast(`${generatedText}${recoveryText}${busyCount?`另有${busyCount}张仍在处理，未重复提交。`:''}`, failed > 0 || recoveryFailed > 0 || recoveryPending > 0);
+      toast(`${reused.length?`已免费复用${reused.length}张项目图片。`:''}${generatedText}${recoveryText}${busyCount?`另有${busyCount}张仍在处理，未重复提交。`:''}`, failed > 0 || recoveryFailed > 0 || recoveryPending > 0);
     }
   }
   async function batchVideos() {
@@ -4237,6 +4542,7 @@
       persistSourceDraft();
       if (!await studioConfirm("确定创建新项目吗？当前项目会保留，可以随时继续制作。")) { state.pendingSourceAction = null; return; }
       state.editingProjectId = null;
+      seriesSettingsTarget282=null;
       wizardCreateRequestId = Array.from(crypto.getRandomValues(new Uint8Array(16)), value=>value.toString(16).padStart(2,'0')).join('');
       wizardEpoch++;$('confirmProjectWizard').disabled=false;
       $("visualProjectWizardTitle").textContent = "创建新项目"; $("confirmProjectWizard").textContent = "确认创建（不扣积分）";
@@ -4253,30 +4559,56 @@
     } finally { newProjectWizardOpening=false; }
   }
   async function editProject(id) {
-    if(!await confirmDiscardSource('编辑项目设置'))return;
+    if(!canLeaveWorkspace282(id)||!await confirmDiscardSource('编辑项目设置'))return;
     const context=sourceEditorContext(),epoch=++sourceReadEpoch;
     try {
       await settingsSaveQueue.catch(()=>{});
       const response = await fetch(`/api/visual/project?id=${encodeURIComponent(id)}`, {cache:"no-store"}); const data = await response.json();
       if (!response.ok) throw new Error(data.error || "无法读取项目设置");
-      const project = data.project, value = project.settings || {};
+      const project = data.project;
       if(sourceReadEpoch!==epoch || context.sourceText!==String($('visualSource').value||''))return;
+      if(!canLeaveWorkspace282(id))return;
       activateProject(project,{stage:1});
-      state.editingProjectId = id; state.pendingSourceAction = null;
-      wizardEpoch++;$('confirmProjectWizard').disabled=false;
-      $("visualProjectWizardTitle").textContent = "编辑项目设置"; $("confirmProjectWizard").textContent = "保存修改";
-      $("wizardProjectName").value = project.projectName || ""; $("wizardProjectDescription").value = project.projectDescription || "";
-      refreshWizardModels(value, true);
-      Object.entries(wizardFields).forEach(([suffix,key]) => { if (['ImageTier','VideoTier','ImageRouteType','VideoRouteType'].includes(suffix)) return; const fallback = key === "style" ? project.style : undefined; if (value[key] != null || fallback != null) $("wizard"+suffix).value = String(value[key] ?? fallback); });
-      ["image","video"].forEach(media => { const select=$("wizard"+(media==="image"?"Image":"Video")+"Tier"); if(value[`${media}Model`] && [...select.options].some(option=>option.value===value[`${media}Model`])) select.value=value[`${media}Model`]; });
-      syncImageResolutionOptions($("wizardImageResolution"), $("wizardImageTier").value, value.imageResolution || $("wizardImageResolution").value);
-      syncResolutionOptions($("wizardResolution"), $("wizardVideoTier").value, value.resolution);
-      syncDurationControl($('wizardVideoDuration'),$('wizardVideoTier').value,Number(value.videoDuration || 15));
-      syncVideoRatioOptions($('wizardRatio'),$('wizardVideoTier').value);
-      $("wizardEyeMask").checked = Boolean(value.eyeMask);
-      state.editingProjectCreationMode = value.creationMode || 'asset_first';
-      refreshWizardPricing(); syncStyleButtons(); showDialog("visualProjectWizard"); $("wizardProjectName").focus();
+      presentProjectSettings282(project);
     } catch(error) { toast(error.message,true); }
+  }
+  async function editSeriesSettings282(project){
+    const ticket=seriesNavigation282,editingId=project?.id;
+    try{
+      await settingsSaveQueue.catch(()=>{});
+      const data=await seriesRequest282('/api/visual/series?projectId='+encodeURIComponent(editingId));
+      if(ticket!==seriesNavigation282)return;
+      if(data.project?.id!==editingId||data.project.seriesManaged!==true)throw Error('读取的整剧设置与当前项目不一致。');
+      presentProjectSettings282(data.project);
+    }catch(error){if(ticket===seriesNavigation282)toast(error.message,true);}
+  }
+  function presentProjectSettings282(project){
+    const value=project.settings||{},isSeries=project.seriesManaged===true;
+    state.editingProjectId=project.id;
+    state.pendingSourceAction=null;
+    seriesSettingsTarget282=isSeries?project.id:null;
+    wizardEpoch++;$('confirmProjectWizard').disabled=false;
+    $('visualProjectWizardTitle').textContent=isSeries?'整剧设置':'编辑项目设置';
+    $('confirmProjectWizard').textContent='保存修改';
+    $('wizardProjectName').value=project.projectName||'';
+    $('wizardProjectDescription').value=project.projectDescription||'';
+    refreshWizardModels(value,true);
+    Object.entries(wizardFields).forEach(([suffix,key])=>{
+      if(['ImageTier','VideoTier','ImageRouteType','VideoRouteType'].includes(suffix))return;
+      const configured=value[key]??(key==='style'?project.style:undefined);
+      if(configured!=null)$('wizard'+suffix).value=String(configured);
+    });
+    for(const media of ['image','video']){
+      const select=$('wizard'+(media==='image'?'Image':'Video')+'Tier'),model=value[media+'Model'];
+      if(model&&[...select.options].some(option=>option.value===model))select.value=model;
+    }
+    syncImageResolutionOptions($('wizardImageResolution'),$('wizardImageTier').value,value.imageResolution||$('wizardImageResolution').value);
+    syncResolutionOptions($('wizardResolution'),$('wizardVideoTier').value,value.resolution);
+    syncDurationControl($('wizardVideoDuration'),$('wizardVideoTier').value,Number(value.videoDuration||15));
+    syncVideoRatioOptions($('wizardRatio'),$('wizardVideoTier').value);
+    $('wizardEyeMask').checked=Boolean(value.eyeMask);
+    state.editingProjectCreationMode=value.creationMode||'asset_first';
+    refreshWizardPricing();syncStyleButtons();showDialog('visualProjectWizard');$('wizardProjectName').focus();
   }
   function refreshWizardModels(settings = {}, preferConfigured = false) {
     ["image", "video"].forEach(media => populateModelSelect("wizard" + (media === "image" ? "Image" : "Video") + "Tier", media, settings, preferConfigured));
@@ -4360,24 +4692,49 @@
       settings[`${media}Tier`] = select.selectedOptions[0]?.dataset.tier || "economy";
       settings[`${media}Model`] = select.value;
     });
+    if (Array.isArray(state.profile?.videoRouteGroups)) {
+      settings.videoRouteType = ModelPresentation.legacyRouteForModel(state.profile,"video",settings.videoModel,settings.videoRouteType);
+    }
     const durationIssue = videoCapabilityIssue(settings.videoModel,settings.videoDuration,settings.resolution,settings.ratio);
     if (durationIssue) return toast(durationIssue,true);
     const button = $("confirmProjectWizard");
     const epoch=wizardEpoch,context=sourceEditorContext(),pending=state.pendingSourceAction,editing=state.editingProjectId;
+    const seriesEdit=editing&&seriesSettingsTarget282===editing;
+    const outputModule=pending&&['ecommerce','store','advertising'].includes(state.currentSource?.sourceType)?state.currentSource.sourceType:'workflow';
     const buttonLabel=button.textContent;
     try {
       button.disabled = true;
       button.textContent = editing ? '正在保存…' : '正在创建…';
       const draft=state.pendingSourceAction || (editing && state.sourceProjectId===editing) ? {sourceText:$('visualSource').value,source:state.currentSource} : null;
-      const data = editing
-        ? await post("/api/visual/settings", { projectId:editing, projectName:name, projectDescription:$("wizardProjectDescription").value.trim(), settings })
-        : await post("/api/visual/project/create", { createRequestId:wizardCreateRequestId, projectName:name, projectDescription:$("wizardProjectDescription").value.trim(), style:settings.style, settings,
-            outputModule227:state.pendingSourceAction&&['ecommerce','store','advertising'].includes(state.currentSource?.sourceType)?state.currentSource.sourceType:'workflow' });
-      if(epoch!==wizardEpoch || !sameSourceEditor(context)) {await loadProjects();return;}
+      const projectInput={projectName:name,projectDescription:$('wizardProjectDescription').value.trim(),style:settings.style,settings};
+      const data=editing
+        ? seriesEdit?await seriesRequest282('/api/visual/series/settings',{projectId:editing,...projectInput})
+          :await post('/api/visual/settings',{projectId:editing,...projectInput})
+        :await post('/api/visual/project/create',{createRequestId:wizardCreateRequestId,...projectInput,outputModule227:outputModule,
+          ...(outputModule==='workflow'?{seriesManaged:true}:{})});
+      if(epoch!==wizardEpoch || !seriesEdit&&!sameSourceEditor(context)) {await loadProjects();return;}
       state.pendingSourceAction = null;
       state.editingProjectId = null;
       state.editingProjectCreationMode = null;
+      seriesSettingsTarget282=null;
       closeDialog("visualProjectWizard");
+      if(data.project?.seriesManaged===true){
+        if(seriesEdit){
+          if(seriesView282.projectId()===editing)seriesView282.accept(data);
+          await refreshSharedSettings282(data.project);
+          toast('整剧设置已更新，后续生成使用新设置。');
+        }else{
+          if(draft?.sourceText?.trim()){
+            const linkData={sourceText:draft.sourceText,source:draft.source};
+            seriesHandoffs282.set(data.project.id,linkData);
+            try{localStorage.setItem(seriesHandoffKey282(data.project.id),JSON.stringify(linkData));}catch(_){}
+          }
+          await showSeries282(data.project,Array.isArray(data.episodes)?data:undefined);
+          toast('项目已创建，可以添加剧集。');
+        }
+        void loadProjects();
+        return;
+      }
       try { activateProject(data.project,{stage:1,draft}); }
       catch (error) {
         setProjectCenter(true);
@@ -4397,8 +4754,20 @@
     }
   }
   let settingsSaveQueue = Promise.resolve();const pendingSettings231=new Map();
+  async function refreshSharedSettings282(parent){
+    const child=state.project;
+    if(child?.seriesProjectId!==parent.id)return;
+    const updated={...child,seriesProjectName:parent.projectName,settings:parent.settings,style:parent.style};
+    restoreProjectSettings(updated);
+    render(updated);
+    await macroInlineView?.refreshMediaDefaults232?.(updated);
+  }
   async function saveCurrentProjectSettings(showToast = true) {
     if (!state.project) return;
+    if(state.project.seriesProjectId){
+      if(showToast)await editSeriesSettings282({id:state.project.seriesProjectId});
+      return;
+    }
     const projectId = state.project.id,revision=cutRevision(state.project);
     const settings = { ...projectSettings(), continuity: false };
     const key=showToast?null:JSON.stringify([projectId,revision,settings]);
@@ -4580,6 +4949,7 @@
     });
     window.AssetCardDetails?.enhance(document,state.project.id);
     window.CompactAssets205?.enhance(state.project);
+    assetTools283.enhance(state.project);
     document.querySelectorAll('.visual-episode-card').forEach(node => {
       if (node.querySelector('.episode-card-heading')) return;
       const heading = document.createElement('header'); heading.className = 'episode-card-heading';
@@ -4768,7 +5138,7 @@
     if (event.target.matches('.episode-video-duration,#visualVideoDuration,#wizardVideoDuration')) event.target.dataset.configuredDuration = event.target.value;
     if (event.target.matches('.episode-select')) { updateStoryboardButton(); CreditGate.recalculate(); }
   },true);
-  ["closeProjectWizard","cancelProjectWizard"].forEach(id => $(id).addEventListener("click", () => { state.pendingSourceAction = null; state.editingProjectId = null; closeDialog("visualProjectWizard"); }));
+  ["closeProjectWizard","cancelProjectWizard"].forEach(id => $(id).addEventListener("click", () => { state.pendingSourceAction = null; state.editingProjectId = null; seriesSettingsTarget282=null;closeDialog("visualProjectWizard"); }));
   ["closeAssetDialog","cancelAssetDialog"].forEach(id => $(id).addEventListener("click", () => closeDialog("visualAssetDialog")));
   ["closeStyleDialog","cancelStyleDialog"].forEach(id => $(id).addEventListener("click", () => closeDialog("visualStyleDialog")));
   $("closeStylePicker").addEventListener("click", () => closeDialog("visualStylePickerDialog"));
@@ -4782,7 +5152,38 @@
   $("useSource").addEventListener("click", event=>workflowAction(event.currentTarget,openMacroArrangement)); $('openMacroArrangement')?.addEventListener('click',event=>workflowAction(event.currentTarget,openMacroArrangement)); $("fillStoryboard").addEventListener("click", event => workflowAction(event.currentTarget, executeFillStoryboard)); $("confirmCutModeDialog").addEventListener("click", startMacroFromSettings); document.querySelectorAll('input[name="cutMode"], input[name="cutTargetPreset"], input[name="storyboardScope"]').forEach(node => node.addEventListener("change", syncCutModeDialog)); ["cutFixedSeconds","cutTargetMinutes","cutTargetSeconds"].forEach(id => $(id).addEventListener("input", syncCutModeDialog)); ["closeCutModeDialog","cancelCutModeDialog"].forEach(id => $(id).addEventListener("click", () => {state.timelineModelApproval=null;closeDialog("visualCutModeDialog");})); $("confirmSourceReference").addEventListener("click", event => workflowAction(event.currentTarget, recognizeWorkflowAssets)); $("visualRecognitionModel").addEventListener("change", event => { localStorage.setItem("drama-recognition-model", event.target.value); updateRecognitionQuote(); }); $("visualVideoDuration").addEventListener("change", updateEstimate); $("visualImageResolution").addEventListener("change", updateEstimate); $("visualResolution").addEventListener("change", updateEstimate);
   $("newVisualProject").addEventListener("click", () => { state.pendingSourceAction = null; newProjectWizard().catch(error=>toast(error.message,true)); });
   $("closeVisualCoverEditor").addEventListener("click", () => { $("visualProjectCoverEditor").classList.add("hidden"); $("visualProjectList").scrollIntoView({behavior:"smooth",block:"start"}); });
-  $("visualProjectList").addEventListener("click", event => { const card = event.target.closest("[data-project-id]"); if (!card) return; const button = event.target.closest("button"); if (!button) return; event.preventDefault(); event.stopPropagation(); if (button.classList.contains("open-visual-project")) return openProject(card.dataset.projectId); if (button.classList.contains("project-cover-action")) return openCoverEditor(card.dataset.projectId); if (button.classList.contains("edit-visual-project")) return editProject(card.dataset.projectId); if (button.classList.contains("delete-visual-project")) return deleteProject(card.dataset.projectId); });
+  $('visualProjectList').addEventListener('click',event=>{
+    const card=event.target.closest('[data-project-id]'),button=event.target.closest('button');
+    if(!card||!button)return;
+    event.preventDefault();event.stopPropagation();
+    const id=card.dataset.projectId,series=card.dataset.seriesManaged==='true';
+    if(button.classList.contains('open-visual-project'))return series?showSeries282({id}):openProject(id);
+    if(button.classList.contains('convert-visual-project'))return convertSeries282(id);
+    if(button.classList.contains('project-cover-action'))return openCoverEditor(id);
+    if(button.classList.contains('edit-visual-project'))return series?editSeriesSettings282({id}):editProject(id);
+    if(button.classList.contains('delete-visual-project'))return series?removeSeries282(id):deleteProject(id);
+  });
+  $('returnToSeries282').addEventListener('click',()=>{
+    const project=state.project;
+    if(project?.seriesProjectId)showSeries282({id:project.seriesProjectId});
+  });
+  $('editSeriesSettings282').addEventListener('click',()=>{
+    if(state.project?.seriesProjectId)editSeriesSettings282({id:state.project.seriesProjectId});
+  });
+  $('visualDeletedSeries282').addEventListener('click',showDeletedSeries282);
+  $('closeDeletedSeries282').addEventListener('click',()=>closeDialog('visualDeletedSeriesDialog282'));
+  $('visualDeletedSeriesList282').addEventListener('click',async event=>{
+    const button=event.target.closest('[data-series-restore]');
+    if(!button||deletedSeriesBusy282)return;
+    deletedSeriesBusy282=true;button.disabled=true;
+    try{
+      await seriesRequest282('/api/visual/series/restore',{projectId:button.dataset.seriesRestore});
+      await loadProjects();
+      if(!$('visualDeletedSeriesDialog282').classList.contains('hidden'))showDeletedSeries282();
+      toast('项目和原有剧集已恢复。');
+    }catch(error){toast(error.message,true);}
+    finally{deletedSeriesBusy282=false;button.disabled=false;}
+  });
   const apiDefaults = { volcengine: "https://ark.cn-beijing.volces.com/api/v3", aliyun: "https://dashscope.aliyuncs.com/api/v1", custom: "" };
   [$("visualImageProvider"), $("visualVideoProvider")].filter(Boolean).forEach(select => select.addEventListener("change", () => { $(select.id === "visualImageProvider" ? "visualImageBaseUrl" : "visualVideoBaseUrl").value = apiDefaults[select.value] || ""; }));
   document.addEventListener("click", async event => {
@@ -4833,6 +5234,7 @@
       if (episodeNode && !reset) {
         episodeNode.dataset.generating = "true";
         episodeButtons.forEach(button => button.disabled = true);
+        if(video){video.textContent='正在准备视频…';window.ModelActivity?.set(video,{state:'pending',preserve:true});}
       }
       if (savePrompt) await saveAssetPrompt(savePrompt.closest(".visual-card"));
       else if (asset) await assetGenerate(asset.closest(".visual-card"));
@@ -4842,7 +5244,14 @@
     } catch (error) { if (!error.assetPreviewHandled) toast(error.message, true); }
     finally {
       if (episodeNode) delete episodeNode.dataset.generating;
-      episodeButtons.forEach(button => button.disabled = false);
+      const videoJob=video&&state.activeVideoJobs.get(videoJobKey(state.project?.id,episodeNode.dataset.episode));
+      if(videoJob)updateVideoJob(videoJob);
+      else {
+        episodeButtons.forEach(button => button.disabled = false);
+        if(video&&video.isConnected){const item=state.project?.episodes?.find(row=>row.id===episodeNode.dataset.episode);
+          video.textContent=pendingVideoEpisode(item)?'继续查询原任务':item?.videoFile?'重新生成视频':'生成视频';
+          window.ModelActivity?.set(video,{state:'',preserve:true});}
+      }
     }
   });
   document.addEventListener("click", event => {

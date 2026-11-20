@@ -9,6 +9,11 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const pipelineReturnIdentity = snapshot => JSON.stringify([snapshot?.projectId || '',snapshot?.revisionId || '',snapshot?.sourceHash || '',snapshot?.taskId || '',snapshot?.active?.claimId || '',snapshot?.savedStoryboardReturnIdentity || null]);
+  function scenePart286(snapshot,sceneId,requestHash,action){
+    const parts=snapshot?.sceneParts286?.[sceneId]?.parts;
+    return Array.isArray(parts)?parts.find(row=>row.requestHash===requestHash&&
+      (!action||row.actions?.includes(action))):undefined;
+  }
   const projectIdValid = value => /^[a-f0-9]{32}$/.test(String(value || ''));
   const downloadModules227 = new Map();
   function rememberDownloadModule227(snapshot) {
@@ -30,8 +35,10 @@
   const reviewTextStatuses=new Set(['needs_review','uncertain']);
   const runningTextStatuses=new Set(['queued','running','reserving','submitted','observing','arranging','saving','returned']);
   const textStatus=row=>String(row?.state||row?.status||'').toLowerCase();
-  const isTerminalTextTask=row=>terminalTextStatuses.has(textStatus(row));
-  const textTaskInFlight=row=>{const status=textStatus(row);if(terminalTextStatuses.has(status)||reviewTextStatuses.has(status))return false;return runningTextStatuses.has(status)||!status&&!!(row?.taskId||row?.localTaskId);};
+  // A finished worker still owns this card while its saved result is being
+  // read. Keep that short synchronization state scoped to the same task.
+  const isTerminalTextTask=row=>!row?.syncing&&terminalTextStatuses.has(textStatus(row));
+  const textTaskInFlight=row=>{if(row?.syncing)return true;const status=textStatus(row);if(terminalTextStatuses.has(status)||reviewTextStatuses.has(status))return false;return runningTextStatuses.has(status)||!status&&!!(row?.taskId||row?.localTaskId);};
   const activePending = snapshot => !!snapshot?.active && Object.keys(snapshot.active).length>0&&!isTerminalTextTask(snapshot.active);
   const terminalLinkedTask=(snapshot,row)=>{
     const task=snapshot?.task,taskId=String(task?.id||task?.taskId||''),rowId=String(row?.taskId||row?.localTaskId||'');
@@ -99,6 +106,7 @@
       // cardNumbers is the remaining scope of THIS invocation. A completed
       // sibling or an old card excluded by "missing only" is not generating.
       if(number&&Array.isArray(row.cardNumbers)&&!row.cardNumbers.map(Number).includes(Number(number)))continue;
+      if(row.syncing)return {...row,phase:'syncing_card',message:String(row.syncing),animate:false};
       const progress=number&&row.cardProgress?.[String(number)];
       if(progress?.status==='completed')continue;
       if(progress?.status==='waiting')return {...row,phase:'waiting_card',message:'本卡尚未开始；已返回的卡片可先编辑或生成视频。',animate:false};
@@ -108,6 +116,7 @@
     }
   }
   function textWorkTitle(work){
+    if(work?.phase==='syncing_card')return '正在同步本卡结果';
     if(work?.phase==='waiting_card')return '等待补齐本卡分镜';
     if(work?.phase==='returned_card')return '分镜已返回，正在整理保存';
     if(work?.phase==='card_failed')return '本卡补齐未完成';
@@ -116,11 +125,16 @@
     if(textStatus(work)==='queued')return '本地排队中（文本最多10项并发）';
     if(work?.phase==='config')return '正在核对模型与费用';
     if(work?.phase==='order')return '正在准备本次原订单';
-    if(work?.phase==='model')return '正在连接模型，等待返回';
+    if(['model','connecting'].includes(work?.phase))return '已发起请求，等待模型返回';
     if(work?.phase==='validating')return '模型已返回，正在验收';
     if(work?.phase==='settling')return '正在核对结算与保存结果';
     if(['submitted','arranging'].includes(textStatus(work)))return '原任务处理中';
     return '正在准备模型调用';
+  }
+  function textWorkMessage291(work){
+    const message=String(work?.message||'本卡独立处理中，其他卡片可继续操作。');
+    const legacy=['model','connecting'].includes(work?.phase)&&/^正在连接模型（第([1-9]\d*)次）…$/.exec(message);
+    return legacy?`已发起第${legacy[1]}次请求，等待模型返回…`:message;
   }
   function textBlocked(view,id,number){return textScopes(view).some(task=>{
     if(task._local||!textTaskInFlight(task))return false;
@@ -155,6 +169,10 @@
   }
   function quoteSummary(quote,title){
     if(!quote||!Number.isInteger(quote.maxCalls)||quote.maxCalls<1||!Number.isFinite(quote.totalCredits)||quote.totalCredits<=0)throw Error('没有有效报价，未开放提交。');
+    if(quote.retryPart286)return [title||'补做这个分段',
+      '只提交这个分段。已验收的分镜和视频保留。',
+      `本次 1 次模型调用 · ${Number(quote.totalCredits.toFixed(6))} 积分`,
+      '请确认是否发起这次新调用。'].join('\n');
     if(quote.pricingMode==='live_quote'){
       const expiry=Number(quote.expiresAt)*1000;if(!Number.isFinite(expiry)||expiry<=Date.now())throw Error('本次实时报价已过期，请重新核价并确认；未提交生成。');
       return [title||'确认生成本卡媒体',...(quote.modelName?['本次模型：'+quote.modelName]:[]),`实时核价 · 本次 ${quote.totalCredits} 积分`,`报价有效至 ${new Date(expiry).toLocaleTimeString('zh-CN',{hour12:false})}`,...(quote.upstreamEstimateOnly?['上游估价；本次确认积分固定。']:[]),'仅执行本次确认的卡片，不自动换价继续。确认生成？'].join('\n');
@@ -247,17 +265,14 @@
     },true);
   }
   const mediaModels = (catalog,action) => (catalog?.models || []).filter(row=>row && row.media===(action==='frame'?'image':'video') && row.gatewayReady===true && row.enabled!==false && row.model);
+  const routeProfile = (catalog,action) => ({visualModels:mediaModels(catalog,action),
+    visualCatalogPublished:true,videoRouteGroups:catalog?.videoRouteGroups});
   function modelRoute234(catalog,action,model,fallback='official') {
-    const row=mediaModels(catalog,action).find(row=>row.model===model);
-    if(['discount','official'].includes(row?.routeType))return row.routeType;
-    const special=['seedance-2-0-special','seedance-2-0-manju-special','seedance-2-0-ecom-special','seedance-2-0-9tu-special','seedance-2-5-special','seedance-2-0-promo','seedance-2-5-promo'];
-    if(row)return special.includes(String(model).toLowerCase())?'discount':'official';
-    return ['discount','official'].includes(fallback)?fallback:'official';
+    return presentation.routeForModel(routeProfile(catalog,action),action==='frame'?'image':'video',model,fallback);
   }
   const routeModels234=(catalog,action,route)=>mediaModels(catalog,action).filter(row=>modelRoute234(catalog,action,row.model)===route);
   function mediaRoutes277(catalog,action) {
-    return presentation.availableRoutes({visualModels:mediaModels(catalog,action),visualCatalogPublished:true},
-      action==='frame'?'image':'video');
+    return presentation.availableRoutes(routeProfile(catalog,action),action==='frame'?'image':'video');
   }
   const mediaPayload234=({routeType,tailFrameUnavailableReason,...choice})=>{
     if(choice.tailFrameContinuation!==true)delete choice.tailFrameMode;
@@ -274,23 +289,34 @@
     if(Number.isFinite(item?.minDurationSeconds)&&Number.isFinite(item?.maxDurationSeconds)&&minimum>0&&maximum>=minimum&&maximum<=1800)return Array.from({length:Math.floor(maximum)-Math.ceil(minimum)+1},(_,index)=>Math.ceil(minimum)+index);
     return [];
   }
-  function defaultMediaDraft(catalog,action,saved={},ratio='16:9',card=null) {
+  function defaultMediaDraft(catalog,action,saved={},ratio='16:9',card=null,fixedCard=false) {
     const project=catalog?.projectMediaDefaults?.[action] || {},requestedRoute=saved.routeType||project.routeType,list=requestedRoute?routeModels234(catalog,action,requestedRoute):mediaModels(catalog,action),preferred=action==='frame'?list.find(row=>String(row.model).toLowerCase()==='image-2.5'&&mediaResolutions(catalog,row.model,action).length):null;
     // An explicit card/project choice stays selected even if retired. Only a
     // project without any saved model may use the old catalog default.
-    const requested=String(Object.hasOwn(saved,'model')?saved.model:project.model || '').trim(),model=requested || preferred?.model || list[0]?.model || '',item=list.find(row=>row.model===model),resolutions=mediaResolutions(catalog,model,action),ratios=item?.supportedAspectRatios?.length?item.supportedAspectRatios:['16:9','9:16','1:1'];
+    const requested=String(Object.hasOwn(saved,'model')?saved.model:project.model || '').trim(),model=requested || preferred?.model || list[0]?.model || '',item=mediaModels(catalog,action).find(row=>row.model===model),resolutions=mediaResolutions(catalog,model,action),ratios=item?.supportedAspectRatios?.length?item.supportedAspectRatios:['16:9','9:16','1:1'];
     const savedResolution=String(saved.resolution || '').toLowerCase(),projectResolution=String(project.resolution || '').toLowerCase();
     const result={model,routeType:modelRoute234(catalog,action,model,saved.routeType||project.routeType),resolution:resolutions.includes(savedResolution)?savedResolution:resolutions.includes(projectResolution)?projectResolution:item?resolutions[0]||'':savedResolution||projectResolution,
-      ratio:ratios.includes(saved.ratio)?saved.ratio:ratios.includes(project.ratio)?project.ratio:ratios.includes(ratio)?ratio:ratios[0]||'',referenceAssetIds:Array.isArray(saved.referenceAssetIds)?saved.referenceAssetIds.slice():[]};
+      ratio:fixedCard?(project.ratio||ratio):ratios.includes(saved.ratio)?saved.ratio:ratios.includes(project.ratio)?project.ratio:ratios.includes(ratio)?ratio:ratios[0]||'',referenceAssetIds:Array.isArray(saved.referenceAssetIds)?saved.referenceAssetIds.slice():[]};
     if(action==='video'){
       const actual=mediaGenerationDuration(card),desired=Number.isInteger(saved.duration)&&saved.duration>0?saved.duration:Number.isFinite(actual)&&actual>0?actual:project.duration,options=videoDurationOptions(item);
-      if(Number.isInteger(desired)&&desired>0)result.duration=options.length&&!options.includes(desired)?options.reduce((best,value)=>Math.abs(value-desired)<Math.abs(best-desired)?value:best,options[0]):desired;
+      if(Number.isInteger(desired)&&desired>0)result.duration=!fixedCard&&options.length&&!options.includes(desired)?options.reduce((best,value)=>Math.abs(value-desired)<Math.abs(best-desired)?value:best,options[0]):desired;
       const tail=tailFrameState239(item,{...result,tailFrameMode:saved.tailFrameMode,tailFrameContinuation:saved.tailFrameContinuation});
       result.tailFrameMode=tail.mode;
       if(tail.enabled)result.tailFrameContinuation=true;
       if(tail.cancelled)result.tailFrameUnavailableReason=tail.notice;
     }
     return result;
+  }
+  function videoCardSettings285(snapshot,id,number){
+    return mediaRecord(snapshot,id,number).videoSettings285;
+  }
+  function cardMediaSelection(view,snapshot,id,number,card,action){
+    const fixedCard=view?.seriesManaged===true&&action==='video';
+    const saved=fixedCard?videoCardSettings285(snapshot,id,number):null;
+    return defaultMediaDraft(view?.catalog,action,{
+      referenceAssetIds:cardReferenceSelection(snapshot,id,number,card,view,action),
+      ...view?.mediaDrafts?.[mediaKey(id,number)]?.[action],...saved
+    },snapshot.settings?.ratio||'16:9',card,fixedCard);
   }
   // Model asset IDs describe entities in the scene, not necessarily images.
   // User-saved and locally edited selections are exact; only initial model
@@ -389,12 +415,12 @@
   }
   function renderMedia(snapshot,segment,number,card,view) {
     const id=segmentId(segment),key=mediaKey(id,number),record=mediaRecord(snapshot,id,number),pending=cardMediaBlocked(view,id,number)||Object.values(view.operations||{}).some(row=>row.kind==='media'&&overlaps(row,id,number)),textPending=textBlocked(view,id,number);
-    const saved=view.mediaDrafts?.[key] || {},attrs=`data-segment="${esc(id)}" data-card="${number}"`;
-    const ratio=defaultMediaDraft(view.catalog,'video',saved.video,snapshot.settings?.ratio || '16:9').ratio;
+    const attrs=`data-segment="${esc(id)}" data-card="${number}"`;
+    const ratio=cardMediaSelection(view,snapshot,id,number,card,'video').ratio;
     const match=/^(\d{1,2}):(\d{1,2})$/.exec(ratio),width=match?Number(match[1]):16,height=match?Number(match[2]):9;
     const previewStyle=width>0&&height>0?`--preview-ratio:${width}/${height};--preview-width:${360*width/height}px`:'';
     const controls=!view.catalog?'<p class="hint">正在读取视频模型设置；已保存的作品可先查看。</p>':(view.catalogRefreshPending251?'<p class="hint">价格目录待更新，暂显示上次可用配置；提交前会确认后台已发布售价。</p>':'')+['video'].map(action=>{
-      const selection=defaultMediaDraft(view.catalog,action,{referenceAssetIds:cardReferenceSelection(snapshot,id,number,card,view,action),...saved[action]},snapshot.settings?.ratio || '16:9',card),routes=mediaRoutes277(view.catalog,action),activeRoute=routes.some(([id])=>id===selection.routeType)?selection.routeType:routes[0]?.[0]||'',list=routeModels234(view.catalog,action,activeRoute),item=list.find(row=>row.model===selection.model),resolutions=mediaResolutions(view.catalog,selection.model,action),ratios=item?.supportedAspectRatios?.length?item.supportedAspectRatios:['16:9','9:16','1:1'],issue=mediaIssue(view.catalog,action,selection,card.durationSeconds,card),disabled=operationBlocked(view,id,number)||quoteBlocked(view,id,number)||pending||textPending;
+      const selection=cardMediaSelection(view,snapshot,id,number,card,action),routes=mediaRoutes277(view.catalog,action),activeRoute=routes.some(([id])=>id===selection.routeType)?selection.routeType:routes[0]?.[0]||'',list=routeModels234(view.catalog,action,activeRoute),item=list.find(row=>row.model===selection.model),resolutions=mediaResolutions(view.catalog,selection.model,action),ratios=item?.supportedAspectRatios?.length?item.supportedAspectRatios:['16:9','9:16','1:1'],issue=mediaIssue(view.catalog,action,selection,card.durationSeconds,card),disabled=operationBlocked(view,id,number)||quoteBlocked(view,id,number)||pending||textPending;
       const choices=(name,values,selected)=>{
         const missing=name==='model'&&selected&&!values.some(row=>row.model===selected),project=view.catalog?.projectMediaDefaults?.[action],label=project?.model===selected?project.modelName||'项目所选模型':'本卡所选模型';
         return `<select data-media-param="${name}" data-media-action="${action}" ${attrs} ${disabled?'disabled':''}>${missing?`<option value="${esc(selected)}" selected disabled>${esc(label)}（当前不可用，请重新选择）</option>`:''}${values.map(row=>`<option value="${esc(typeof row==='object'?row.model:row)}" ${(typeof row==='object'?row.model:row)===selected?'selected':''}>${esc(typeof row==='object'?(row.displayName||row.model)+(name==='model'&&action==='video'?' · '+tailFrameLabel242(row,selection):''):name==='duration'?row+' 秒':row)}</option>`).join('')}</select>`;
@@ -402,19 +428,29 @@
       const duration=selection.duration??mediaGenerationDuration(card),fractional=!Number.isInteger(card.durationSeconds)&&duration===Math.ceil(card.durationSeconds),durationOptions=videoDurationOptions(item),cost=item?mediaCost(view.catalog,selection,duration):null,tailState=tailFrameState239(item,{...selection,duration}),tailIssue=tailFrameIssue237(item,{...selection,duration},number);
       const limit=Number(view.catalog.concurrency?.video?.limit);
       const routeOptions=routes.map(([id,label])=>
-        `<option value="${id}" ${activeRoute===id?'selected':''}>${label}</option>`).join('')
+        `<option value="${esc(id)}" ${activeRoute===id?'selected':''}>${esc(label)}</option>`).join('')
         || '<option value="" disabled>暂无已发布线路</option>';
-      return `<section class="media-block"><strong>视频 · 本卡 ${esc(card.durationSeconds)} 秒</strong><div class="media-choices"><label>线路<select data-media-param="routeType" data-media-action="${action}" ${attrs} ${disabled?'disabled':''}>${routeOptions}</select></label><label>模型${choices('model',list,selection.model)}</label><label>清晰度${choices('resolution',resolutions,selection.resolution)}</label><label>画幅${choices('ratio',ratios,selection.ratio)}</label><label>生成时长${choices('duration',durationOptions.length?durationOptions:[duration],duration)}</label></div><label class="media-meta"><input type="checkbox" data-media-param="tailFrameContinuation" data-media-action="video" ${attrs} ${tailState.enabled?'checked':''} ${disabled||tailState.issue?'disabled':''}> 尾帧续画 · 自动适配</label><small class="media-meta" data-tail-mode242>${esc(tailFrameLabel242(item,{...selection,duration}))}</small><small class="media-meta" data-tail-slots242>${esc(tailFrameUsage242(item,{...selection,duration},number).text)}</small><small class="media-meta" data-tail-capability role="status">${esc(selection.tailFrameUnavailableReason||tailState.issue|| (tailState.mode==='first-frame'?'固定首帧承接：前卡尾帧直接作为本卡首帧。':'参考图承接：提示词要求以尾帧作为首帧；接口不锁定首帧，实际可能偏差，不能保证首画面完全一致。'))}</small><small class="media-meta">${number===1?'本场首卡按正常方式生成，不从其他场次取画面。':tailState.enabled?'同场前卡完成后本地提取末帧；手选参考图保留，批量按卡顺序生成。'+(tailState.mode==='first-frame'&&item?.firstFrameRequiresImageRatio?' 画幅沿用前卡。':''):'默认关闭；开启后需同场前卡视频已完成。'}</small>${fractional?`<small class="media-meta">原镜头时长不变，末镜既有落幅保持${duration-card.durationSeconds}秒，不增加剧情。</small>`:''}${issue||tailIssue?`<p class="media-error">${esc(issue||tailIssue)}</p>`:''}<div class="media-generate-row"><button type="button" class="primary" data-media-quote="${action}" data-published-credits="${cost===null?'':cost}" ${attrs} ${disabled||issue||tailIssue?'disabled':''}>生成</button><span class="media-cost" aria-live="polite">${item?.pricingMode==='live_quote'?'实时核价 · 生成前确认本卡实际积分':cost===null?'暂无有效积分价格':`生成${esc(duration)}秒 · 预计 ${cost.toFixed(2)} 积分`}</span></div>${Number.isInteger(limit)&&limit>0?`<small class="media-meta" data-video-capacity>本机视频最多 ${limit} 路并发 · 超出排队 · 原任务查询独立</small>`:''}</section>`;
+      const extraChoices=view.seriesManaged
+        ? ''
+        : `<label>画幅${choices('ratio',ratios,selection.ratio)}</label><label>生成时长${choices('duration',durationOptions.length?durationOptions:[duration],duration)}</label>`;
+      const preference=view.seriesManaged
+        ? videoCardSettings285(snapshot,id,number)
+          ? `<div class="media-card-settings"><small>仅本卡</small><button type="button" class="secondary" data-media-reset-settings ${attrs} ${disabled?'disabled':''}>恢复整剧默认</button></div>`
+          : '<small class="media-card-settings-default">整剧默认 · 可在本卡调整</small>'
+        : '';
+      return `<section class="media-block"><strong>视频 · 本卡 ${esc(card.durationSeconds)} 秒</strong><div class="media-choices"><label>线路<select data-media-param="routeType" data-media-action="${action}" ${attrs} ${disabled?'disabled':''}>${routeOptions}</select></label><label>模型${choices('model',list,selection.model)}</label><label>清晰度${choices('resolution',resolutions,selection.resolution)}</label>${extraChoices}</div>${preference}<label class="media-meta"><input type="checkbox" data-media-param="tailFrameContinuation" data-media-action="video" ${attrs} ${tailState.enabled?'checked':''} ${disabled||tailState.issue?'disabled':''}> 尾帧续画 · 自动适配</label><small class="media-meta" data-tail-mode242>${esc(tailFrameLabel242(item,{...selection,duration}))}</small><small class="media-meta" data-tail-slots242>${esc(tailFrameUsage242(item,{...selection,duration},number).text)}</small><small class="media-meta" data-tail-capability role="status">${esc(selection.tailFrameUnavailableReason||tailState.issue|| (tailState.mode==='first-frame'?'固定首帧承接：前卡尾帧直接作为本卡首帧。':'参考图承接：提示词要求以尾帧作为首帧；接口不锁定首帧，实际可能偏差，不能保证首画面完全一致。'))}</small><small class="media-meta">${number===1?'本场首卡按正常方式生成，不从其他场次取画面。':tailState.enabled?'同场前卡完成后本地提取末帧；手选参考图保留，批量按卡顺序生成。'+(tailState.mode==='first-frame'&&item?.firstFrameRequiresImageRatio?' 画幅沿用前卡。':''):'默认关闭；开启后需同场前卡视频已完成。'}</small>${fractional?`<small class="media-meta">原镜头时长不变，末镜既有落幅保持${duration-card.durationSeconds}秒，不增加剧情。</small>`:''}${issue||tailIssue?`<p class="media-error">${esc(issue||tailIssue)}</p>`:''}<div class="media-generate-row"><button type="button" class="primary" data-media-quote="${action}" data-published-credits="${cost===null?'':cost}" ${attrs} ${disabled||issue||tailIssue?'disabled':''}>生成</button><span class="media-cost" aria-live="polite">${item?.pricingMode==='live_quote'?'实时核价 · 生成前确认本卡实际积分':cost===null?'暂无有效积分价格':`生成${esc(duration)}秒 · 预计 ${cost.toFixed(2)} 积分`}</span></div>${Number.isInteger(limit)&&limit>0?`<small class="media-meta" data-video-capacity>本机视频最多 ${limit} 路并发 · 超出排队 · 原任务查询独立</small>`:''}</section>`;
     }).join('');
     const task=view.mediaProgress?.[key]||{},start=view.mediaStarted?.[key]||Number(record.active?.createdAt)*1000;
     const observing=pending&&(!!view.mediaTasks?.[key]&&!['done','error','failed','paused','unknown'].includes(task.state)
       ||Object.values(view.operations||{}).some(row=>['media','observe'].includes(row.kind)&&overlaps(row,id,number)));
+    const saving=task.state==='saving'||task.phase==='saving'||String(task.message||'').startsWith('上游已完成生成，正在保存');
     const progress=Number.isFinite(task.progress)?Math.max(0,Math.min(100,task.progress)):null;
     const elapsed=Number.isFinite(start)?Math.max(0,Math.floor((Date.now()-start)/1000)):null;
     const queueLimit=Number(task.concurrencyLimit||task.concurrency?.limit),atLimit=task.state==='queued'&&(task.concurrency?.atLimit===true||String(task.message||'').includes('并发上限'));
     const missing=record.active?.lookupStatus==='not_found',waitLabel=task.state==='queued'?'原任务累计等待':'已等待';
     const queueStart=Number(task.createdAt)*1000;
-    const wait=observing?`<div class="video-generation-overlay" role="status"><span class="video-generation-spinner" aria-label="生成中"></span><span ${atLimit?'data-media-queue-notice':''}>${atLimit?`已达到 ${queueLimit||20} 路并发上限，本卡排队中`:task.state==='queued'?'已排队，等待空闲生成位':'正在查询原视频任务'}${progress===null?'':` · ${Math.round(progress)}%`}</span>${progress===null?'':`<progress max="100" value="${progress}" aria-label="当前查询阶段"></progress>`}<small data-video-start="${Number.isFinite(start)?start:''}" data-wait-label="${waitLabel}">${elapsed!==null?`${waitLabel} ${Math.floor(elapsed/60)}分${String(elapsed%60).padStart(2,'0')}秒`:'等待原任务返回'}</small>${task.state==='queued'&&Number.isFinite(queueStart)&&queueStart>0?`<small data-video-start="${queueStart}" data-wait-label="本次本地排队"></small>`:''}</div>`:pending?`<div class="video-generation-overlay video-observation-paused" role="status"><strong>${missing?'未找到原订单，等待核对':record.active?.status==='needs_review'||['error','failed','paused'].includes(task.state)?'本机查询已暂停':'原任务已保留，等待接回'}</strong><small>${missing&&!record.active?.taskId?'本地没有上游任务编号，不能确认已完成；原记录保留，未重新生成。':'上游结果待核对；可查询原任务，或解除本机等待后重新核价。'}</small></div>`:'';
+    const waitTitle=saving?task.message||'结果已返回，正在保存和同步…':atLimit?`已达到 ${queueLimit||20} 路并发上限，本卡排队中`:task.state==='queued'?'已排队，等待空闲生成位':'正在查询原视频任务';
+    const wait=observing?`<div class="video-generation-overlay" role="status"><span class="video-generation-spinner" aria-label="处理中"></span><span ${atLimit?'data-media-queue-notice':''}>${esc(waitTitle)}${progress===null||saving?'':` · ${Math.round(progress)}%`}</span>${progress===null?'':`<progress max="100" value="${progress}" aria-label="当前查询阶段"></progress>`}<small data-video-start="${Number.isFinite(start)?start:''}" data-wait-label="${waitLabel}">${elapsed!==null?`${waitLabel} ${Math.floor(elapsed/60)}分${String(elapsed%60).padStart(2,'0')}秒`:'等待原任务返回'}</small>${task.state==='queued'&&Number.isFinite(queueStart)&&queueStart>0?`<small data-video-start="${queueStart}" data-wait-label="本次本地排队"></small>`:''}</div>`:pending?`<div class="video-generation-overlay video-observation-paused" role="status"><strong>${missing?'未找到原订单，等待核对':record.active?.status==='needs_review'||['error','failed','paused'].includes(task.state)?'本机查询已暂停':'原任务已保留，等待接回'}</strong><small>${missing&&!record.active?.taskId?'本地没有上游任务编号，不能确认已完成；原记录保留，未重新生成。':'上游结果待核对；可查询原任务，或解除本机等待后重新核价。'}</small></div>`:'';
     const video=mediaUrl(snapshot.projectId,record.videoFile,'video'),poster=video?`/api/visual/video-preview?projectId=${encodeURIComponent(snapshot.projectId)}&file=${encodeURIComponent(record.videoFile)}`:'',output=`<div class="media-output">${video?`<figure><video controls controlslist="nodownload" preload="metadata" poster="${esc(poster)}" src="${esc(video)}" aria-label="本卡视频播放器"></video></figure>`:'<div class="video-preview-placeholder" aria-label="视频播放区域"><span aria-hidden="true">▷</span></div>'}${wait}</div>${video?`<div class="media-download-row"><a data-macro-download href="${esc(downloadUrl(snapshot.projectId,record.videoFile,'video',`场次-${id}-卡${number}.mp4`))}" download="场次-${esc(id)}-卡${number}.mp4">↓ 下载视频</a></div>`:''}`;
     const history=(record.history||[]).map((row,index)=>{const kind=row.action||row.kind,action=kind==='frame'?'frame':kind==='video'?'video':null,url=action?mediaUrl(snapshot.projectId,row.file,action):'',historyPoster=url&&action==='video'?`/api/visual/video-preview?projectId=${encodeURIComponent(snapshot.projectId)}&file=${encodeURIComponent(row.file)}`:'',name=`场次-${id}-卡${number}-版本${index+1}.${action==='frame'?'jpg':'mp4'}`,meta=`${row.modelName||'模型未记录'} · ${row.durationSeconds??row.duration??'—'}秒 · ${row.resolution||''} · ${ratioLabel(row.ratio)} · ${row.createdAt||''} · 实扣 ${row.chargedPoints??'待核对'} 积分`;return `<article><p class="media-meta">${esc(meta)}</p>${url?(action==='frame'?`<img loading="lazy" src="${esc(url)}" alt="历史首帧">`:`<video controls controlslist="nodownload" preload="none" poster="${esc(historyPoster)}" src="${esc(url)}" aria-label="历史视频播放器"></video>`):'<p>没有可显示的真实媒体文件。</p>'}${url?`<div class="media-download-row"><a data-macro-download href="${esc(downloadUrl(snapshot.projectId,row.file,action,name))}" download="${esc(name)}">下载此版本</a></div>`:''}</article>`;}).join('');
     const requestId=String(record.active?.requestId||''),detach=pending&&requestId?`<button type="button" class="secondary media-detach-button" data-media-detach data-request-id="${esc(requestId)}" ${attrs} ${view.busy?'disabled':''} title="只解除本机等待，不会取消或退款上游任务">解除卡死</button>`:'';
@@ -422,7 +458,7 @@
   }
   function renderReferences(snapshot,segment,number,card,view,complete) {
     const id=segmentId(segment),action='video',key=mediaKey(id,number),ready=(view?.catalog?.assets || []).filter(row=>row.imageReady),record=mediaRecord(snapshot,id,number);
-    const selection=defaultMediaDraft(view?.catalog,action,{referenceAssetIds:cardReferenceSelection(snapshot,id,number,card,view,action),...view?.mediaDrafts?.[key]?.video},snapshot.settings?.ratio || '16:9');
+    const selection=cardMediaSelection(view,snapshot,id,number,card,action);
     const catalogAssets=new Map((view?.catalog?.assets || []).map(row=>[row.id,row]));
     const assets=[...ready,...selection.referenceAssetIds.filter(id=>!ready.some(row=>row.id===id)).map(id=>catalogAssets.get(id)||{id,name:id,kind:'',imageReady:false})];
     const model=mediaModels(view?.catalog,action).find(row=>row.model===selection.model),usage=tailFrameUsage242(model,selection,number),maximum=Number.isInteger(usage.maximum)?usage.maximum:null;
@@ -559,7 +595,9 @@
         // original text node; never use this path for rich editable children.
         if(old.textContent!==next.textContent)old.textContent=next.textContent;
         old._macroChildren=Array.from(old.childNodes);for(const node of old._macroChildren)remember(node);
-      }else children(old,next);old._macroTemplate=nextSignature;
+      }else children(old,next);
+      if(old.tagName==='SELECT'&&old.hasAttribute('data-media-param')&&old.value!==next.value)old.value=next.value;
+      old._macroTemplate=nextSignature;
     }
     function children(parent,next){
       const before=parent._macroChildren||Array.from(parent.childNodes),used=new Set(),after=[];
@@ -598,6 +636,43 @@
     if(unfinishedPrefix&&typeof issue?.message==='string')return issue.code==='pending_return'?'本场还有未返回的分镜；已形成的视频卡可以继续使用，其余内容待继续。':'已形成的视频卡仍保留。'+issue.message;
     return !hasCards&&typeof issue?.message==='string'?issue.message:'';
   }
+  function capacityFailure284(value){
+    const details=value&&typeof value==='object'?(value.details||value.errorDetails||value):{};
+    const message=typeof value==='string'?value:String(value?.message||value?.error||'');
+    let code=String(value?.code||details?.code||'');
+    if(!code&&/本场单个完整发言或自然单元超过请求容量/.test(message))code='SCENE_UNIT_TOO_LARGE';
+    if(!['SCENE_UNIT_TOO_LARGE','SHOT_INPUT_TOO_LARGE'].includes(code))return null;
+    return {code,message,sceneId:details.sceneId||'',sourceStart:details.sourceStart,
+      textBudget:details.textBudget&&typeof details.textBudget==='object'?details.textBudget:null,
+      capacityDiagnostic284:details.capacityDiagnostic284||null};
+  }
+  function capacityMessage284(failure){
+    const diagnostic=failure?.capacityDiagnostic284,detail=typeof diagnostic==='string'?diagnostic:diagnostic?.message||'';
+    const reasons=new Set(Array.isArray(diagnostic?.capacityReasons)?diagnostic.capacityReasons:[]);
+    const location=String(detail||failure?.message||'').match(/^第\s*\d+\s*场/)?.[0]||'本次分镜请求';
+    let cause='',advice='';
+    if(reasons.has('request_bytes')){cause='完整请求超过软件单次请求大小限制';advice='请检查本场引用或联系管理员。';}
+    else if(reasons.has('input')&&reasons.has('output')){cause='输入与预计分镜输出均超过可用预算';advice='请使用输入和输出容量更大的文本线路。';}
+    else if(reasons.has('output')){cause='预计分镜输出超过可用输出预算';advice='请使用输出容量更大的文本线路。';}
+    else if(reasons.has('input')){cause='完整输入超过可用输入预算';advice=diagnostic.assetCount>0?'请检查本批资产选择，或使用输入容量更大的文本线路。':'请使用输入容量更大的文本线路。';}
+    else if(reasons.has('context')){cause='输入与预计输出合计超过可用上下文预算';advice='请使用上下文容量更大的文本线路。';}
+    if(cause)return location+'：'+cause+'。'+advice+'原文和已有分镜仍保留，该段未提交生成。';
+    if(detail)return String(diagnostic?.summary||detail);
+    return '有一段内容未通过容量检查，该段尚未提交生成。原文和已有分镜仍保留。请展开容量详情核对具体限制。';
+  }
+  function capacityMarkup284(failure,opened=false){
+    if(!failure)return '';
+    const b=failure.textBudget||{},number=value=>Number.isFinite(value)&&value>=0?value.toLocaleString('zh-CN'):null,rows=[];
+    if(number(b.fullInputBytes)!==null)rows.push('完整输入：'+number(b.fullInputBytes)+' 字节');
+    if(number(b.estimatedInputTokens)!==null)rows.push('估算输入：'+number(b.estimatedInputTokens)+' tokens');
+    if(number(b.reservedOutputTokens)!==null)rows.push('预留输出：'+number(b.reservedOutputTokens)+' tokens');
+    if(number(b.contextWindowTokens)!==null)rows.push('上下文预算：'+number(b.contextWindowTokens)+' tokens');
+    if(number(b.maxInputTokens)!==null)rows.push('输入上限：'+number(b.maxInputTokens)+' tokens');
+    if(number(b.maxOutputTokensLimit)!==null)rows.push('输出上限：'+number(b.maxOutputTokensLimit)+' tokens');
+    const diagnostic=failure.capacityDiagnostic284,description=typeof diagnostic==='string'?diagnostic:diagnostic?.message||diagnostic?.summary||'';
+    return '<details class="mi-capacity-details284"'+(opened?' open':'')+'><summary>查看容量详情</summary><p>'+esc(failure.message||'本次请求未通过容量检查。')+'</p>'+(rows.length?'<p>'+rows.map(esc).join(' · ')+'</p><p>容量检查采用保守估算；输入字节数不代表模型实际 tokenizer 的 token 数。</p>':'')+(description&&description!==failure.message?'<p>'+esc(String(description))+'</p>':'')+'<small>错误类型：'+esc(failure.code)+(Number.isInteger(failure.sourceStart)?' · 原文位置标记：'+failure.sourceStart:'')+'</small></details>';
+  }
+  function responseError284(data,status){return Object.assign(new Error(data?.error||`接口返回 ${status}`),{status,...(data?.code?{code:data.code}:{}),...(data?.details&&typeof data.details==='object'?{details:data.details}:{})});}
   function sceneStatusNotice(snapshot,id,message){
     if(!snapshot?.shotFirst||snapshot.sourceEpochMatches===false||!id||id==='all')return '';
     const previousPartial=String(snapshot.lastError||'').includes('部分场次未完成')
@@ -632,7 +707,7 @@
       else if(record.videoFile||(record.history||[]).some(row=>(row.action||row.kind)==='video'&&row.file))reason='已有视频';
       else if(view.mediaUnknown?.[mediaKey(id,number)]||[...Object.values(record.activeTasks||{}),record.active].some(row=>row&&Object.keys(row).length&&!['completed','refunded','not_submitted','failed','cancelled','detached'].includes(row.status)))reason='原任务执行中或待核对';
       else if(cardMediaBlocked(view,id,number)||operationBlocked(view,id,number)||textBlocked(view,id,number))reason='原任务执行中或待核对';
-      else{const choice=defaultMediaDraft(view.catalog,'video',{referenceAssetIds:cardReferenceSelection(snapshot,id,number,card,view),...view.mediaDrafts?.[mediaKey(id,number)]?.video},snapshot.settings?.ratio||'16:9',card);reason=mediaIssue(view.catalog,'video',choice,card.durationSeconds,card);}
+      else{const choice=cardMediaSelection(view,snapshot,id,number,card,'video');reason=mediaIssue(view.catalog,'video',choice,card.durationSeconds,card);}
       if(reason)skipped.push({cardNumber:number,reason});else ready.push(number);
     }
     return {segmentId:id,title:scene.title||'当前场次',cardNumbers:ready,skipped,totalCards:cards.length,
@@ -683,14 +758,28 @@
         const recovery=cardRecoveryState(view,id,number),checking=recovery.uncertain||recovery.running.length>0;
         const regenerate=`<button type="button" class="primary card-regenerate-button" data-card-regenerate data-segment="${esc(id)}" data-card="${number}" ${blocked||regenerateUncertain?'disabled':''}>重新生成</button>`
           +(checking?`<button type="button" class="secondary card-recovery-button" data-card-recover data-segment="${esc(id)}" data-card="${number}" ${operationBlocked(view,id,number)?'disabled':''} title="只查询本卡关联的原任务和旧订单，不重新调用模型、不新增扣费">${recovery.uncertain?'核对旧单'+(recovery.pending.length?'（'+recovery.pending.length+'）':''):'查询状态'}</button>`:'');
-        const cardError=snapshot.cardRegenerations?.[id]?.[String(number)]?.error;
-        const errorHTML=cardError ? `<div class="card-regeneration-error" role="alert">${typeof globalThis.ModelActivity?.markup==='function'?globalThis.ModelActivity.markup('error',String(cardError)):'<span>本卡补齐未完成：'+esc(cardError)+'</span>'}</div>` : '';
+        const cardRecord=snapshot.cardRegenerations?.[id]?.[String(number)]||{};
+        const inProgress=!!work&&work.phase!=='card_failed',cardError=cardRecord.error;
+        const errorHTML=cardError&&!inProgress ? `<div class="card-regeneration-error" role="alert">${typeof globalThis.ModelActivity?.markup==='function'?globalThis.ModelActivity.markup('error',String(cardError)):'<span>本次补齐未完成：'+esc(cardError)+'</span>'}</div>` : '';
         const warnings=Array.isArray(card.speechValidationWarnings)?card.speechValidationWarnings:[];
         const details=Array.isArray(card.detailDiagnostics)?card.detailDiagnostics:[];
         const warningHTML=renderStoryboardChecks(warnings,details);
-        const returnHTML=''; // 完整原返回保留在场次记录中，原记录不删除。
-        const pendingHTML='<p class="card-recovery-note">重新生成将发起新调用并正常计费；旧单独立保留。</p>'+(work?`<div class="card-text-wait" role="status" aria-live="polite" data-card-text-pending data-card-text-phase="${esc(work.phase||'preparing')}">${work.animate===false?'':'<i class="video-generation-spinner" aria-hidden="true"></i>'}<div><strong>${esc(textWorkTitle(work))}</strong><small>${esc(work.message||'本卡独立处理中，其他卡片可继续操作。')}${complete?' · 下方暂保留上次已保存的分镜，本次新结果尚未替换。':''}</small></div></div>`:'');
-        html.push(`<article class="video-card" data-segment="${esc(id)}" data-card="${number}"${panelAttrs}><div class="card-heading"><h3>${navigation?'视频卡 '+number:'第 '+(sceneIndex+1)+' 场 · 卡 '+number} · ${esc(card.durationSeconds)} 秒</h3><span>${card.storyboardStale?'原文已修改，待重新补齐本卡分镜':complete ? '分镜已保存' : '待补齐分镜'}</span></div>${typeof card.sourceText==='string' ? `<details class="card-source-panel" data-source-panel data-source-key="${esc(JSON.stringify([id,number]))}"><summary><span class="source-expand-label">查看原文</span><span class="source-collapse-label">收起原文</span><span class="source-dirty-label" data-source-dirty hidden>有未保存修改</span></summary><section data-source-editor data-segment="${esc(id)}" data-card="${number}"><h4>本卡原文</h4><div class="card-source">${esc(card.sourceText)}</div></section></details>` : ''}<section class="shot-list">${errorHTML}${warningHTML}${returnHTML}${renderStyle(snapshot.stylePresentation)}${pendingHTML}<div class="storyboard-panel-head"><h4>视频描述词</h4>${regenerate}</div>${complete ? `<div class="macro-card-editor" data-prompt-editor data-segment="${esc(id)}" data-card="${number}"><div class="plain-storyboard" tabindex="0">${esc(draft?.prompt ?? prompt)}</div></div>` : '<div class="storyboard-pending empty">待补齐本卡分镜</div>'}</section>${view && complete ? renderMedia(snapshot,segment,number,card,view) : '<section class="media-panel"><div class="video-preview-placeholder" aria-label="视频播放区域"><span aria-hidden="true">▷</span></div></section>'}${renderReferences(snapshot,segment,number,card,view,complete)}</article>`);
+        const savedReturn=returnedContent(cardRecord),cachedReturn=view?.storyboardReturns?.[mediaKey(id,number)];
+        // A preview belongs to one exact raw response, not every later attempt
+        // on the same card. Keep historical receipts without relabelling them.
+        const inspectedReturn=savedReturn?cachedReturn?.rawResponse===savedReturn.rawResponse?cachedReturn:null
+          :cardRecord.hasSavedStoryboardReturn===true&&Number.isInteger(cachedReturn?.snapshotRead291)
+            &&cachedReturn.snapshotRead291===view?.snapshotRead291?cachedReturn:null;
+        const readReturnButton=`<button type="button" class="secondary" data-storyboard-return data-segment="${esc(id)}" data-card="${number}" ${inProgress||operationBlocked(view,id,number)?'disabled':''}>读取原返回并核对（免费）</button>`;
+        const showReturn=(savedReturn||cardRecord.hasSavedStoryboardReturn===true)&&(!complete||['returned_unstructured','validation_failed','failed','error'].includes(textStatus(cardRecord)));
+        const currentReturn=!!savedReturn?.claimId&&savedReturn.claimId===(work?.cardProgress?.[String(number)]?.stageClaimId||work?.claimId);
+        const previousHTML=inProgress&&(showReturn||cardError)?`<details class="storyboard-audit" data-card-return-history><summary>${currentReturn?'本次返回记录':'上次返回记录'}</summary><p>${currentReturn?'本次原返回已保留，当前正在同步处理结果。':'以下是上次调用的记录；本次任务仍在进行中。'}</p>${cardError||savedReturn?.validationError?`<p>${esc(cardError||savedReturn.validationError)}</p>`:''}${showReturn?readReturnButton:''}<small>当前任务结束后可免费核对，未重新提交旧任务。</small></details>`:'';
+        const returnHTML=!inProgress&&showReturn?`<section class="storyboard-return" data-card-saved-return role="status"><p>${!savedReturn?'本卡有已保存的模型原返回，可免费核对。':complete?'本次模型返回已保存，尚未替换下方已保存的分镜。':'本卡模型返回已保存，尚未写入当前分镜。'}${savedReturn?.validationError?`原因：${esc(savedReturn.validationError)}`:''}</p>${readReturnButton}<small>读取已保存的本卡结果，不重新生成、不新增扣费。</small>${inspectedReturn?`<details><summary>查看本卡原返回</summary>${renderReturnedContent(inspectedReturn,complete)}</details>`:''}</section>`:'';
+        const pendingHTML=(work?`<div class="card-text-wait" role="status" aria-live="polite" data-card-text-pending data-card-text-phase="${esc(work.phase||'preparing')}">${work.animate===false?'':'<i class="video-generation-spinner" aria-hidden="true"></i>'}<div><strong>${esc(textWorkTitle(work))}</strong><small>${esc(textWorkMessage291(work))}${complete?' · 下方暂保留上次已保存的分镜，本次新结果尚未替换。':''}</small></div></div>`:'')+'<p class="card-recovery-note">重新生成将发起新调用并正常计费；旧单独立保留。</p>';
+        const runningLabel=work?.phase==='syncing_card'?'正在同步本卡结果':textStatus(work)==='queued'||work?.phase==='waiting_card'?'本卡已排队，等待生成':'本卡正在生成';
+        const headingStatus=inProgress?runningLabel:work?.phase==='card_failed'?'本次补齐未完成':card.storyboardStale?'原文已修改，待重新补齐本卡分镜':complete?'分镜已保存':'待补齐分镜';
+        const emptyPrompt=inProgress?`${runningLabel}，完成后显示在这里。`:'待补齐本卡分镜';
+        html.push(`<article class="video-card" data-segment="${esc(id)}" data-card="${number}"${panelAttrs}><div class="card-heading"><h3>${navigation?'视频卡 '+number:'第 '+(sceneIndex+1)+' 场 · 卡 '+number} · ${esc(card.durationSeconds)} 秒</h3><span>${esc(headingStatus)}</span></div>${typeof card.sourceText==='string' ? `<details class="card-source-panel" data-source-panel data-source-key="${esc(JSON.stringify([id,number]))}"><summary><span class="source-expand-label">查看原文</span><span class="source-collapse-label">收起原文</span><span class="source-dirty-label" data-source-dirty hidden>有未保存修改</span></summary><section data-source-editor data-segment="${esc(id)}" data-card="${number}"><h4>本卡原文</h4><div class="card-source">${esc(card.sourceText)}</div></section></details>` : ''}<section class="shot-list">${pendingHTML}${errorHTML}${warningHTML}${previousHTML}${returnHTML}${renderStyle(snapshot.stylePresentation)}<div class="storyboard-panel-head"><h4>视频描述词</h4>${regenerate}</div>${complete ? `<div class="macro-card-editor" data-prompt-editor data-segment="${esc(id)}" data-card="${number}"><div class="plain-storyboard" tabindex="0">${esc(draft?.prompt ?? prompt)}</div></div>` : `<div class="storyboard-pending empty" ${inProgress?'data-card-generation-placeholder':''}>${esc(emptyPrompt)}</div>`}</section>${view && complete ? renderMedia(snapshot,segment,number,card,view) : '<section class="media-panel"><div class="video-preview-placeholder" aria-label="视频播放区域"><span aria-hidden="true">▷</span></div></section>'}${renderReferences(snapshot,segment,number,card,view,complete)}</article>`);
       }
     }
     return html.join('') || '<p class="empty">当前场次尚未保存原文切割结果。</p>';
@@ -706,10 +795,13 @@
     const projectId = String(options.projectId || '');
     const initialSnapshot=options.initialSnapshot&&options.initialSnapshot.projectId===projectId?options.initialSnapshot:null;
     const draft = {source:'',policy:{mode:'smart',maxSeconds:15,requestedSeconds:0},settings:{}};
-    const view = {projectId,snapshot:{},filter:'all',quote:null,busy:false,operations:{},activeTask:'',textTasks:{},textUnknown:{},submitUncertain:false,message:'',error:false,loaded:false,catalog:null,mediaDrafts:{},mediaTasks:{},mediaRequests:{},mediaUnknown:{},mediaProgress:{},mediaStarted:{},storyboardReturns:{}};
+    const view = {projectId,seriesManaged:options.seriesManaged===true,snapshot:{},filter:'all',quote:null,busy:false,operations:{},activeTask:'',textTasks:{},textUnknown:{},submitUncertain:false,message:'',error:false,loaded:false,catalog:null,mediaDrafts:{},mediaTasks:{},mediaRequests:{},mediaUnknown:{},mediaProgress:{},mediaStarted:{},storyboardReturns:{}};
     if(initialSnapshot){view.snapshot=initialSnapshot;view.cachedSnapshot=true;view.message='先显示本项目已保存分镜，正在读取最新状态。';}
-    let stateLoadPromise=null;
+    let stateLoadPromise=null, incrementalRefresh=null, refreshRequested=false, cardStateEpoch=0;
     const terminalTextReceipts=new Map();
+    const textRefreshKeys=new Map();
+    const liveTextFields=['state','status','phase','message','progress','availableCardCount','completedSceneCount',
+      'finishedRequestCount','completedRequestCount','totalRequestCount','activeRequestCount','requestConcurrencyLimit'];
     let foregroundLoads=0;
     const quotes=new Map(),regroupPreviews=new Map(),sceneBatches230=new Map();let operationId=0;
     view.sceneVideoBatches230={};
@@ -718,7 +810,7 @@
     let epoch = 0, loadEpoch = 0, catalogEpoch232 = 0, mediaPriceEpoch156 = 0, pipelineReadEpoch = 0, disposed = false, submittedAction = null;
     // The snapshot is read-only to views and is replaced on accepted responses.
     // Never JSON-copy megabytes of receipts once per mounted card or poll tick.
-    const emit = () => { if (!disposed && options.onChange) options.onChange({...view},draft); };
+    const emit = (progressOnly=false) => { if (!disposed && options.onChange) options.onChange({...view},draft,progressOnly); };
     const begin=(action,id,number,kind='text',phase='preparing')=>{if((kind==='detach'?detachBlocked:operationBlocked)(view,id,number))throw Error('本卡正在提交，请勿重复点击。');const token=String(++operationId);view.operations[token]={action,segmentId:id,cardNumber:number,kind,state:'running',phase};return token;};
     const end=token=>{delete view.operations[token];emit();};
     function mergeCardState(incoming,id,number){
@@ -729,8 +821,10 @@
         if(row!==undefined)next[field]={...next[field],[id]:{...next[field]?.[id],[String(number)]:row}};
       }
       view.snapshot=next;
+      cardStateEpoch++;
     }
-    const message = (text,isError=false) => {view.message=text;view.error=isError;emit();};
+    let messageEpoch=0;
+    const message = (text,isError=false,progressOnly=false) => {messageEpoch++;view.errorDetails=isError?capacityFailure284(text):null;view.message=view.errorDetails?capacityMessage284(view.errorDetails):typeof text==='string'?text:text?.message||String(text);view.error=isError;emit(progressOnly);};
     const api = (url,body) => options.request(url,body === undefined ? {method:'GET'} : {method:'POST',body});
     const identity = (action,id,number) => JSON.stringify(isPlanAction(action)?{epoch,action,draft}:{epoch,action,id,number,plan:number?cardIdentity228(view.snapshot,id,number)||view.snapshot.plan?.planHash:view.snapshot.plan?.planHash,edit:number?view.snapshot.sourceEdits?.[id]?.[String(number)]:view.snapshot.sourceEdits?.[id],settings:view.snapshot.currentSettings??draft.settings});
     const anyActive = () => anyTextActive(view) || ['queued','running'].includes(view.snapshot.task?.state);
@@ -744,7 +838,7 @@
     const localUnknown=scope=>({...scope,_local:true,_baseline:scopeReceipt(view.snapshot,scope),
       _knownClaimIds:savedTextTasks(view.snapshot).filter(row=>sameScope(row,scope)).map(row=>row.claimId).filter(Boolean)});
     const ownedCard=(id,number)=>{const row=segments(view.snapshot).find(row=>segmentId(row)===id);if(!row || !Number.isInteger(number)||number<1)throw Error('本卡不存在。');const card=readSceneCards(view.snapshot,row)[number-1];if(!card?.complete || card.storyboardStale || !card.storyboard&&!card.shots?.length&&!card.directorGuide?.shots?.length)throw Error('本卡分镜未完成或原文已修改，请先补齐本卡。');return card;};
-    const mediaSelection=(id,number,action)=>{const card=readSceneCards(view.snapshot,segments(view.snapshot).find(row=>segmentId(row)===id)||{})[number-1];return defaultMediaDraft(view.catalog,action,{referenceAssetIds:cardReferenceSelection(view.snapshot,id,number,card,view,action),...view.mediaDrafts[mediaKey(id,number)]?.[action]},view.snapshot.settings?.ratio || '16:9',card);};
+    const mediaSelection=(id,number,action)=>{const card=readSceneCards(view.snapshot,segments(view.snapshot).find(row=>segmentId(row)===id)||{})[number-1];return cardMediaSelection(view,view.snapshot,id,number,card,action);};
     const mediaIdentity=(id,number,action)=>{const card=cardIdentity228(view.snapshot,id,number);return JSON.stringify({epoch,mediaPriceEpoch156,id,number,action,selection:mediaSelection(id,number,action),...(card?{card}:{planHash:view.snapshot.plan?.planHash,resultHash:view.snapshot.segments?.[id]?.result?.rawResponseHash}),draft:view.snapshot.cardDrafts?.[id]?.[String(number)] || null});};
     const mediaBlocked=(id,number)=>cardMediaBlocked(view,id,number);
     const mediaHasOriginal=(id,number)=>mediaActive(mediaRecord(view.snapshot,id,number)) || !!view.mediaTasks[mediaKey(id,number)] || !!view.mediaUnknown[mediaKey(id,number)];
@@ -814,15 +908,33 @@
       const clear=()=>{if(stateLoadPromise===work)stateLoadPromise=null;};
       work.then(clear,clear);return work;
     }
+    function refreshTextProjection(){
+      refreshRequested=true;
+      if(incrementalRefresh)return;
+      incrementalRefresh=(async()=>{
+        while(refreshRequested&&!disposed){
+          refreshRequested=false;
+          if(stateLoadPromise)await stateLoadPromise.catch(()=>{});
+          if(disposed)return;
+          try{await load({background:true,quiet:true});}
+          catch(_){textRefreshKeys.clear();break;}
+        }
+      })().finally(()=>{incrementalRefresh=null;if(refreshRequested&&!disposed)refreshTextProjection();});
+    }
     async function loadFresh(settings={}) {
-      assertProject(); const serial=++loadEpoch,foreground=settings.background!==true,existingText=new Set(Object.keys(view.textTasks));if(foreground){foregroundLoads++;view.busy=true;emit();}
+      assertProject(); const serial=++loadEpoch,foreground=settings.background!==true,existingText=new Set(Object.keys(view.textTasks)),readMessage=messageEpoch;if(foreground){foregroundLoads++;view.busy=true;emit();}
       try {
-        let incoming=await api(`/api/visual/macro/state?projectId=${encodeURIComponent(projectId)}`);
+        let incoming;
+        for(let revision;;){
+          revision=cardStateEpoch;
+          incoming=await api(`/api/visual/macro/state?projectId=${encodeURIComponent(projectId)}`);
+          if(revision===cardStateEpoch||disposed||serial!==loadEpoch)break;
+        }
         if (serial !== loadEpoch || disposed) return;
         if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming) || incoming.projectId !== projectId) throw Error('项目状态返回不完整或身份不匹配，已保存分镜仍保留，请重新加载。');
         rememberDownloadModule227(incoming);
         incoming=withDetachedReceipts(incoming);
-        view.snapshot=incoming;view.loaded=true;view.cachedSnapshot=false;view.projectReadError='';
+        view.snapshot=incoming;view.snapshotRead291=(view.snapshotRead291||0)+1;view.loaded=true;view.cachedSnapshot=false;view.projectReadError='';
         for(const [id,cards] of Object.entries(incoming.media || {}))for(const [number,record] of Object.entries(cards || {})){
           const key=mediaKey(id,Number(number)),active=record.active || {};
           if(mediaActive(record)&&Number.isFinite(active.createdAt))view.mediaStarted[key]=active.createdAt*1000;
@@ -841,26 +953,30 @@
         for(const row of savedTextTasks(incoming)){
           const taskId=String(row.taskId||row.localTaskId||'');
           if(['needs_review','uncertain'].includes(row.status)){incomingUnknown[row.claimId||JSON.stringify([row.segmentId,row.cardNumber])]=clone(row);continue;}
-          if(taskId){const live=view.textTasks[taskId];incomingTasks[taskId]={...clone(row),...(live?{state:live.state,phase:live.phase,message:live.message,progress:live.progress}:{})};}
+          if(taskId){const live=view.textTasks[taskId];incomingTasks[taskId]={...clone(row),...Object.fromEntries(liveTextFields.filter(key=>live&&key in live).map(key=>[key,live[key]]))};}
         }
         for(const [key,row]of Object.entries(previousUnknown))if(row._local&&!savedTasks.some(saved=>sameScope(saved,row)&&
           (row.claimId?saved.claimId===row.claimId:!(row._knownClaimIds||[]).includes(saved.claimId)))&&scopeReceipt(incoming,row)===row._baseline)incomingUnknown[key]=row;
         const unresolvedActive=['needs_review','uncertain'].includes(String(active.status||''));
         if(!Object.keys(incomingTasks).length&&!isTerminalTextTask(active)&&!unresolvedActive&&task&&['queued','running'].includes(task.state)){const taskId=String(task.id||task.taskId||'');if(taskId)incomingTasks[taskId]={...active,taskId,action:active.action||submittedAction?.action||'plan',segmentId:active.segmentId||submittedAction?.segmentId,cardNumber:active.cardNumber||submittedAction?.cardNumber};}
-        for(const [taskId,row]of Object.entries(view.textTasks))if(terminalTextReceipts.has(taskId)||!existingText.has(taskId))incomingTasks[taskId]=row;
+        for(const [taskId,row]of Object.entries(view.textTasks))if(terminalTextReceipts.has(taskId)||!existingText.has(taskId)
+          ||row.localSubmit&& !savedTasks.some(saved=>String(saved.taskId||saved.localTaskId||'')===taskId))incomingTasks[taskId]=row;
         view.textTasks=incomingTasks;view.textUnknown=incomingUnknown;view.activeTask=Object.keys(incomingTasks)[0]||'';
         const submittedRecord=submittedAction?.cardNumber ? incoming.cardRegenerations?.[submittedAction.segmentId]?.[String(submittedAction.cardNumber)] : submittedAction?.segmentId ? incoming.segments?.[submittedAction.segmentId] : null;
         const definitive=!!view.activeTask || ['done','error','failed'].includes(task?.state) || (submittedAction?.action==='plan' && segments(incoming).length>0) || (submittedRecord && ['ready','done','completed','arranged','failed','error','validation_failed','not_submitted'].includes(submittedRecord.status));
         view.submitUncertain=!!(incoming.uncertain || active.status==='needs_review'&&!active.segmentId || task?.state==='uncertain' || wasUncertain && !definitive);
         if(view.quote){const quote=view.quote,valid=quote.kind==='media'?quote.token===mediaIdentity(quote.segmentId,quote.cardNumber,quote.action):quote.token===identity(quote.action,quote.segmentId,quote.cardNumber);if(!valid)view.quote=null;}
-const progressiveCards=segments(incoming).reduce((sum,scene)=>sum+(incoming.segments?.[segmentId(scene)]?.result?.progressive228===true?readSceneCards(incoming,scene).filter(cardComplete).length:0),0);
-view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCards} 张视频卡；这些卡可先编辑或生成视频。`:''}已完成 ${incoming.completedSceneCount||0}/${incoming.totalSceneCount||0} 场分镜。${snapshotTextInFlight(incoming)?'后续分镜继续处理中，已形成的卡片保持不变。':incoming.canResume?'其余场次可点击“继续未完成编排”。':'已完成场次可直接生成视频，无需再补整遍分镜。'}` : segments(incoming).length ? '已读取剧情场次与已保存分镜。切换场次不调用模型，补齐分镜按报价付费。' : '原稿已读取。请设置整场分镜，按场生成镜头并顺序组卡；补齐分镜按实际调用计费。';view.error=false;
-      if(!incoming.completedSceneCount&&Object.values(incoming.savedStoryboardReturns||{}).some(row=>Object.values(row.sceneEditors||{}).some(slot=>slot.emptyShots===true))){view.message='本次尚未生成可用镜头，原返回已保留。可重新补齐当前场次；没有自动重提。';view.error=true;}
-        if(incoming.lastError){view.message=`上次未完成：${String(incoming.lastError)}\n原稿及原返回保留。可对同一稿重新免费核价，确认后才发起新的调用；不会自动重试。`;view.error=true;}
-        if(view.submitUncertain){view.message='上次调用记录已保留，不影响再次操作；手动生成会发起新的调用。';view.error=false;}
+        if(readMessage===messageEpoch&&(foreground||!view.activeTask)){
+          const progressiveCards=segments(incoming).reduce((sum,scene)=>sum+(incoming.segments?.[segmentId(scene)]?.result?.progressive228===true?readSceneCards(incoming,scene).filter(cardComplete).length:0),0);
+          view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCards} 张视频卡；这些卡可先编辑或生成视频。`:''}已完成 ${incoming.completedSceneCount||0}/${incoming.totalSceneCount||0} 场分镜。${snapshotTextInFlight(incoming)?'后续分镜继续处理中，已形成的卡片保持不变。':incoming.canResume?'其余场次可点击“继续未完成编排”。':'已完成场次可直接生成视频，无需再补整遍分镜。'}` : segments(incoming).length ? '已读取剧情场次与已保存分镜。切换场次不调用模型，补齐分镜按报价付费。' : '原稿已读取。请设置整场分镜，按场生成镜头并顺序组卡；补齐分镜按实际调用计费。';view.error=false;
+          if(!incoming.completedSceneCount&&Object.values(incoming.savedStoryboardReturns||{}).some(row=>Object.values(row.sceneEditors||{}).some(slot=>slot.emptyShots===true))){view.message='本次尚未生成可用镜头，原返回已保留。可重新补齐当前场次；没有自动重提。';view.error=true;}
+          view.errorDetails=capacityFailure284(incoming.lastErrorDetails?{...incoming.lastErrorDetails,message:incoming.lastError}:incoming.lastError);
+          if(incoming.lastError){view.message=view.errorDetails?capacityMessage284(view.errorDetails):`上次未完成：${String(incoming.lastError)}\n原稿及原返回保留。可对同一稿重新免费核价，确认后才发起新的调用；不会自动重试。`;view.error=true;}
+          if(view.submitUncertain){view.message='上次调用记录已保留，不影响再次操作；手动生成会发起新的调用。';view.error=false;}
+        }
       } catch(error) {
         const failure=Object.assign(new Error(error?.message||String(error)),{projectStateRead:true});
-        if(serial===loadEpoch&&!disposed)view.projectReadError=failure.message;
+        if(serial===loadEpoch&&!disposed&&!settings.quiet)view.projectReadError=failure.message;
         throw failure;
       }
       finally {if(foreground){foregroundLoads--;view.busy=foregroundLoads>0;}if(serial===loadEpoch||foreground)emit();}
@@ -874,6 +990,9 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
     }
     function selectSegment(id) { if(id!=='all' && !segments(view.snapshot).some(row=>segmentId(row)===id)) throw Error('找不到这个场次。');view.filter=id;emit(); }
     async function quote(action,id,number,extra={}) {
+      const retry=extra.retryPart286;
+      if(retry&&(action!=='plan_resume'||!scenePart286(view.snapshot,retry.sceneId,retry.requestHash,'retry_part')))
+        throw Error('这个分段的状态已变化，请刷新后重新选择。');
       const scopedPlanStart=action==='plan'&&extra.restart===true&&['current','all'].includes(extra.scope);
       assertProject();if(!view.loaded)throw Error('请先读取项目。');if(operationBlocked(view,id,number) || (action==='plan_resume'?anyActive():action==='plan'?(scopedPlanStart?scopedPlanTextBlocked(view):anyActive())||mediaScopeActive():scopeActive(id,number)||mediaScopeActive(id,number)))throw Error('本次任务正在执行，完成后可再次点击；其他功能可继续使用。');
       if(!['plan','plan_resume','segment'].includes(action))throw Error('报价动作无效。');
@@ -895,9 +1014,13 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
           // This is a workflow routing option, not part of the card-duration contract.
           delete policy.arrangementMode;
         }
-        const response=await api('/api/visual/macro/quote',{projectId,source:action==='plan'&&(repeatable()||extra.scope)?view.snapshot.currentSource??draft.source:draft.source,policy,settings:clone(repeatable()||action==='plan'&&extra.scope||action==='segment'&&savedCardActions()?view.snapshot.currentSettings??draft.settings:draft.settings),action,...(extra.directSubmit?{directSubmit:true}:{}),...(action==='plan'?{arrangementMode,...(extra.scope?{scope:extra.scope,...(extra.scope==='current'?{segmentId:extra.segmentId,sceneNumber:extra.sceneNumber}:{})}:{})}:{}),...(extra.restart?{restart:true}:{}),...(id ? {segmentId:id} : {}),...(number!==undefined?{cardNumber:number}:{}),...(completionMode?{completionMode}:{})});
+        const response=await api('/api/visual/macro/quote',retry?{projectId,action,retryPart286:retry}:{projectId,source:action==='plan'&&(repeatable()||extra.scope)?view.snapshot.currentSource??draft.source:draft.source,policy,settings:clone(repeatable()||action==='plan'&&extra.scope||action==='segment'&&savedCardActions()?view.snapshot.currentSettings??draft.settings:draft.settings),action,...(extra.directSubmit?{directSubmit:true}:{}),...(action==='plan'?{arrangementMode,...(extra.scope?{scope:extra.scope,...(extra.scope==='current'?{segmentId:extra.segmentId,sceneNumber:extra.sceneNumber}:{})}:{})}:{}),...(extra.restart?{restart:true}:{}),...(id ? {segmentId:id} : {}),...(number!==undefined?{cardNumber:number}:{}),...(completionMode?{completionMode}:{})});
         if(disposed || token!==identity(action,id,number)){message('原稿或设置已变化，旧报价已作废，请重新免费核价。');return null;}
         const quotedAction=action==='plan'&&extra.scope&&response?.action==='plan_resume'?'plan_resume':action;
+        if(retry&&(response?.maxCalls!==1||response?.retryPart286?.sceneId!==retry.sceneId||
+            response?.retryPart286?.requestHash!==retry.requestHash||
+            !scenePart286(view.snapshot,retry.sceneId,retry.requestHash,'retry_part')))
+          throw Error('本次费用与所选分段不匹配，未提交。');
         if(!validTextQuote(response,quotedAction,id,number,view.snapshot,completionMode))throw Error('报价字段不完整、补齐范围或卡片不匹配、调用次数或费用不一致，未开放提交。');
         const prepared={...response,...(completionMode?{completionMode}:{}),kind:'text',segmentId:id||'',cardNumber:number,restart:!!extra.restart,scopedPlanStart,directSubmit:extra.directSubmit===true,token:quotedAction===action?token:identity(quotedAction,id,number)};
         quotes.set(prepared.quoteId,prepared);
@@ -905,10 +1028,13 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         // shared modal, or overwrite another card/action's open confirmation.
         if(!extra.directSubmit)view.quote=prepared;
         message(extra.directSubmit?'本卡费用已核对，正在提交重新生成。':'报价已就绪；确认后付费调用模型，取消不调用、不扣费。');return clone(prepared);
-      } catch(error){message(error.message,true);throw error;}finally{end(op);}
+      } catch(error){message(error,true);throw error;}finally{end(op);}
     }
     async function confirmQuote(quoted) {
       const pending=quoted||view.quote;
+      const retry=pending?.retryPart286;
+      if(retry&&!scenePart286(view.snapshot,retry.sceneId,retry.requestHash,'retry_part'))
+        throw Error('这个分段的状态已变化，本次报价已失效。');
       if(pending?.directSubmit&&directRegenerationBlocked(view,pending.segmentId,pending.cardNumber))throw Error('本卡新任务仍在执行或本次提交回执未确认，请勿重复点击；旧待核单独立保留。');
       const planBlocked=pending?.scopedPlanStart?scopedPlanTextBlocked(view):anyActive();
       if(!pending || !quotes.has(pending.quoteId) || operationBlocked(view,pending.segmentId,pending.cardNumber) || pending.kind==='media' || (pending.action==='plan_resume'?planBlocked:pending.action==='plan'?planBlocked||mediaScopeActive():scopeActive(pending.segmentId,pending.cardNumber)||mediaScopeActive(pending.segmentId,pending.cardNumber)) || pending.token!==identity(pending.action,pending.segmentId,pending.cardNumber))throw Error('报价已失效或对应范围已有调用，请重新检查当前状态。');
@@ -916,7 +1042,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
       try {
         const response=await api('/api/visual/macro/submit',{projectId,quoteId:pending.quoteId,confirmed:true});
         if(typeof response.taskId!=='string' || !response.taskId)throw Error('未收到任务编号。');
-        view.textTasks[response.taskId]={taskId:response.taskId,state:'queued',action:pending.action,shotFirst:pending.shotFirst===true,segmentId:pending.segmentId,cardNumber:pending.cardNumber,maxCalls:pending.maxCalls,...(Array.isArray(pending.cardNumbers)?{cardNumbers:clone(pending.cardNumbers)}:{})};syncTextAlias();message('本地任务已创建；空闲执行位会立即开始核价与提交，其他卡片可独立操作。');return response.taskId;
+        view.textTasks[response.taskId]={taskId:response.taskId,state:'queued',localSubmit:true,action:pending.action,shotFirst:pending.shotFirst===true,segmentId:pending.segmentId,cardNumber:pending.cardNumber,maxCalls:pending.maxCalls,...(Array.isArray(pending.cardNumbers)?{cardNumbers:clone(pending.cardNumbers)}:{})};syncTextAlias();message('本地任务已创建；空闲执行位会立即开始核价与提交，其他卡片可独立操作。');return response.taskId;
       } catch(error){view.textUnknown[JSON.stringify([pending.segmentId,pending.cardNumber])]=localUnknown({action:pending.action,segmentId:pending.segmentId,cardNumber:pending.cardNumber});syncTextAlias();message(`本次提交未确认：${error.message}\n原记录独立保留，按钮已恢复；再次点击会发起新调用，不会自动重试。`,true);throw error;}
       finally{end(op);}
     }
@@ -924,32 +1050,66 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
       if(!taskId)return {done:true};
       const receipt=terminalTextReceipts.get(taskId);
       const scope=receipt?.scope||view.textTasks[taskId]||{action:'plan'};
-      const task=receipt?.task||await api(`/api/tasks/${encodeURIComponent(taskId)}`);
+      let task;
+      try{task=receipt?.task||await api(`/api/tasks/${encodeURIComponent(taskId)}`);}
+      catch(error){
+        if((error?.status??error?.httpStatus)!==404)throw error;
+        // The local worker disappeared. Read the project journal before
+        // clearing the spinner; its original paid call may still be unknown.
+        if(stateLoadPromise)await stateLoadPromise.catch(()=>{});
+        if(disposed)return {done:true};
+        await load({background:true,quiet:true});
+        if(disposed)return {done:true};
+        const saved=savedTextTasks(view.snapshot).find(row=>String(row.taskId||row.localTaskId||'')===taskId);
+        if(saved&&textTaskInFlight(saved))return {done:false};
+        delete view.textTasks[taskId];textRefreshKeys.delete(taskId);syncTextAlias();
+        const pending=!!saved&&reviewTextStatuses.has(textStatus(saved));
+        message(view.snapshot.lastError||(pending?'本机分镜任务已停止，请核对原调用。':'本机任务状态已同步，已保存的分镜保留。'),pending);
+        return {done:true,uncertain:pending};
+      }
       if(disposed)return {done:true};
       if(task.state==='done' || task.state==='error' || task.state==='failed') {
         const failed=task.state!=='done';
+        const syncing=failed?`本次未完成：${task.error||task.message||'请查看本段保存的错误信息'}。正在同步原记录…`:'任务已返回，正在读取已保存的结果…';
         terminalTextReceipts.set(taskId,{task,scope});
-        if(!view.textTasks[taskId]){view.textTasks[taskId]=scope;syncTextAlias();}
+        view.textTasks[taskId]={...scope,state:task.state,status:task.state,progress:100,syncing};syncTextAlias();
+        if(!receipt)message(syncing,failed,true);
         // An earlier read could have captured the snapshot before the task finished.
         if(stateLoadPromise)await stateLoadPromise.catch(()=>{});
         if(disposed)return {done:true};
-        await load({background:true});
+        await load({background:true,quiet:true});
         if(disposed)return {done:true};
         terminalTextReceipts.delete(taskId);
+        textRefreshKeys.delete(taskId);
         delete view.textTasks[taskId];syncTextAlias();
         const returned=task.returnedUnstructured===true||task.result?.returnedUnstructured===true||task.result?.workflowComplete===false&&task.result?.returnedContent||returnedContent(scope.cardNumber?view.snapshot.cardRegenerations?.[scope.segmentId]?.[String(scope.cardNumber)]:view.snapshot.segments?.[scope.segmentId]);
         message(failed ? `本次未完成：${task.error || task.message || '请查看本段保存的错误信息'}。原返回及其他场次保留，未自动重试。` : returned?'模型已返回，尚未转为视频卡；原内容已保留，可通过“查看最近原返回”读取。':'本次结果已保存。切换场次查看，不会自动继续收费。',failed);
         return {done:true,failed};
       }
-      if(!['queued','running'].includes(task.state)) {delete view.textTasks[taskId];view.textUnknown[taskId]=localUnknown(scope);syncTextAlias();message('原调用记录已保留，可再次手动生成；不会自动重新调用。',true);return {done:true,uncertain:true}; }
-      const tracked={...scope,state:task.state,status:task.state,phase:String(task.phase||''),message:String(task.message||'')};
+      if(!['queued','running'].includes(task.state)) {delete view.textTasks[taskId];textRefreshKeys.delete(taskId);view.textUnknown[taskId]=localUnknown(scope);syncTextAlias();message('原调用记录已保留，可再次手动生成；不会自动重新调用。',true);return {done:true,uncertain:true}; }
+      const tracked={...scope,state:task.state,status:task.state,phase:String(task.phase||''),message:String(task.message||''),
+        ...Object.fromEntries(liveTextFields.filter(key=>Number.isFinite(task[key])).map(key=>[key,task[key]]))};
       if(Number.isFinite(task.progress))tracked.progress=Math.max(0,Math.min(100,task.progress));else delete tracked.progress;
       view.textTasks[taskId]=tracked;
-      if(scope.maxCalls>1||isPlanAction(scope.action)||scope.action==='segment')await load({background:true});
-      message(`${task.message || '正在处理当前段'}${Number.isFinite(task.progress) ? ` · ${Math.max(0,Math.min(100,task.progress))}%` : ''}。本页不会自动重试或追加收费。`);
+      message(`${task.message || '正在处理当前段'}${Number.isFinite(task.progress) ? ` · ${Math.max(0,Math.min(100,task.progress))}%` : ''}。本页不会自动重试或追加收费。`,false,true);
+      const refreshKey=[task.availableCardCount,task.completedSceneCount,task.finishedRequestCount,task.completedRequestCount].join('/');
+      if(textRefreshKeys.get(taskId)!==refreshKey){textRefreshKeys.set(taskId,refreshKey);refreshTextProjection();}
       return {done:false};
     }
-    async function recover(claimId) {
+    async function recover(claimId,stageClaimId) {
+      if(stageClaimId){
+        assertProject();
+        const match=Object.values(view.snapshot.sceneParts286||{}).some(scene=>scene.parts?.some(
+          row=>row.claimId===claimId&&row.stageClaimId===stageClaimId&&row.actions?.includes('recover_original')));
+        if(view.busy||!match)throw Error('没有可核对的分段原调用，请刷新状态。');
+        view.busy=true;view.quote=null;message('正在核对这个分段的原调用。');
+        try{
+          const response=await api('/api/visual/macro/recover',{projectId,claimId,stageClaimId});
+          await load({background:true});
+          message(response.recovery?.message||'已核对这个分段的原调用，请查看最新状态。');
+          return response;
+        }catch(error){message(error,true);throw error;}finally{view.busy=false;emit();}
+      }
       const candidates=savedTextTasks(view.snapshot);
       const active=(claimId?candidates.find(row=>row.claimId===claimId):candidates.find(row=>row.claimId&&['needs_review','uncertain'].includes(row.status))||view.snapshot.active)||{};assertProject();if(view.busy || !active.claimId)throw Error('没有可核对的原调用。');
       view.busy=true;view.quote=null;message('正在免费核对原返回与旧订单，不重新生成、不创建新的模型调用。');
@@ -987,21 +1147,40 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
     async function readStoryboardReturn(id,number){
       assertProject();
       if(!segments(view.snapshot).some(row=>segmentId(row)===id)||!Number.isInteger(number)||number<1)throw Error('本卡不存在。');
+      const currentWork=cardTextWork(view,id,number);
+      if(currentWork&&currentWork.phase!=='card_failed')throw Error('本卡正在生成或同步结果，请等待当前任务结束后免费核对原返回。');
       const op=begin('segment',id,number,'observe');
       message('正在读取本卡已保存的模型原返回；不调用模型、不新增扣费。');
       try{
         const response=await api('/api/visual/macro/recheck-return',{projectId,segmentId:id,cardNumber:number});
         if(response.projectId!==projectId||response.segmentId!==id||response.cardNumber!==number||response.noModelCall!==true||response.noNewCharge!==true||typeof response.rawResponse!=='string')throw Error('原返回身份不匹配，未覆盖本卡分镜。');
         if(disposed)return {stale:true};
-        view.storyboardReturns[mediaKey(id,number)]={rawResponse:response.rawResponse,message:String(response.message||'已读取模型原返回。'),previewOnly:response.previewOnly===true,
+        await load({background:true});
+        if(disposed)return {stale:true};
+        view.storyboardReturns[mediaKey(id,number)]={rawResponse:response.rawResponse,message:String(response.message||'已读取模型原返回。'),previewOnly:response.previewOnly===true,snapshotRead291:view.snapshotRead291,
           previewStoryboard:typeof response.previewStoryboard==='string'?response.previewStoryboard:'',validationError:String(response.validationError||''),billingState:String(response.billingState||''),
           speechValidationWarnings:Array.isArray(response.speechValidationWarnings)?clone(response.speechValidationWarnings):[],detailDiagnostics:Array.isArray(response.detailDiagnostics)?clone(response.detailDiagnostics):[]};
-        await load({background:true});
         message(response.message||'已读取原返回，未新增调用或扣费。',response.rechecked!==true&&response.previewOnly!==true);return response;
-      }catch(error){message(error.message,true);throw error;}finally{end(op);}
+      }catch(error){message(error,true);throw error;}finally{end(op);}
     }
     async function readPipelineReturn(settings={}){
       assertProject();
+      if(settings.requestHash){
+        const {segmentId:id,requestHash}=settings;
+        const part=scenePart286(view.snapshot,id,requestHash,'inspect_return');
+        if(!part?.claimId||!part.stageClaimId)throw Error('这个分段尚无可读的原返回。');
+        const query=new URLSearchParams({projectId,segmentId:id,claimId:part.claimId,stageClaimId:part.stageClaimId});
+        const response=await api(`/api/visual/macro/pipeline-return?${query}`);
+        const current=scenePart286(view.snapshot,id,requestHash,'inspect_return');
+        if(disposed||current?.claimId!==part.claimId||current?.stageClaimId!==part.stageClaimId||
+            current?.rawResponseHash!==part.rawResponseHash)return {stale:true};
+        if(response.projectId!==projectId||response.localOnly!==true||response.noModelCall!==true||
+            response.noNewCharge!==true||response.claimId!==part.claimId||response.stageClaimId!==part.stageClaimId||
+            response.requestHash!==requestHash||part.rawResponseHash&&response.rawResponseHash!==part.rawResponseHash||
+            !(response.scope||[]).some(row=>row.sceneId===id&&row.sourceStart===part.sourceStart&&row.sourceEnd===part.sourceEnd)||
+            typeof response.rawResponse!=='string')throw Error('原返回与所选分段不匹配。');
+        return response;
+      }
       const ticket=++pipelineReadEpoch,identity=pipelineReturnIdentity(view.snapshot);
       const response=await api(`/api/visual/macro/pipeline-return?projectId=${encodeURIComponent(projectId)}${settings.segmentId?'&segmentId='+encodeURIComponent(settings.segmentId):''}`);
       if(disposed||ticket!==pipelineReadEpoch||identity!==pipelineReturnIdentity(view.snapshot))return {stale:true};
@@ -1033,7 +1212,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         if(disposed||view.snapshot.revisionId!==revision)return null;
         if(typeof response.previewId!=='string'||!response.previewId||response.revisionId!==revision||response.segmentId!==id||response.maxSeconds!==maxSeconds||response.noModelCall!==true||response.noNewCharge!==true||!Number.isInteger(response.beforeCardCount)||!Number.isInteger(response.afterCardCount)||response.afterCardCount<1||!Array.isArray(response.cardDurations)||response.cardDurations.length!==response.afterCardCount||response.cardDurations.some(seconds=>!Number.isFinite(seconds)||seconds<=0||seconds>maxSeconds))throw Error('组卡预览返回不匹配，未应用任何修改。');
         regroupPreviews.set(response.previewId,clone(response));message('组卡预览已就绪，确认后才应用。');return clone(response);
-      }catch(error){message(error.message,true);throw error;}finally{end(op);}
+      }catch(error){message(error,true);throw error;}finally{end(op);}
     }
     async function applyRegroup(preview){
       assertProject();const saved=regroupPreviews.get(preview?.previewId);
@@ -1047,7 +1226,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         for(const key of Object.keys(view.mediaDrafts)){if(JSON.parse(key)[0]===saved.segmentId)delete view.mediaDrafts[key];}
         for(const key of Object.keys(view.storyboardReturns)){if(JSON.parse(key)[0]===saved.segmentId)delete view.storyboardReturns[key];}
         message(response.message||'已免费重新组卡。');return response;
-      }catch(error){message(error.message,true);throw error;}finally{end(op);}
+      }catch(error){message(error,true);throw error;}finally{end(op);}
     }
     function invalidateCatalog232(){catalogEpoch232++;view.catalog=null;view.quote=null;emit();}
     function invalidateMediaPrices156(){
@@ -1072,12 +1251,12 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         if(!response.draft || typeof response.draft.prompt!=='string' || !Number.isInteger(response.draft.revision))throw Error('描述词保存未返回有效版本，请刷新核对后再生成。');
         if(response.state?.projectId && response.state.projectId!==projectId)throw Error('描述词返回项目不匹配。');
         if(response.state)mergeCardState(response.state,id,number);
-        else {view.snapshot={...view.snapshot,cardDrafts:{...view.snapshot.cardDrafts,[id]:{...view.snapshot.cardDrafts?.[id],[String(number)]:clone(response.draft)}}};}
+        else {view.snapshot={...view.snapshot,cardDrafts:{...view.snapshot.cardDrafts,[id]:{...view.snapshot.cardDrafts?.[id],[String(number)]:clone(response.draft)}}};cardStateEpoch++;}
         // Saving text/references does not mean the user chose the currently
         // resolved model or capabilities. Keep only actual local overrides.
         const key=mediaKey(id,number);view.mediaDrafts[key]??={};view.mediaDrafts[key].video={...view.mediaDrafts[key].video,referenceAssetIds:response.draft.referenceAssetIds || []};
         message('描述词与引用已保存。');return clone(response.draft);
-      }catch(error){message(error.message,true);throw error;}finally{end(op);}
+      }catch(error){message(error,true);throw error;}finally{end(op);}
     }
     async function saveCardSource(id,number,sourceText,expectedRevision) {
       assertProject();
@@ -1087,7 +1266,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         const response=await api('/api/visual/macro/card/source',{projectId,segmentId:id,cardNumber:number,sourceText,expectedRevision});
         if(response.state?.projectId!==projectId || !Number.isInteger(response.sourceEdit?.revision))throw Error('原文保存返回无效，请刷新核对。');
         mergeCardState(response.state,id,number);message('原文已保存，待补齐本卡分镜。');return clone(response.sourceEdit);
-      }catch(error){message(error.message,true);throw error;}finally{end(op);}
+      }catch(error){message(error,true);throw error;}finally{end(op);}
     }
     async function uploadReference(id,number,file) {
       assertProject();
@@ -1101,7 +1280,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         mergeCardState(response.state,id,number);
         if(view.catalog)view.catalog.assets=[...(view.catalog.assets||[]).filter(a=>a.id!==response.asset.id),clone(response.asset)];
         message('外部参考图已保存，未调用模型。');return clone(response);
-      }catch(error){message(error.message,true);throw error;}finally{end(op);}
+      }catch(error){message(error,true);throw error;}finally{end(op);}
     }
     async function deleteReference(id,number,assetId) {
       assertProject();
@@ -1114,24 +1293,62 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         view.snapshot=clone(response.state);view.catalog.assets=view.catalog.assets.filter(row=>row.id!==assetId);
         for(const draft of Object.values(view.mediaDrafts))for(const choice of Object.values(draft))if(choice.referenceAssetIds)choice.referenceAssetIds=choice.referenceAssetIds.filter(value=>value!==assetId);
         epoch++;message('外部参考图已移除；原文件保留，未调用模型。');return clone(response);
-      }catch(error){message(error.message,true);throw error;}finally{view.busy=false;emit();}
+      }catch(error){message(error,true);throw error;}finally{view.busy=false;emit();}
     }
+    async function saveVideoCardSettings(id,number,choice){
+      const card=ownedCard(id,number);
+      if(!view.seriesManaged||!view.catalog||operationBlocked(view,id,number)||scopeActive(id,number)||mediaBlocked(id,number))
+        throw Error('本卡正在处理，请稍后再调整视频设置。');
+      const revisionId=view.snapshot.revisionId,cardHash=card.cardHash228;
+      const body={projectId,segmentId:id,cardNumber:number,...choice,
+        ...(revisionId?{revisionId}:{}),...(cardHash?{cardHash}:{})};
+      const op=begin('segment',id,number,'settings');
+      view.quote=null;
+      emit();
+      try{
+        const {videoSettings}=await api('/api/visual/macro/media/video-settings',body);
+        if(disposed)return;
+        if(choice.reset?videoSettings!==null:videoSettings?.model!==choice.model||videoSettings?.resolution!==choice.resolution)
+          throw Error('本卡视频设置的保存结果待核对，请刷新后查看。');
+        if(view.snapshot.revisionId!==revisionId||
+            readSceneCards(view.snapshot,segments(view.snapshot).find(row=>segmentId(row)===id)||{})[number-1]?.cardHash228!==cardHash)
+          return await load({background:true});
+        const current=view.snapshot.media||{},slot={...mediaRecord(view.snapshot,id,number)};
+        if(videoSettings)slot.videoSettings285=videoSettings;
+        else delete slot.videoSettings285;
+        view.snapshot={...view.snapshot,media:{...current,[id]:{...current[id],[String(number)]:slot}}};
+        cardStateEpoch++;
+        message(videoSettings?'本卡视频模型已保存。':'本卡已恢复整剧默认视频模型。');
+      }catch(error){message(error,true);throw error;}finally{end(op);}
+    }
+    const resetVideoCardSettings=(id,number)=>saveVideoCardSettings(id,number,{reset:true});
     function updateMediaDraft(id,number,action,patch) {
       const card=ownedCard(id,number);if(!['frame','video'].includes(action)||operationBlocked(view,id,number)||scopeActive(id,number)||mediaBlocked(id,number))throw Error('原任务待核对或媒体参数已锁定，不能修改后重复提交。');
       // Only a real control change is an override. Reference-only updates,
       // including automatic annotation, must continue to inherit the project.
-      const keys=new Set(['model','routeType','resolution','ratio','duration','referenceAssetIds','tailFrameContinuation','tailFrameMode']);
+      const fixedCard=view.seriesManaged&&action==='video';
+      const keys=new Set(['referenceAssetIds','tailFrameContinuation','tailFrameMode',
+        ...(view.seriesManaged?(fixedCard?['model','routeType','resolution']:[]):['model','routeType','resolution','ratio','duration'])]);
       const explicit=Object.fromEntries(Object.entries(clone(patch)||{}).filter(([name])=>keys.has(name)));
       if(Object.hasOwn(explicit,'tailFrameContinuation')&&(action!=='video'||typeof explicit.tailFrameContinuation!=='boolean'))throw Error('尾帧续画必须是视频任务的明确勾选状态。');
       if(Object.hasOwn(explicit,'tailFrameMode')&&(action!=='video'||!['first-frame','reference'].includes(explicit.tailFrameMode)))throw Error('尾帧承接方式无效。');
       if(Object.hasOwn(explicit,'routeType')){
-        if(!['discount','official'].includes(explicit.routeType))throw Error('请选择特价或官方线路。');
+        if(!mediaRoutes277(view.catalog,action).some(([id])=>id===explicit.routeType))throw Error('请选择当前已发布的线路。');
         const available=routeModels234(view.catalog,action,explicit.routeType).filter(row=>mediaResolutions(view.catalog,row.model,action).length);
         explicit.model=available[0]?.model||'';explicit.resolution='';
       }else if(Object.hasOwn(explicit,'model'))explicit.routeType=modelRoute234(view.catalog,action,explicit.model);
-      const key=mediaKey(id,number),saved={...view.mediaDrafts[key]?.[action],...explicit};
+      const key=mediaKey(id,number),prior=fixedCard?videoCardSettings285(view.snapshot,id,number):null;
+      if(fixedCard&&['model','routeType','resolution'].some(name=>Object.hasOwn(explicit,name))){
+        const selected=defaultMediaDraft(view.catalog,action,{...prior,...explicit},view.snapshot.settings?.ratio||'16:9',card,true);
+        if(!mediaResolutions(view.catalog,selected.model,action).includes(selected.resolution)){
+          emit();
+          throw Error('当前线路没有可用的视频模型规格，请换一条线路。');
+        }
+        return saveVideoCardSettings(id,number,{model:selected.model,resolution:selected.resolution});
+      }
+      const saved={...view.mediaDrafts[key]?.[action],...explicit};
       if(action==='video'){
-        const candidate=defaultMediaDraft(view.catalog,action,{referenceAssetIds:cardReferenceSelection(view.snapshot,id,number,card,view,action),...saved},view.snapshot.settings?.ratio||'16:9',card),item=mediaModels(view.catalog,action).find(row=>row.model===candidate.model),tail=tailFrameState239(item,{...candidate,tailFrameContinuation:saved.tailFrameContinuation});
+        const candidate=defaultMediaDraft(view.catalog,action,{referenceAssetIds:cardReferenceSelection(view.snapshot,id,number,card,view,action),...saved,...prior},view.snapshot.settings?.ratio||'16:9',card,fixedCard),item=mediaModels(view.catalog,action).find(row=>row.model===candidate.model),tail=tailFrameState239(item,{...candidate,tailFrameContinuation:saved.tailFrameContinuation});
         if(explicit.tailFrameContinuation===true&&tail.issue)throw Error(tail.issue);
         saved.tailFrameMode=tail.mode;
         if(tail.cancelled){saved.tailFrameContinuation=false;message(tail.notice,true);}
@@ -1149,13 +1366,13 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         const response=await api('/api/visual/macro/media/quote',{projectId,segmentId:id,cardNumber:number,action,...mediaPayload234(selected)});
         if(disposed||token!==mediaIdentity(id,number,action))throw Error('本卡设置或项目已变化，媒体报价已作废。');
         if(!response.quoteId||response.action!==action||response.maxCalls!==1||!Number.isFinite(response.totalCredits)||response.totalCredits<=0||response.segmentId!==undefined&&response.segmentId!==id||response.cardNumber!==undefined&&response.cardNumber!==number||action==='video'&&(response.duration??response.durationSeconds)!==undefined&&(response.duration??response.durationSeconds)!==duration)throw Error('媒体报价身份、所选生成时长或费用无效，未开放提交。');
-        if(directSubmit&&(response.segmentId!==id||response.cardNumber!==number||(response.duration??response.durationSeconds)!==duration||response.resolution!==selected.resolution||response.ratio!==selected.ratio))throw Error('视频报价与当前卡片或生成设置不一致，未提交；请刷新核对。');
+        if(directSubmit&&(response.segmentId!==id||response.cardNumber!==number||(response.duration??response.durationSeconds)!==duration||response.resolution!==selected.resolution||response.ratio!==selected.ratio||response.model!==undefined&&response.model!==selected.model))throw Error('视频报价与当前卡片或生成设置不一致，未提交；请刷新核对。');
         const prepared={...response,notice:[response.notice,response.pricingNote172].filter(Boolean).join(' '),kind:'media',segmentId:id,cardNumber:number,durationSeconds:duration,directSubmit,token};quotes.set(prepared.quoteId,prepared);
         // The Generate click is approval for this video only. Keep the server
         // quote contract without briefly opening or replacing another modal.
         if(!directSubmit)view.quote=prepared;
         message(directSubmit?'视频费用已核对，正在提交本卡视频。':'媒体免费核价完成；确认后提交本次媒体，不会隐式生成首帧。');return clone(prepared);
-      }catch(error){message(error.message,true);throw error;}finally{end(op);}
+      }catch(error){message(error,true);throw error;}finally{end(op);}
     }
     async function confirmMediaQuote(quoted) {
       const pending=quoted||view.quote;if(disposed||!pending||!quotes.has(pending.quoteId)||pending.kind!=='media'||operationBlocked(view,pending.segmentId,pending.cardNumber)||scopeActive(pending.segmentId,pending.cardNumber)||mediaBlocked(pending.segmentId,pending.cardNumber)||pending.token!==mediaIdentity(pending.segmentId,pending.cardNumber,pending.action))throw Error('本次生成设置已变化或任务正在执行，请重新点击生成。');
@@ -1201,7 +1418,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
         if(disposed||response.projectId!==projectId||response.segmentId!==id||rows.length!==captured.length||new Set(rows.map(row=>row.quoteId)).size!==rows.length)throw Error('本场报价身份或数量变化，未提交生成。');
         batch.quotes=captured.map(capture=>{
           const row=rows.find(item=>item.cardNumber===capture.number);
-          if(!row||!row.quoteId||row.action!=='video'||row.segmentId!==id||row.maxCalls!==1||!Number.isFinite(row.totalCredits)||row.totalCredits<=0||(row.duration??row.durationSeconds)!==capture.duration||row.resolution!==capture.selected.resolution||row.ratio!==capture.selected.ratio||capture.token!==mediaIdentity(id,capture.number,'video'))throw Error('本卡设置、生成时长或报价已变化，未提交生成。');
+          if(!row||!row.quoteId||row.action!=='video'||row.segmentId!==id||row.maxCalls!==1||!Number.isFinite(row.totalCredits)||row.totalCredits<=0||(row.duration??row.durationSeconds)!==capture.duration||row.resolution!==capture.selected.resolution||row.ratio!==capture.selected.ratio||row.model!==undefined&&row.model!==capture.selected.model||capture.token!==mediaIdentity(id,capture.number,'video'))throw Error('本卡设置、生成时长或报价已变化，未提交生成。');
           return {...row,kind:'media',durationSeconds:capture.duration,directSubmit:true,token:capture.token};
         });
         for(const row of batch.quotes)quotes.set(row.quoteId,row);
@@ -1316,14 +1533,26 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
       const taskId=view.mediaTasks[key],scope=view.mediaRequests[key];if(!taskId)return {done:true};let task;
       try{task=await api(`/api/tasks/${encodeURIComponent(taskId)}`);}catch(error){if(disposed||view.mediaTasks[key]!==taskId||view.mediaRequests[key]!==scope)return {done:!view.mediaTasks[key],stale:true};throw error;}
       if(disposed||view.mediaTasks[key]!==taskId||view.mediaRequests[key]!==scope)return {done:!view.mediaTasks[key],stale:true};
-      view.mediaProgress[key]={...view.mediaProgress[key],state:task.state,message:task.message||'',createdAt:task.createdAt,concurrencyLimit:task.concurrencyLimit,...(Number.isFinite(task.progress)?{progress:task.progress}:{})};
-      if(['done','error','failed'].includes(task.state)){delete view.mediaTasks[key];await load({background:true});const saved=mediaOutcome(mediaSlot(key),scope);if(!ownsMedia(key,scope)&&!saved?.completed)return {done:!view.mediaTasks[key],stale:true};const outcome=clearResolvedMedia(key,scope);message(outcome?.completed?'本卡原视频已保存，已解除旧等待；没有重新生成或新增扣费。':task.state==='done'?'媒体任务返回，已刷新真实文件与历史；没有视频文件时不视为成片完成。':`媒体任务未完成：${task.error||task.message||'请免费核对原任务'}。不会自动重新生成。`,!outcome?.completed&&task.state!=='done');return {done:true};}
+      view.mediaProgress[key]={...view.mediaProgress[key],state:task.state,phase:task.phase,message:task.message||'',createdAt:task.createdAt,concurrencyLimit:task.concurrencyLimit,...(Number.isFinite(task.progress)?{progress:task.progress}:{})};
+      if(['done','error','failed'].includes(task.state)){
+        const failed=task.state!=='done';
+        const syncing=failed?`媒体任务未完成：${task.error||task.message||'请免费核对原任务'}。正在同步原记录…`:'媒体任务已返回，正在读取已保存的结果…';
+        if(!failed)view.mediaProgress[key]={...view.mediaProgress[key],state:'saving',message:syncing};
+        message(syncing,failed);
+        if(stateLoadPromise)await stateLoadPromise.catch(()=>{});
+        if(!ownsMedia(key,scope)&&view.mediaTasks[key]!==taskId)return {done:!view.mediaTasks[key],stale:true};
+        await load({background:true,quiet:true});
+        const saved=mediaOutcome(mediaSlot(key),scope);if(!ownsMedia(key,scope)&&!saved?.completed)return {done:!view.mediaTasks[key],stale:true};
+        if(view.mediaTasks[key]===taskId)delete view.mediaTasks[key];
+        const outcome=clearResolvedMedia(key,scope);
+        message(outcome?.completed?'本卡原视频已保存，已解除旧等待；没有重新生成或新增扣费。':failed?`媒体任务未完成：${task.error||task.message||'请免费核对原任务'}。不会自动重新生成。`:'媒体任务返回，已刷新真实文件与历史；没有视频文件时不视为成片完成。',!outcome?.completed&&failed);return {done:true};
+      }
       if(!['queued','running'].includes(task.state)){view.mediaUnknown[key]=scope||{projectId,localTaskId:taskId};delete view.mediaTasks[key];await load({background:true});const saved=mediaOutcome(mediaSlot(key),scope);if(!ownsMedia(key,scope)&&!saved?.completed)return {done:!view.mediaTasks[key],stale:true};if(clearResolvedMedia(key,scope)?.completed){message('本卡原视频已保存，已解除旧等待；没有重新生成或新增扣费。');return {done:true};}message('原媒体任务结果未明确，只可免费核对，不会新建收费调用。',true);return {done:true};}message(`${task.message||'正在等待本卡媒体返回'}。不自动重试生成。`);return {done:false};
     }
     function exported() {
       return {kind:'macro-arrangement-development-preview',projectId,version:view.snapshot.version,sourceHash:view.snapshot.sourceHash,segments:segments(view.snapshot).filter(row=>view.filter==='all'||segmentId(row)===view.filter).map(row=>({segment:row,record:view.snapshot.segments?.[segmentId(row)] || {}}))};
     }
-    return {load,updateDraft,quote,confirmQuote,cancelQuote,selectSegment,pollOnce,recover,checkCardTask,readStoryboardReturn,readPipelineReturn,updateReturnedDraft,saveReturnedDraft,previewRegroup,applyRegroup,loadCatalog,invalidateCatalog232,invalidateMediaPrices156,saveCardDraft,saveCardSource,uploadReference,deleteReference,updateMediaDraft,quoteMedia,confirmMediaQuote,quoteSceneVideos230,confirmSceneVideos230,cancelSceneVideoBatch230,observeMedia,detachMedia,reconnectMedia,pollMediaOnce,exported,getState:()=>clone(view),peekState:()=>view,getDraft:()=>clone(draft),dispose:()=>{disposed=true;epoch++;loadEpoch++;}};
+    return {load,updateDraft,quote,confirmQuote,cancelQuote,selectSegment,pollOnce,recover,checkCardTask,readStoryboardReturn,readPipelineReturn,updateReturnedDraft,saveReturnedDraft,previewRegroup,applyRegroup,loadCatalog,invalidateCatalog232,invalidateMediaPrices156,saveCardDraft,saveCardSource,uploadReference,deleteReference,updateMediaDraft,resetVideoCardSettings,quoteMedia,confirmMediaQuote,quoteSceneVideos230,confirmSceneVideos230,cancelSceneVideoBatch230,observeMedia,detachMedia,reconnectMedia,pollMediaOnce,exported,getState:()=>clone(view),peekState:()=>view,getDraft:()=>clone(draft),dispose:()=>{disposed=true;epoch++;loadEpoch++;}};
   }
   function mount(document,win) {
     const $=id=>document.getElementById(id);
@@ -1337,7 +1566,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
     const referenceOpen = new Map(),sourceOpen=new Map(),fillModes=new Map(),regenerating=new Map();
     const regeneratingScope=(id,number)=>[...regenerating.values()].some(row=>row.segmentId===id&&(!number||row.cardNumber===number));
     const showError=error=>{if(win.ModelActivity)win.ModelActivity.set($('macroStatus'),{state:'error',message:error.message || String(error)});else $('macroStatus').textContent=error.message || String(error);$('macroStatus').classList.add('error');};
-    const request=async(url,options)=>{const response=await win.fetch(url,{method:options.method,credentials:'same-origin',cache:'no-store',...(options.body ? {headers:{'Content-Type':'application/json'},body:JSON.stringify(options.body)} : {})});let data;try{data=await response.json();}catch(_){throw Error('接口未返回可识别数据，请刷新状态核对。');}const terminalTask=url.startsWith('/api/tasks/')&&['error','failed'].includes(data.state);if(!response.ok || data.error && !data.projectId&&!terminalTask)throw Error(data.error || `接口返回 ${response.status}`);return data;};
+    const request=async(url,options)=>{const response=await win.fetch(url,{method:options.method,credentials:'same-origin',cache:'no-store',...(options.body ? {headers:{'Content-Type':'application/json'},body:JSON.stringify(options.body)} : {})});let data;try{data=await response.json();}catch(_){throw Error('接口未返回可识别数据，请刷新状态核对。');}const terminalTask=url.startsWith('/api/tasks/')&&['error','failed'].includes(data.state);if(!response.ok || data.error && !data.projectId&&!terminalTask)throw responseError284(data,response.status);return data;};
     const draftFromInputs=()=>({source:$('macroSource').value,policy:{mode:$('macroMode').value,maxSeconds:Number($('macroMaxSeconds').value),requestedSeconds:$('macroMode').value==='custom' ? Number($('macroTarget').value) : 0,arrangementMode:'shot_first'}});
     function render(view,draft) {
       view={...view,operations:{...view.operations,...Object.fromEntries(regenerating)}};
@@ -1401,7 +1630,7 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
       if(regeneratingScope(id,number))return;
       const action=button.dataset.mediaQuote,directSubmit=action==='video',token='media:'+mediaKey(id,number),displayedCredits=Number(button.dataset.publishedCredits),catalogPending=controller.peekState().catalogRefreshPending251===true;
       // Acquire the local scope before the first await, including draft save.
-      regenerating.set(token,{action:'segment',segmentId:id,cardNumber:number,kind:'media',state:'running',phase:'preparing'});button.disabled=true;
+      regenerating.set(token,{action:'segment',segmentId:id,cardNumber:number,kind:'media',state:'running',phase:'preparing'});button.disabled=true;button.textContent='正在准备…';
       try{
         await new Promise(resolve=>win.requestAnimationFrame(()=>win.setTimeout(resolve,0)));
         render(controller.peekState(),controller.getDraft());editors?.capture();
@@ -1442,5 +1671,5 @@ view.message=incoming.shotFirst ? `${progressiveCards?`已形成 ${progressiveCa
     return controller;
   }
   if(typeof document!=='undefined'){setInterval(()=>updateWaitTimes(document),1000);installDownloads(document,globalThis);}
-  return {mediaQuoteNeedsConfirmation251,tailFrameLabel242,tailFrameUsage242,tailFrameCapabilityIssue239,tailFrameState239,clearMediaCache231,sceneVideoPlan230,renderStoryboardChecks,createController,pipelineReturnIdentity,sceneIssueMessage,sceneStatusNotice,renderCards,reconcileCards,readCards,readSceneCards,cardPrompt,cardComplete,cardIdentity228,validTextQuote,quoteSummary,renderStyle,escapeHTML:esc,projectIdValid,mediaUrl,mediaIssue,mediaCost,modelRoute234,routeModels234,mediaPayload234,updateWaitTimes,defaultMediaDraft,videoDurationOptions,cardReferenceSelection,mediaKey,operationBlocked,quoteBlocked,directRegenerationBlocked,cardRecoveryState,regroupReady,cardTextWork,textWorkTitle,textBlocked,anyTextActive,scopedPlanTextBlocked,savedTextTasks,isTerminalTextTask,textTaskInFlight,snapshotTextInFlight,savedCardActionsAvailable,cardMediaBlocked,mount};
+  return {scenePart286,capacityFailure284,capacityMessage284,capacityMarkup284,responseError284,mediaQuoteNeedsConfirmation251,tailFrameLabel242,tailFrameUsage242,tailFrameCapabilityIssue239,tailFrameState239,clearMediaCache231,sceneVideoPlan230,renderStoryboardChecks,createController,pipelineReturnIdentity,sceneIssueMessage,sceneStatusNotice,renderCards,reconcileCards,readCards,readSceneCards,cardPrompt,cardComplete,cardIdentity228,validTextQuote,quoteSummary,renderStyle,escapeHTML:esc,projectIdValid,mediaUrl,mediaIssue,mediaCost,modelRoute234,routeModels234,mediaPayload234,updateWaitTimes,defaultMediaDraft,videoDurationOptions,cardReferenceSelection,mediaKey,operationBlocked,quoteBlocked,directRegenerationBlocked,cardRecoveryState,regroupReady,cardTextWork,textWorkTitle,textWorkMessage291,textBlocked,anyTextActive,scopedPlanTextBlocked,savedTextTasks,isTerminalTextTask,textTaskInFlight,snapshotTextInFlight,savedCardActionsAvailable,cardMediaBlocked,mount};
 });
