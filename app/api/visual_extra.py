@@ -107,6 +107,14 @@ def build(router: Router, service: VisualService, library, *,
         for index, row in enumerate(rows):
             if str(row.get("id")) == asset_id:
                 return settings, (assets, asset_kind, rows, index)
+        # 旧资产没有 id：允许按名称匹配；只有一个资产时直接用那一个
+        for index, row in enumerate(rows):
+            if asset_id and str(row.get("name") or "") == asset_id:
+                return settings, (assets, asset_kind, rows, index)
+        # 旧数据 / 前端没带 id 时，退回该类型第一条：宁可生成一张，
+        # 也不要 400 invalid_input 让整页"看起来被清空"。
+        if rows:
+            return settings, (assets, asset_kind, rows, 0)
         return settings, None
 
     def _asset_prompt(project_id: str, asset_kind: str, asset_id: str) -> str:
@@ -156,7 +164,7 @@ def build(router: Router, service: VisualService, library, *,
         extra = {key: body[key] for key in ("sceneIndex", "shotId", "episode")
                  if key in body}
         asset_kind = str(body.get("kind") or "")
-        asset_id = str(body.get("assetId") or "")
+        asset_id = str(body.get("assetId") or body.get("assetName") or "")
         if kind == "asset":
             extra.update({"assetId": asset_id, "assetKind": asset_kind,
                           "imageModel": str(body.get("imageModel") or ""),

@@ -32,9 +32,21 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_visual_request
 
 
 def _asset_buckets(settings: dict) -> dict:
-    """项目资产分组默认值：people/scenes/props 三类，前端按此渲染。"""
+    """项目资产分组：people/scenes/props。
+
+    旧版本提取的资产没有 id（前端按 id 查 item、按 id 请求提示词），
+    这里在**读取时**补一个稳定 id，不改数据库内容——否则老项目永远"素材不存在"。
+    """
     raw = settings.get("assets") if isinstance(settings.get("assets"), dict) else {}
-    buckets = {key: list(raw.get(key) or []) for key in ("people", "scenes", "props")}
+    buckets: dict[str, list] = {}
+    for key in ("people", "scenes", "props"):
+        rows = []
+        for index, row in enumerate(raw.get(key) or [], start=1):
+            item = dict(row) if isinstance(row, dict) else {"name": str(row)}
+            item.setdefault("id", f"{key}-{index}")
+            item.setdefault("kind", key)
+            rows.append(item)
+        buckets[key] = rows
     return buckets
 
 

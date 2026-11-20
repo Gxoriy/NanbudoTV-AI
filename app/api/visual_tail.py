@@ -140,7 +140,9 @@ def build(router: Router, service: VisualService, library, *,
             return Response(200, {"ok": True, "prompt": record["payload"]["prompt"]})
         record = _doc_or_404(str(body.get("assetId") or ""), KIND_ASSET)
         if record is None:
-            return Response.error(404, "not_found", "素材不存在。")
+            # 旧项目的资产只存在 project.settings.assets 里，不在素材库；
+            # 返回空提示词即可，前端会用资产名兜底，不要弹 not_found。
+            return Response(200, {"ok": True, "prompt": ""})
         return Response(200, {"ok": True, "prompt": record["payload"].get("prompt", "")})
 
     def asset_observe(req: Request) -> Response:
