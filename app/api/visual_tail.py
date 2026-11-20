@@ -314,24 +314,56 @@ def build(router: Router, service: VisualService, library, *,
         body = req.json() if req.body else {}
         project_id = str(body.get("projectId") or "")
         source = str(body.get("source") or "")
+        action = str(body.get("action") or "plan")
+        segment_id = body.get("segmentId")
+        completion = body.get("completionMode")
         quote = {
             "ok": True,
             "quoteId": uuid.uuid4().hex,
             "projectId": project_id,
-            "action": str(body.get("action") or "plan"),
-            "segmentId": ("" if body.get("segmentId") is None
-                          else str(body.get("segmentId"))),
-            "cardNumber": body.get("cardNumber"),
+            "action": action,
+            "unitCredits": 1.0,
             "maxCalls": 1,
             "totalCredits": 1.0,
             "estimatedPoints": 1.0,
             "expiresAt": __import__("time").time() + 600,
-            "pricingMode": "free",
+            "pricingMode": "flat",
             "source": source[:4000],
             "message": "免费演示，不扣积分。",
         }
+        if segment_id not in (None, ""):
+            quote["segmentId"] = str(segment_id)
+        if body.get("cardNumber") is not None:
+            quote["cardNumber"] = int(body["cardNumber"])
+
+        if completion in ("missing", "all"):
+            state = dict(_macro(project_id) or {})
+            scenes = list(state.get("scenes") or [])
+            scene = next((row for row in scenes
+                          if str(row.get("id")) == str(segment_id)), None)
+            if scene is None and scenes:
+                scene = scenes[0]
+            cards = list((scene or {}).get("cards") or [])
+            if completion == "all":
+                targets = list(range(1, len(cards) + 1))
+            else:
+                targets = [int(card.get("number") or index + 1)
+                           for index, card in enumerate(cards)
+                           if card.get("complete") is not True]
+            quote["completionMode"] = completion
+            quote["cardNumbers"] = targets
+            quote["cardCount"] = len(targets)
+            quote["maxCalls"] = max(1, len(targets))
+            quote["totalCredits"] = quote["maxCalls"] * quote["unitCredits"]
+            quote["estimatedPoints"] = quote["totalCredits"]
+        elif action in ("plan", "plan_resume"):
+            # 前端 plan 放行条件：actualCallBilling 或 shotFirst
+            quote["actualCallBilling"] = True
+            quote["shotFirst"] = True
         _macro_quotes[quote["quoteId"]] = quote
-        return Response(200, quote)
+        payload = {key: value for key, value in quote.items()
+                   if key != "source" and value is not None}
+        return Response(200, payload)
 
     def macro_media_catalog(_req: Request) -> Response:
         return Response(200, {"ok": True, "media": [], "message": VIDEO_REQUIRED})
@@ -462,6 +494,9 @@ def build(router: Router, service: VisualService, library, *,
                                        "number": int(row.get("number") or index),
                                        "title": str(row.get("title") or ""),
                                        "source": str(row.get("source") or "")})
+                completion = str(quote.get("completionMode") or "")
+                targets = [int(number) for number in
+                           (quote.get("cardNumbers") or [])]
                 total = 0
                 for scene in scenes:
                     if segment_id and str(scene.get("id")) != segment_id:
@@ -469,12 +504,25 @@ def build(router: Router, service: VisualService, library, *,
                     text = str(scene.get("source") or source or "").strip()
                     if not text:
                         continue
-                    # 本地按句切镜：稳定、免费，先把"补齐分镜"跑通
+                    existing = list(scene.get("cards") or [])
                     parts = [part.strip() for part in
                              text.replace("\n", "。").split("。") if part.strip()]
-                    cards = [{"number": index, "prompt": part,
+                    fresh = [{"number": index, "prompt": part,
                               "sourceText": part, "complete": True}
                              for index, part in enumerate(parts[:8], start=1)]
+                    if completion == "all" or not existing:
+                        cards = fresh
+                    else:
+                        by_number = {int(row.get("number") or 0): row
+                                     for row in existing}
+                        for row in fresh:
+                            number = int(row["number"])
+                            if targets and number not in targets:
+                                continue
+                            if by_number.get(number, {}).get("complete") is True:
+                                continue
+                            by_number[number] = row
+                        cards = [by_number[key] for key in sorted(by_number)]
                     if cards:
                         scene["cards"] = cards
                         total += len(cards)
@@ -488,12 +536,17 @@ def build(router: Router, service: VisualService, library, *,
             except Exception as exc:  # noqa: BLE001
                 task_store.fail(task_id, "internal", str(exc)[:200])
 
-        import threading  # noqa: PLC0415
-
-        threading.Thread(target=work, args=(task.id,), daemon=True).start()
-        return Response(200, {"ok": True, "quoteId": quote_id, "action": action,
-                              "maxCalls": 1, "totalCredits": 1.0,
-                              "segmentId": segment_id, "taskId": task.id})
+        work(task.id)
+        receipt = {"ok": True, "quoteId": quote_id, "action": action,
+                   "maxCalls": int(quote.get("maxCalls") or 1),
+                   "unitCredits": float(quote.get("unitCredits") or 1.0),
+                   "totalCredits": float(quote.get("totalCredits") or 1.0),
+                   "taskId": task.id}
+        if segment_id:
+            receipt["segmentId"] = segment_id
+        if quote.get("cardNumber") is not None:
+            receipt["cardNumber"] = int(quote["cardNumber"])
+        return Response(200, receipt)
 
         def work(task_id: str) -> None:
             try:
