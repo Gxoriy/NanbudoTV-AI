@@ -163,9 +163,46 @@ def build(router: Router, service: VisualService, library, *,
 
     # ---------- 画布 ----------
     def canvas_list(req: Request) -> Response:
-        items = store.list(KIND_CANVAS, owner=owner_of(req) or None)
+        # 删除是软删除；不过滤的话前端删完列表会再次出现刚删的卡片
+        items = [row for row in store.list(KIND_CANVAS, owner=owner_of(req) or None)
+                 if not (row.get("payload") or {}).get("deleted")]
         return Response(200, {"ok": True, "canvases": [
             store.brief(row, fields=("thumbnail", "nodeCount")) for row in items]})
+
+    def canvas_delete(req: Request) -> Response:
+        """前端批量删除：失败时卡片显示 not_migrated 且列表不刷新。"""
+        body = req.json() if req.body else {}
+        raw = body.get("ids")
+        ids = list(raw) if isinstance(raw, (list, tuple)) else [
+            str(body.get("id") or body.get("canvasId") or "")]
+        deleted: list[str] = []
+        pending: list[str] = []
+        for doc_id in ids:
+            record = store.get(str(doc_id))
+            if record is None or record["kind"] != KIND_CANVAS:
+                pending.append(str(doc_id))
+                continue
+            payload = dict(record["payload"])
+            payload["deleted"] = True
+            store.update(str(doc_id), payload=payload)
+            deleted.append(str(doc_id))
+        items = [row for row in store.list(KIND_CANVAS, owner=owner_of(req) or None)
+                 if not (row.get("payload") or {}).get("deleted")]
+        return Response(200, {"ok": True, "deleted": deleted, "pending": pending,
+                              "canvases": [store.brief(row,
+                                                       fields=("thumbnail", "nodeCount"))
+                                           for row in items]})
+
+    def canvas_restore(req: Request) -> Response:
+        body = req.json() if req.body else {}
+        doc_id = str(body.get("id") or body.get("canvasId") or "")
+        record = store.get(doc_id)
+        if record is None or record["kind"] != KIND_CANVAS:
+            return Response.error(404, "not_found", "画布不存在。")
+        payload = dict(record["payload"])
+        payload["deleted"] = False
+        store.update(doc_id, payload=payload)
+        return Response(200, {"ok": True, "id": doc_id})
 
     def canvas_document(req: Request) -> Response:
         doc_id = req.q1("id") or req.q1("canvasId") or ""
@@ -431,6 +468,8 @@ def build(router: Router, service: VisualService, library, *,
 
     # ---------- 注册：离线可用 ----------
     router.register("D2", "/api/canvas/list", canvas_list)
+    router.register("D2", "/api/canvas/delete", canvas_delete, methods=("POST",))
+    router.register("D2", "/api/canvas/restore", canvas_restore, methods=("POST",))
     router.register("D2", "/api/canvas/document", canvas_document)
     router.register("D2", "/api/canvas/save", canvas_save, methods=("POST",))
     router.register("D2", "/api/canvas/create", canvas_create, methods=("POST",))

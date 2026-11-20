@@ -63,6 +63,23 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
         updated = store.update(project_id, payload=payload)
         return Response(200, {"ok": True, "project": updated, "file": relative})
 
+    def _append_bd_result(store, project_id: str, payload: dict,  # noqa: ANN001
+                          data: dict, *, kind: str) -> None:
+        """前端结果列表读 project.results（不是 outputs），没有文件就没有卡片。"""
+        import json as _json  # noqa: PLC0415
+
+        text = _json.dumps(data, ensure_ascii=False, indent=1)
+        rel = store.save_file("breakdown", f"{project_id}-{kind}.json",
+                              text.encode("utf-8"))
+        results = list(payload.get("results") or [])
+        results.append({"file": rel, "name": "拆解分析" if kind == "analysis"
+                        else "创意分镜", "modelName": "GT-6 Sol · 默认",
+                        "mode": "creative", "resolution": "文本结果",
+                        "saved": False, "kind": kind,
+                        "createdAt": time.time(), "deleted": False})
+        store.update(project_id, payload={**payload, "analysis": data,
+                                          "results": results})
+
     def _breakdown_task(req: Request, kind: str) -> Response:
         if assist is None:
             return Response.error(503, "model_unconfigured",
@@ -93,7 +110,8 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
                         f"{body.get('limit', 60)} 秒。\n"
                         '输出 JSON：{"hook":"","structure":[""],"sellingPoints":[""],'
                         '"shots":[{"start":0,"end":2,"shot":""}]}')
-                    store.update(project_id, payload={**payload, "analysis": data})
+                    _append_bd_result(store, project_id, payload, data,
+                                      kind="analysis")
                 else:
                     data = assist.json_call(
                         "你是短视频复刻编导，只输出 JSON。",
@@ -104,7 +122,9 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
                     outputs.append({"kind": "storyboard",
                                     "shots": data.get("shots") or [],
                                     "createdAt": time.time()})
-                    store.update(project_id, payload={**payload, "outputs": outputs})
+                    payload["outputs"] = outputs
+                    _append_bd_result(store, project_id, payload, data,
+                                      kind="storyboard")
                 task_store.succeed(task_id, {"projectId": project_id,
                                              "kind": kind, "data": data})
             except Exception as exc:  # noqa: BLE001

@@ -32,7 +32,7 @@ MAX_VIDEO_BYTES = 512 * 1024 * 1024
 
 
 def build(router: Router, service: VisualService, library, *,
-          assist=None) -> None:
+          assist=None, task_store=None) -> None:
     store = library
     if store is None:
         return
@@ -308,6 +308,9 @@ def build(router: Router, service: VisualService, library, *,
     # ---------- 素材分析与删除 ----------
     def assets_analyze(req: Request) -> Response:
         body = req.json()
+        # 前端「资产提取」传 projectId + sourceText（不是图片 assetId）
+        if body.get("projectId") and body.get("sourceText"):
+            return _analyze_script_assets(body)
         asset_id = str(body.get("assetId") or body.get("id") or "")
         record = store.get(asset_id) if asset_id else None
         relative = str((record or {}).get("payload", {}).get("file")
@@ -600,6 +603,59 @@ def build(router: Router, service: VisualService, library, *,
                     methods=("POST",))
     router.register("D2", "/api/visual/project/scenes", project_scenes,
                     methods=("POST",))
+    def _analyze_script_assets(body: dict) -> Response:
+        """从剧本文本提取人物/场景/物品，写入项目 settings.assets，异步返回 taskId。"""
+        if assist is None or task_store is None:
+            return Response.error(503, "unsupported", "LLM 或任务队列未就绪。")
+        project_id = str(body.get("projectId") or "")
+        source_text = str(body.get("sourceText") or "")
+        if not service.store.get(project_id):
+            return Response.error(404, "not_found", "项目不存在。")
+        if not source_text.strip():
+            return Response.error(400, "invalid_input", "缺少剧本正文。")
+
+        task = task_store.create("visual.assets_analyze", "D2",
+                                 {"projectId": project_id,
+                                  "chars": len(source_text)})
+
+        def work(task_id: str) -> None:
+            try:
+                task_store.start(task_id)
+            except KeyError:
+                return
+            try:
+                task_store.set_progress(task_id, 0.2, "正在识别人物、场景与物品…")
+                # VisualAssist 暴露的是 _json_call(spec, user)，不是 TextAssist.json_call
+                data = assist._json_call(
+                    '输出 JSON：{"people":[{"name":"","aliases":[],"role":""}],'
+                    '"scenes":[{"name":"","description":""}],'
+                    '"props":[{"name":"","description":""}]}',
+                    f"剧本：{source_text[:4000]}")
+                current = service.store.get(project_id) or {}
+                settings = dict(current.get("settings") or {})
+                assets = dict(settings.get("assets") or {})
+                assets["people"] = data.get("people") or []
+                assets["scenes"] = data.get("scenes") or []
+                assets["props"] = data.get("props") or []
+                settings["assets"] = assets
+                service.store.update(project_id, settings=settings)
+                project = service.store.get(project_id)
+                task_store.succeed(task_id, {
+                    "ok": True, "project": project, "assets": assets,
+                    "assetCounts": {key: len(value or [])
+                                    for key, value in assets.items()},
+                    "message": "资产提取完成",
+                })
+            except Exception as exc:  # noqa: BLE001
+                task_store.fail(task_id, str(getattr(exc, "code", "internal")),
+                                str(getattr(exc, "message", exc)))
+
+        import threading  # noqa: PLC0415
+
+        threading.Thread(target=work, args=(task.id,), daemon=True).start()
+        return Response(200, {"ok": True, "taskId": task.id,
+                              "alreadyRecognized": False})
+
     router.register("D2", "/api/visual/assets/analyze", assets_analyze,
                     methods=("POST",))
     router.register("D2", "/api/visual/assets/delete", assets_delete, methods=("POST",))

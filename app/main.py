@@ -417,7 +417,8 @@ def main(argv: list[str] | None = None) -> int:
     hall_api.build(router, workspace, downloads_root=data_dir / "outputs" / "downloads")
     storage_api.build(router, workspace, data_dir=data_dir, install_root=ROOT)
     visual_stage.build(router, visual_service, visual_library,
-                       assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"))
+                       assist=VisualAssist(profiles_path=data_dir / "llm-profiles.json"),
+                       task_store=store)
     visual_extra.build(router, visual_service, visual_library,
                        assets_store=visual_assets,
                        video_pipeline=video_pipeline,
