@@ -70,8 +70,18 @@ def build(router: Router, service, assets_store) -> None:
                                  or name in str(row.get("name") or "")
                                  or str(row.get("name") or "") in name)
                 ]
-                if item.get("imageFile"):
+                own = str(item.get("imageFile") or "")
+                if own:
                     status, reason = "existing", "此资产已有可用图片，默认不覆盖。"
+                    # 让弹窗能预览项目里已生成的图（不只依赖本机素材库）
+                    candidates = [{
+                        "versionId": f"own-{key}", "id": f"own-{key}",
+                        "name": name or "已生成参考图",
+                        "sourceName": "当前项目已生成",
+                        "url": f"/api/asset-library/image?file={own}",
+                        "file": own, "recommended": True,
+                        "eligible": True, "requiresReview": False,
+                    }] + candidates
                 elif key in busy:
                     status, reason = "busy", "此项已进入原图片任务，本次不覆盖。"
                 elif candidates:

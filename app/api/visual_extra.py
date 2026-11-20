@@ -494,6 +494,14 @@ def build(router: Router, service: VisualService, library, *,
         return Response(200, {"ok": True})
 
     def asset_media(req: Request) -> Response:
+        from urllib.parse import unquote  # noqa: PLC0415
+
+        direct = unquote(req.q1("file") or "")
+        if direct:
+            path = store.file_path(direct)
+            if path is None:
+                return Response.error(404, "not_found", "文件不存在。")
+            return _file(path)
         record = store.get(req.q1("id") or "")
         if record is None:
             return Response.error(404, "not_found", "素材不存在。")

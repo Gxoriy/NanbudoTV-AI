@@ -281,13 +281,23 @@ def build(router: Router, service: VisualService, library, *,
             previous = saved_scenes.get(str(scene.get("id")))
             if previous and previous.get("cards"):
                 scene["cards"] = previous["cards"]
+        final_scenes = merged or saved.get("scenes") or []
+        segments_payload: dict[str, dict] = {}
+        for scene in final_scenes:
+            scene_id = str(scene.get("id") or "")
+            cards = list(scene.get("cards") or [])
+            scene.setdefault("cardPlans", cards)
+            if scene_id:
+                segments_payload[scene_id] = {"result": {"cards": cards}}
         snapshot = {
             **saved,
             "ok": True,
             "projectId": project_id,
             "source": source,
             "currentSource": source,
-            "scenes": merged or saved.get("scenes") or [],
+            "scenes": final_scenes,
+            # 前端 readSceneCards 走这里；缺了就会认为"本场没有卡"
+            "segments": {**(saved.get("segments") or {}), **segments_payload},
         }
         # state 键保留给旧调用方/测试，顶层才是前端快照契约
         return Response(200, {**snapshot, "state": snapshot})
