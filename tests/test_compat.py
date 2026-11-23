@@ -53,8 +53,17 @@ class CompatTest(unittest.TestCase):
         self.assertEqual(created.status, 200, created.payload)
         doc_id = created.payload["id"]
 
+        self.assertEqual(created.payload["document"]["ecommerce259"]["mode"],
+                         "video")
         listed = self.call("list", method="GET", query="?includeDeleted=1")
         self.assertEqual(listed.payload["count"], 1)
+        # 新版前端读 value.projects，并按 row.mode 过滤
+        self.assertEqual(listed.payload["projects"][0]["mode"], "video")
+
+        opened = self.call("document", method="GET", query=f"?id={doc_id}")
+        self.assertEqual(opened.status, 200, opened.payload)
+        self.assertEqual(opened.payload["document"]["ecommerce259"]["mode"],
+                         "video")
 
         saved = self.call("save", {"id": doc_id, "name": "保温杯-改",
                                    "document": {"title": "x"}})

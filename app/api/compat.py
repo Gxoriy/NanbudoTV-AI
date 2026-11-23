@@ -37,37 +37,72 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
         return wrapper
 
     # ---------- 文档 CRUD ----------
+    def _ecom_document(record: dict) -> dict:
+        payload = record.get("payload") or {}
+        mode = str(payload.get("mode") or "video")
+        document = dict(payload.get("ecommerce259") or {})
+        document.setdefault("mode", mode)
+        document.setdefault("form", {})
+        return {**record, "mode": mode, "ecommerce259": document,
+                "batch260": payload.get("batch260")
+                or {"items": [], "results": []}}
+
+    def _ecom_brief(row: dict) -> dict:
+        payload = row.get("payload") or {}
+        return {"id": row["id"], "name": row["name"],
+                "updatedAt": row["updatedAt"],
+                "deleted": bool(payload.get("deleted")),
+                "mode": str(payload.get("mode") or "video")}
+
     @action("list")
     def list_docs(req: Request) -> Response:
         include_deleted = req.q1("includeDeleted") in ("1", "true", "yes")
-        rows = store.list(DOC_KIND, limit=int(req.q1("limit") or 200))
-        items = [{"id": row["id"], "name": row["name"],
-                  "updatedAt": row["updatedAt"],
-                  "deleted": bool(row["payload"].get("deleted"))} for row in rows]
+        rows = []
+        for kind in (DOC_KIND, "ecommerce"):
+            rows.extend(store.list(kind, limit=int(req.q1("limit") or 200)))
+        rows.sort(key=lambda row: row.get("updatedAt") or 0, reverse=True)
+        items = [_ecom_brief(row) for row in rows]
         if not include_deleted:
             items = [row for row in items if not row["deleted"]]
-        return Response(200, {"ok": True, "documents": items, "count": len(items)})
+        # 新版 ecommerce259.js 读 value.projects；旧调用方仍读 documents
+        return Response(200, {"ok": True, "projects": items,
+                              "documents": items, "count": len(items)})
+
+    @action("document")
+    def document(req: Request) -> Response:
+        doc_id = req.q1("id") or req.q1("canvasId") or ""
+        record = store.get(doc_id)
+        if record is None or record.get("kind") not in (DOC_KIND, "ecommerce"):
+            return Response.error(404, "not_found", "电商项目不存在。")
+        return Response(200, {"ok": True, "document": _ecom_document(record)})
 
     @action("create")
     def create(req: Request) -> Response:
         body = req.json() if req.body else {}
+        mode = str(body.get("mode") or "video")
+        document = dict(body.get("document") or {})
+        document["mode"] = mode
         record = store.create(DOC_KIND, str(body.get("name") or "未命名商品"),
-                              {"ecommerce259": body.get("document") or {},
+                              {"mode": mode, "ecommerce259": document,
                                "batch260": {"items": [], "results": []}})
-        return Response(200, {"ok": True, "id": record["id"], "document": record})
+        return Response(200, {"ok": True, "id": record["id"],
+                              "document": _ecom_document(record)})
 
     @action("save")
     def save(req: Request) -> Response:
         body = req.json() if req.body else {}
         doc_id = str(body.get("id") or body.get("canvasId") or "")
         record = store.get(doc_id)
-        if record is None or record["kind"] != DOC_KIND:
+        if record is None or record["kind"] not in (DOC_KIND, "ecommerce"):
             return Response.error(404, "not_found", "电商项目不存在。")
+        mode = str(body.get("mode") or record["payload"].get("mode") or "video")
+        document = dict(body.get("document")
+                        or record["payload"].get("ecommerce259") or {})
+        document["mode"] = mode
         updated = store.update(doc_id, name=str(body.get("name") or record["name"]),
-                               payload={**record["payload"],
-                                        "ecommerce259": body.get("document")
-                                        or record["payload"].get("ecommerce259", {})})
-        return Response(200, {"ok": True, "document": updated})
+                               payload={**record["payload"], "mode": mode,
+                                        "ecommerce259": document})
+        return Response(200, {"ok": True, "document": _ecom_document(updated)})
 
     @action("save-preferences")
     def save_preferences(req: Request) -> Response:

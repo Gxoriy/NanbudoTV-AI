@@ -69,23 +69,42 @@ def build(router: Router, store: DocStore, *, assist=None) -> None:
 
     # ---------- 电商项目 ----------
     def ecom_list(_req: Request) -> Response:
-        return Response(200, {"ok": True, "projects": [_brief(r) for r in
-                                                       store.list(KIND_ECOM)]})
+        rows = list(store.list(KIND_ECOM)) + list(store.list("ecommerce259"))
+        rows.sort(key=lambda row: row.get("updatedAt") or 0, reverse=True)
+        return Response(200, {"ok": True, "projects": [_brief(row)
+                                                       for row in rows]})
 
     def ecom_save(req: Request) -> Response:
-        body = req.json()
-        doc_id = str(body.get("id") or "")
+        body = req.json() if req.body else {}
+        doc_id = str(body.get("id") or body.get("canvasId") or "")
         name = str(body.get("name") or body.get("projectName") or "").strip()
-        payload = {k: v for k, v in body.items() if k not in ("id", "name", "projectName")}
         if doc_id:
-            record = store.update(doc_id, name=name or None, payload=payload)
-            if record is None:
+            record = store.get(doc_id)
+            if record is None or record.get("kind") not in (KIND_ECOM, "ecommerce259"):
                 return Response.error(404, "not_found", "项目不存在。")
-        else:
-            if not name:
-                return Response.error(400, "invalid_input", "项目名称不能为空。")
-            record = store.create(KIND_ECOM, name, payload)
-        return Response(200, {"ok": True, "project": record})
+            payload = dict(record.get("payload") or {})
+            mode = str(body.get("mode") or payload.get("mode") or "video")
+            document = dict(payload.get("ecommerce259") or {})
+            for key in ("form", "versions", "batch260"):
+                if key in body:
+                    document[key] = body[key]
+            document["mode"] = mode
+            updated = store.update(doc_id, name=name or record["name"],
+                                   payload={**payload, "mode": mode,
+                                            "ecommerce259": document})
+            return Response(200, {"ok": True, "project": updated,
+                                  "document": updated, "mode": mode,
+                                  "ecommerce259": document})
+        if not name:
+            return Response.error(400, "invalid_input", "项目名称不能为空。")
+        mode = str(body.get("mode") or "video")
+        document = {"mode": mode, "form": body.get("form") or {},
+                    "versions": body.get("versions") or []}
+        record = store.create("ecommerce259", name,
+                              {"mode": mode, "ecommerce259": document})
+        return Response(200, {"ok": True, "project": record,
+                              "document": record, "mode": mode,
+                              "ecommerce259": document})
 
     def batch_list(_req: Request) -> Response:
         return Response(200, {"ok": True, "batches": [_brief(r) for r in
