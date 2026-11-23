@@ -25,8 +25,9 @@ class VideoPipeline:
 
     def start(self, kind: str, *, prompt: str, project_id: str = "",
               duration: str | None = None, aspect_ratio: str | None = None,
-              version: str | None = None, images: list[str] | None = None
-              ) -> dict[str, Any]:
+              version: str | None = None, images: list[str] | None = None,
+              segment_id: str = "", card_number: int = 0,
+              on_done=None) -> dict[str, Any]:
         if not prompt.strip():
             return {"ok": False, "status": 400, "error": "invalid_input",
                     "message": "提示词不能为空。"}
@@ -46,7 +47,8 @@ class VideoPipeline:
                                        "duration": duration, "aspectRatio": ratio})
         threading.Thread(target=self._work,
                          args=(task.id, kind, project_id, prompt, duration, ratio,
-                               version, images or []),
+                               version, images or [], segment_id, card_number,
+                               on_done),
                          daemon=True).start()
         return {"ok": True, "taskId": task.id, "duration": duration,
                 "aspectRatio": ratio}
@@ -57,8 +59,9 @@ class VideoPipeline:
         task = self.task_store.get(task_id)
         return task.public() if task else None
     def _work(self, task_id: str, kind: str, project_id: str, prompt: str,
-              duration: str, ratio: str, version: str,
-              images: list[str]) -> None:
+              duration: str, ratio: str, version: str, images: list[str],
+              segment_id: str = "", card_number: int = 0,
+              on_done=None) -> None:
         try:
             self.task_store.start(task_id)
         except KeyError:
@@ -85,8 +88,12 @@ class VideoPipeline:
                 "asset", prompt[:40] or "生成视频",
                 {"file": relative, "type": "video", "projectId": project_id,
                  "kind": kind, "prompt": prompt, "upstreamTaskId": upstream_id})
-            self.task_store.succeed(task_id, {"file": relative, "assetId": record["id"],
-                                             "upstreamTaskId": upstream_id})
+            result = {"file": relative, "assetId": record["id"],
+                      "upstreamTaskId": upstream_id,
+                      "segmentId": segment_id, "cardNumber": card_number}
+            self.task_store.succeed(task_id, result)
+            if on_done is not None:
+                on_done(task_id, result)
         except VideoError as exc:
             self.task_store.fail(task_id, "network" if exc.code == "network" else "internal",
                                  exc.message)

@@ -282,6 +282,16 @@ def build(router: Router, service: VisualService, library, *,
             if previous and previous.get("cards"):
                 scene["cards"] = previous["cards"]
         final_scenes = merged or saved.get("scenes") or []
+        from .media_recovery import recover_media  # noqa: PLC0415
+
+        tasks = list(task_store.list()) if task_store is not None else []
+        media, recovered_cards = recover_media(project_id,
+                                               saved.get("media") or {},
+                                               final_scenes, tasks)
+        for scene in final_scenes:
+            if not (scene.get("cards") or []):
+                scene["cards"] = list((recovered_cards.get(str(scene.get("id")))
+                                       or {}).values())
         segments_payload: dict[str, dict] = {}
         plan_segments: list[dict] = []
         for index, scene in enumerate(final_scenes, start=1):
@@ -303,6 +313,7 @@ def build(router: Router, service: VisualService, library, *,
             "projectId": project_id,
             "source": source,
             "currentSource": source,
+            "media": media,
             "scenes": final_scenes,
             # 前端 renderCards 只遍历 plan.segments
             "plan": {**saved_plan, "segments": plan_segments},
@@ -445,12 +456,42 @@ def build(router: Router, service: VisualService, library, *,
                      or (quote or {}).get("source") or "").strip()
         if not prompt:
             return Response.error(400, "invalid_input", "缺少生成提示词或有效报价。")
+        project_id = str(body.get("projectId") or "")
+        segment_id = str(body.get("segmentId") or (quote or {}).get("segmentId") or "")
+        card_number = int(body.get("cardNumber") or (quote or {}).get("cardNumber") or 0)
+
+        def on_done(task_id: str, out: dict) -> None:
+            """视频落库后写回宏快照，前端刷新才能看到卡片视频。"""
+            state = dict(_macro(project_id) or {})
+            media = dict(state.get("media") or {})
+            scene = dict(media.get(segment_id) or {})
+            row = dict(scene.get(str(card_number)) or {})
+            history = list(row.get("history") or [])
+            history.append({key: value for key, value in out.items()
+                            if key in ("file", "assetId", "upstreamTaskId", "taskId")})
+            row.update({"videoFile": out.get("file"), "assetId": out.get("assetId"),
+                        "upstreamTaskId": out.get("upstreamTaskId"),
+                        "taskId": task_id, "status": "done",
+                        "history": history[-20:]})
+            scene[str(card_number)] = row
+            media[segment_id] = scene
+            state["media"] = media
+            store.set_setting(f"macro:{project_id}", state)
+
+        image_files = []
+        for ref in (body.get("referenceAssetIds") or body.get("images") or []):
+            record = library.get(str(ref)) or {}
+            file_value = str((record.get("payload") or {}).get("file") or "")
+            if file_value:
+                image_files.append(file_value)
+
         result = video_pipeline.start(
-            "macro", prompt=prompt, project_id=str(body.get("projectId") or ""),
+            "macro", prompt=prompt, project_id=project_id,
             duration=str(body.get("duration") or "") or None,
             aspect_ratio=str(body.get("aspectRatio") or body.get("aspect_ratio") or "") or None,
             version=str(body.get("version") or "") or None,
-            images=body.get("images") or [])
+            images=image_files, segment_id=segment_id,
+            card_number=card_number, on_done=on_done)
         if not result.get("ok"):
             return Response.error(int(result.get("status") or 400),
                                   str(result.get("error") or "invalid_input"),
@@ -465,7 +506,10 @@ def build(router: Router, service: VisualService, library, *,
         from .media_quote import build_quote  # noqa: PLC0415
 
         body = req.json() if req.body else {}
-        return Response(200, build_quote(body, _macro, _macro_quotes))
+        record = service.store.get(str(body.get("projectId") or "")) \
+            if service.store else {}
+        settings = dict((record or {}).get("settings") or {})
+        return Response(200, build_quote(body, _macro, _macro_quotes, settings))
 
     def macro_media_observe(_req: Request) -> Response:
         return Response(200, {"ok": True, "state": "idle", "progress": 0})

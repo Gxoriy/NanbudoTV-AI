@@ -89,6 +89,40 @@ class TailRoutesTest(unittest.TestCase):
         self.assertIsInstance(video.get("referenceImageLimit"), int)
         self.assertTrue(video.get("supportedDurations"))
 
+    def test_video_result_written_back_to_snapshot(self) -> None:
+        class FakePipeline:
+            def start(self, kind, **kwargs):  # noqa: ANN001, ANN003
+                kwargs["on_done"]("task-1", {
+                    "file": "videos/done.mp4", "assetId": "asset-1",
+                    "upstreamTaskId": "up-1", "segmentId": kwargs.get("segmentId"),
+                    "cardNumber": kwargs.get("cardNumber"),
+                })
+                return {"ok": True, "taskId": "task-1"}
+
+        router = Router()
+        visual_tail.build(router, self.service, self.library, store=self.workspace,
+                          assist=None, video_pipeline=FakePipeline())
+        quote = router.dispatch(Request(
+            method="POST", path="/api/visual/macro/media/quote",
+            query={}, headers={"content-type": "application/json"},
+            body=json.dumps({"projectId": "p1", "segmentId": "scene-1",
+                             "cardNumber": 1, "action": "video",
+                             "model": "seedance-2.0-anci", "resolution": "720p",
+                             "ratio": "16:9", "duration": 4}).encode())).payload
+        submitted = router.dispatch(Request(
+            method="POST", path="/api/visual/macro/media/submit",
+            query={}, headers={"content-type": "application/json"},
+            body=json.dumps({"projectId": "p1", "segmentId": "scene-1",
+                             "cardNumber": 1, "quoteId": quote["quoteId"],
+                             "confirmed": True}).encode())).payload
+        self.assertEqual(submitted["taskId"], "task-1", submitted)
+        state = router.dispatch(Request(
+            method="GET", path="/api/visual/macro/state?projectId=p1",
+            query={"projectId": ["p1"]}, headers={}, body=b"")).payload
+        row = state["media"]["scene-1"]["1"]
+        self.assertEqual(row["videoFile"], "videos/done.mp4")
+        self.assertEqual(row["status"], "done")
+
     def test_macro_media_quote_matches_card_settings(self) -> None:
         """directSubmit 会逐项比对 segment/card/duration/resolution/ratio/model。"""
         quote = self.call("POST", "/api/visual/macro/media/quote", {
@@ -96,7 +130,7 @@ class TailRoutesTest(unittest.TestCase):
             "action": "video", "model": "seedance-2.0-anci",
             "resolution": "720p", "ratio": "16:9", "duration": 4,
         }).payload
-        self.assertTrue(quote.get("quoteId"))
+        self.assertTrue(quote.get("quoteId"), quote)
         self.assertEqual(quote["action"], "video")
         self.assertEqual(quote["segmentId"], "scene-1")
         self.assertEqual(quote["cardNumber"], 2)
