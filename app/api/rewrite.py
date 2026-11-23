@@ -26,7 +26,7 @@ LLM_REQUIRED = "该功能需要 LLM 生成，当前渠道未接入或受限（42
 
 
 def build(router: Router, store: DocStore, *, assist=None, task_store=None,
-          video_pipeline=None) -> None:
+          video_pipeline=None, library=None) -> None:
     def _brief(record: dict) -> dict:
         return {"id": record["id"], "name": record["name"],
                 "createdAt": record["createdAt"], "updatedAt": record["updatedAt"]}
@@ -465,7 +465,8 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     router.register("D1", "/api/breakdown/", breakdown_list, exact=True)
     router.register("D1", "/api/prompt-reverse/", reverse_list, exact=True)
 
-    rewrite_extra.build(router, store, assist=assist, task_store=task_store)
+    rewrite_extra.build(router, store, assist=assist, task_store=task_store,
+                        video_pipeline=video_pipeline, library=library)
 
     # ---------- 小说转剧本（长文本分卷 + 后台任务） ----------
     def novel_screenplay_start(req: Request) -> Response:

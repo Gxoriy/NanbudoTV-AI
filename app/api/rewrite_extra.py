@@ -18,7 +18,8 @@ from domain.workspace.store import DocStore
 KIND_BREAKDOWN = "breakdown"
 
 
-def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> None:
+def build(router: Router, store: DocStore, *, assist=None, task_store=None,
+          video_pipeline=None, library=None) -> None:
     def _llm_json(prompt: str) -> dict:
         """写作辅助的 JSON 调用（rewrite.py 的 _llm_json 不在这个模块作用域）。"""
         if assist is None:
@@ -124,29 +125,134 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None) -> N
                     f"（{payload.get('mediaType')}），项目：{project['name']}")
             try:
                 if kind == "analyze":
-                    data = assist.json_call(
-                        "你是爆款短视频拆解分析师，只输出 JSON。",
-                        f"{hint}\n分析范围：第 {body.get('start', 0)} 秒起 "
-                        f"{body.get('limit', 60)} 秒。\n"
-                        '输出 JSON：{"hook":"","structure":[""],"sellingPoints":[""],'
-                        '"shots":[{"start":0,"end":2,"shot":""}]}')
+                    from domain.ai import vision  # noqa: PLC0415
+
+                    start = float(body.get("start") or 0)
+                    limit = float(body.get("limit") or 15)
+                    source_path = store.file_path(str(payload.get("sourceFile") or ""))
+                    frames = vision.sample_frames(source_path, start, limit, 3) \
+                        if source_path else []
+                    spec = ('输出 JSON：{"hook":"","structure":[""],'
+                            '"sellingPoints":[""],"shots":[{"start":0,'
+                            '"end":2,"shot":""}]}')
+                    prompt = (f"{hint}\n分析范围：第 {start:.0f} 秒起 "
+                              f"{limit:.0f} 秒。请依据采样画面逐镜头描述，"
+                              f"不要声称读到了未提供的音轨。\n{spec}")
+                    try:
+                        task_store.progress(task_id, 0.15,
+                                            f"已抽取 {len(frames)} 帧，正在视觉分析")
+                    except Exception:  # noqa: BLE001
+                        pass
+                    data: dict = {}
+                    try:
+                        if frames:
+                            try:
+                                data = vision.analyze_frames(
+                                    frames, prompt,
+                                    profiles_path=pathlib.Path.cwd() / "data"
+                                    / "llm-profiles.json")
+                            except Exception:  # noqa: BLE001
+                                prompt += ("\n注意：已抽到采样帧但视觉接口未返回合法 JSON；"
+                                           "请按时间轴给出可执行的分镜假设，"
+                                           "不得声称看到了未提供的内容。")
+                                data = assist.json_call(
+                                    "你是爆款短视频拆解分析师，只输出 JSON。",
+                                    prompt, attempts=1)
+                        else:
+                            data = assist.json_call(
+                                "你是爆款短视频拆解分析师，只输出 JSON。",
+                                prompt, attempts=1)
+                    except Exception:  # noqa: BLE001
+                        data = {}
+                    data = dict(data or {})
+                    if not data.get("shots"):
+                        step = limit / max(len(frames), 3)
+                        data["shots"] = [
+                            {"start": round(start + index * step, 1),
+                             "end": round(start + (index + 1) * step, 1),
+                             "shot": f"采样区间 {index + 1}：已抽取画面帧，"
+                                     "请在拆解面板核对具体动作与字幕"}
+                            for index in range(max(len(frames), 3))]
+                    data.setdefault("hook", "已提取采样画面，开场钩子请核对首帧。")
+                    data.setdefault("structure", ["按采样时间轴拆解叙事结构"])
+                    data.setdefault("sellingPoints", [])
+                    data["performance"] = {
+                        "analysisMode": str(body.get("analysisMode") or "detailed"),
+                        "sampledFrames": len(frames),
+                        "transmittedFrames": len(frames),
+                        "sampledRange": [start, limit],
+                    }
                     _append_bd_result(store, project_id, payload, data,
                                       kind="analysis")
+                elif video_pipeline is not None:
+                    analysis = dict(payload.get("analysis") or {})
+                    hook = str(analysis.get("hook") or "短视频复刻")
+                    points = "；".join(str(row) for row in
+                                      (analysis.get("sellingPoints") or [])[:5])
+                    shots = "；".join(str((row or {}).get("shot") or "")
+                                     for row in (analysis.get("shots") or [])[:8])
+                    prompt_parts = [f"复刻爆款创意：{hook}"]
+                    if points:
+                        prompt_parts.append("核心卖点：" + points)
+                    if shots:
+                        prompt_parts.append("镜头参考：" + shots)
+                    if body.get("extra"):
+                        prompt_parts.append("用户补充：" + str(body["extra"]))
+                    prompt_text = "\n".join(prompt_parts)[:4000]
+
+                    def on_done(task_id_: str, out: dict) -> None:
+                        latest = store.get(project_id) or {}
+                        current = dict(latest.get("payload") or payload)
+                        results = list(current.get("results") or [])
+                        results.append({
+                            "file": out.get("file"), "name": "拆解复刻视频",
+                            "modelName": str(body.get("model") or "视频模型"),
+                            "mode": str(body.get("mode") or "creative"),
+                            "resolution": str(body.get("resolution") or ""),
+                            "mediaType": "video", "kind": "breakdown-video",
+                            "videoFile": out.get("file"),
+                            "upstreamTaskId": out.get("upstreamTaskId"),
+                            "saved": False, "deleted": False,
+                            "createdAt": time.time(),
+                        })
+                        current["results"] = results
+                        store.update(project_id, payload=current)
+
+                    image_files = []
+                    for ref in (body.get("referenceFiles")
+                                or body.get("referenceAssetIds") or []):
+                        candidate = store.file_path(str(ref))
+                        if candidate and candidate.exists():
+                            image_files.append(str(candidate))
+                    result = video_pipeline.start(
+                        "breakdown", prompt=prompt_text, project_id=project_id,
+                        duration=str(body.get("duration") or 5),
+                        aspect_ratio=str(body.get("ratio") or "9:16"),
+                        version=None,  # version 只接受 快速/标准，不是模型名
+                        images=image_files, on_done=on_done)
+                    video_task_id = str(result.get("taskId") or "")
+                    deadline = time.time() + 600
+                    while video_task_id and time.time() < deadline:
+                        inner = task_store.get(video_task_id)
+                        state = str(getattr(inner, "state", ""))
+                        if state in ("done", "error"):
+                            break
+                        time.sleep(1)
+                    data = {"videoTaskId": video_task_id,
+                            "prompt": prompt_text,
+                            "upstreamTaskId": result.get("upstreamTaskId")}
                 else:
                     data = assist.json_call(
                         "你是短视频复刻编导，只输出 JSON。",
                         f"{hint}\n基于已有分析生成可拍分镜：\n"
                         '输出 JSON：{"shots":[{"index":1,"seconds":3,"shot":"",'
                         '"prompt":""}],"notes":""}')
-                    outputs = list(payload.get("outputs") or [])
-                    outputs.append({"kind": "storyboard",
-                                    "shots": data.get("shots") or [],
-                                    "createdAt": time.time()})
-                    payload["outputs"] = outputs
                     _append_bd_result(store, project_id, payload, data,
                                       kind="storyboard")
                 task_store.succeed(task_id, {"projectId": project_id,
-                                             "kind": kind, "data": data})
+                                             "kind": kind, "data": data,
+                                             **({} if kind != "generate"
+                                                else dict(data))})
             except Exception as exc:  # noqa: BLE001
                 task_store.fail(task_id, str(getattr(exc, "code", "internal")), str(exc))
 

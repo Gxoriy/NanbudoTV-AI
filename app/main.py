@@ -413,6 +413,7 @@ def main(argv: list[str] | None = None) -> int:
                       video_pipeline=video_pipeline, task_store=store)
     history_api.build(router, workspace, outputs_root=data_dir / "outputs")
     rewrite_api.build(router, workspace, video_pipeline=video_pipeline,
+                      library=visual_library,
                       assist=TextAssist(data_dir / "llm-profiles.json"),
                       task_store=store)
     compat_api.build(router, workspace, assist=TextAssist(data_dir / "llm-profiles.json"),
