@@ -68,9 +68,12 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     def _bd_public(record: dict) -> dict:
         """前端读 project.media / project.sourceFile，这两个不在 payload 里就会像"没上传"。"""
         payload = record.get("payload") or {}
+        analysis = dict(payload.get("analysis") or {})
+        analysis.setdefault("elements", [])
         return {"id": record["id"], "name": record["name"],
                 # 前端 render() 读 project.analysis（识别资产/生成按钮都依赖它）
-                "analysis": payload.get("analysis") or {},
+                "analysis": analysis,
+                "replacements": payload.get("replacements") or [],
                 "analysisHistory": payload.get("analysisHistory") or [],
                 "motionReference": payload.get("motionReference") or {},
                 "generation": payload.get("generation"),
@@ -140,31 +143,29 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                               f"{limit:.0f} 秒。请依据采样画面逐镜头描述，"
                               f"不要声称读到了未提供的音轨。\n{spec}")
                     try:
-                        task_store.progress(task_id, 0.15,
+                        task_store.set_progress(task_id, 0.15,
                                             f"已抽取 {len(frames)} 帧，正在视觉分析")
                     except Exception:  # noqa: BLE001
                         pass
                     data: dict = {}
-                    try:
-                        if frames:
+                    if frames:
+                        import threading  # noqa: PLC0415
+
+                        box: dict = {}
+
+                        def run_vision() -> None:
                             try:
-                                data = vision.analyze_frames(
+                                box["data"] = vision.analyze_frames(
                                     frames, prompt,
                                     profiles_path=pathlib.Path.cwd() / "data"
                                     / "llm-profiles.json")
                             except Exception:  # noqa: BLE001
-                                prompt += ("\n注意：已抽到采样帧但视觉接口未返回合法 JSON；"
-                                           "请按时间轴给出可执行的分镜假设，"
-                                           "不得声称看到了未提供的内容。")
-                                data = assist.json_call(
-                                    "你是爆款短视频拆解分析师，只输出 JSON。",
-                                    prompt, attempts=1)
-                        else:
-                            data = assist.json_call(
-                                "你是爆款短视频拆解分析师，只输出 JSON。",
-                                prompt, attempts=1)
-                    except Exception:  # noqa: BLE001
-                        data = {}
+                                box["data"] = {}
+
+                        worker = threading.Thread(target=run_vision, daemon=True)
+                        worker.start()
+                        worker.join(timeout=30)
+                        data = box.get("data") or {}
                     data = dict(data or {})
                     if not data.get("shots"):
                         step = limit / max(len(frames), 3)

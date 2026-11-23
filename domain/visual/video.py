@@ -67,9 +67,21 @@ class VideoPipeline:
         except KeyError:
             return
         try:
-            upstream_id = video_api.create_task(
-                self.config, prompt, duration=duration, aspect_ratio=ratio,
-                version=version, images=images)
+            last_error: VideoError | None = None
+            upstream_id = ""
+            for attempt in range(2):
+                try:
+                    upstream_id = video_api.create_task(
+                        self.config, prompt, duration=duration,
+                        aspect_ratio=ratio, version=version, images=images)
+                    last_error = None
+                    break
+                except VideoError as exc:
+                    last_error = exc
+                    if attempt == 0:
+                        continue
+            if last_error is not None:
+                raise last_error
             self.task_store.set_progress(task_id, 0.05, "视频任务已提交，等待生成...")
 
             def on_progress(state: dict[str, Any]) -> None:

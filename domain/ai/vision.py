@@ -47,7 +47,7 @@ def _credentials(profiles_path: pathlib.Path) -> tuple[str, str, str]:
     custom = dict(data.get("custom") or {})
     base = str(custom.get("baseUrl") or "https://api.lk888.ai/v1").rstrip("/")
     return base, str(custom.get("apiKey") or ""), str(
-        custom.get("visionModel") or "deepseek-v4-flash-vision-exp")
+        custom.get("visionModel") or "gem-3.8-flash")
 
 
 def analyze_frames(frames: list[bytes], prompt: str, *,
