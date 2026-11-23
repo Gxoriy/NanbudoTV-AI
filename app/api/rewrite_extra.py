@@ -164,7 +164,7 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
 
                         worker = threading.Thread(target=run_vision, daemon=True)
                         worker.start()
-                        worker.join(timeout=30)
+                        worker.join(timeout=60)
                         data = box.get("data") or {}
                     data = dict(data or {})
                     if not data.get("shots"):
@@ -246,6 +246,12 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                         if state in ("done", "error"):
                             break
                         time.sleep(1)
+                    inner = task_store.get(video_task_id) if video_task_id else None
+                    if inner is not None and str(getattr(inner, "state", "")) != "done":
+                        reason = (getattr(inner, "error_detail", "")
+                                  or getattr(inner, "error", "")
+                                  or "上游视频任务失败")
+                        raise RuntimeError("视频生成失败：" + str(reason)[:300])
                     data = {"videoTaskId": video_task_id,
                             "prompt": prompt_text,
                             "upstreamTaskId": result.get("upstreamTaskId")}
