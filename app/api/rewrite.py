@@ -140,8 +140,10 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
         # 前端 render() 直接读 project.media / project.sourceFile / project.results
         return Response(200, {"ok": True, "project": {
             **record,
-            "analysis": payload.get("analysis") or {},
+            "analysis": {**(payload.get("analysis") or {}),
+                         "elements": (payload.get("analysis") or {}).get("elements") or []},
             "analysisHistory": payload.get("analysisHistory") or [],
+            "replacements": payload.get("replacements") or [],
             "motionReference": payload.get("motionReference") or {},
             "generation": payload.get("generation"),
             "media": payload.get("mediaType") or "video",

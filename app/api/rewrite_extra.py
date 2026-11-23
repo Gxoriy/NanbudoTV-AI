@@ -134,7 +134,8 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                         if source_path else []
                     spec = ('输出 JSON：{"hook":"","structure":[""],'
                             '"sellingPoints":[""],"shots":[{"start":0,'
-                            '"end":2,"shot":""}]}')
+                            '"end":2,"shot":""}],"elements":[{"id":"",'
+                            '"name":"","kind":"person|object|scene","bbox":[]}]}')
                     prompt = (f"{hint}\n分析范围：第 {start:.0f} 秒起 "
                               f"{limit:.0f} 秒。请依据采样画面逐镜头描述，"
                               f"不要声称读到了未提供的音轨。\n{spec}")
@@ -176,6 +177,7 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                     data.setdefault("hook", "已提取采样画面，开场钩子请核对首帧。")
                     data.setdefault("structure", ["按采样时间轴拆解叙事结构"])
                     data.setdefault("sellingPoints", [])
+                    data.setdefault("elements", [])
                     data["performance"] = {
                         "analysisMode": str(body.get("analysisMode") or "detailed"),
                         "sampledFrames": len(frames),

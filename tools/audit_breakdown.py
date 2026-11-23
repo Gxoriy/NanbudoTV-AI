@@ -82,6 +82,8 @@ def main() -> int:
         print(f"[{'OK  ' if shots else 'FAIL'}] 拆解有镜头结果  shots={len(shots)} "
               f"frames={(analysis.get('performance') or {}).get('sampledFrames')}")
         print("     hook=", str(analysis.get("hook") or "")[:80])
+        print("     elements=", len(project.get("analysis", {}).get("elements") or []),
+              "replacements=", len(project.get("replacements") or []))
 
         generate = http(port, "/api/breakdown/generate", {
             "projectId": PID, "model": "seedance-2.0-anci", "mode": "creative",
