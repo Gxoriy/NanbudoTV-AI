@@ -234,6 +234,11 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                         version=None,  # version 只接受 快速/标准，不是模型名
                         images=image_files, on_done=on_done)
                     video_task_id = str(result.get("taskId") or "")
+                    try:
+                        task_store.set_progress(task_id, 0.2,
+                                                "视频任务已提交，等待上游生成")
+                    except Exception:  # noqa: BLE001
+                        pass
                     deadline = time.time() + 600
                     while video_task_id and time.time() < deadline:
                         inner = task_store.get(video_task_id)

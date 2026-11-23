@@ -95,11 +95,16 @@ class RewriteRoutesTest(unittest.TestCase):
         self.assertEqual(self.call("GET", "/api/breakdown/project?id=nope").status, 404)
 
     def test_quotes_are_free(self) -> None:
-        for path in ("/api/breakdown/quote", "/api/prompt-reverse/quote",
-                     "/api/novel-screenplay/quote", "/api/script-alignment/quote"):
+        for path in ("/api/prompt-reverse/quote", "/api/novel-screenplay/quote",
+                     "/api/script-alignment/quote"):
             resp = self.call("POST", path, {})
             self.assertEqual(resp.status, 200, path)
             self.assertEqual(resp.payload["estimatedPoints"], 0.0, path)
+        # 爆款拆解前端读 plan.quote.estimatedPoints，且要求 >0
+        resp = self.call("POST", "/api/breakdown/quote", {"duration": 5})
+        self.assertEqual(resp.status, 200)
+        self.assertGreater(resp.payload["quote"]["estimatedPoints"], 0)
+        self.assertEqual(resp.payload["duration"], 5)
 
     def test_project_delete_rename(self) -> None:
         created = self.call("POST", "/api/rewrite-projects/save",

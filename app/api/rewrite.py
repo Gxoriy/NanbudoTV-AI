@@ -69,6 +69,12 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
         return Response(200, {"ok": True, "estimatedPoints": 0.0, "pricingMode": "free",
                               "message": "免费。"})
 
+    def breakdown_quote(req: Request) -> Response:
+        """前端读 plan.quote.estimatedPoints，且要求 >0 才允许提交。"""
+        from .breakdown_quote import quote_response  # noqa: PLC0415
+
+        return Response(200, quote_response(req.json() if req.body else {}))
+
     def _llm_call(prompt: str, *, system: str = "你是短剧创作助手，回答简洁明了。"):
         if assist is None:
             raise RuntimeError("LLM 未接入")
@@ -273,7 +279,8 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
     router.register("D1", "/api/breakdown/records", breakdown_records)
     router.register("D1", "/api/breakdown/reference-crop", breakdown_reference,
                     methods=("POST",))
-    router.register("D1", "/api/breakdown/quote", _free_quote, methods=("GET", "POST"))
+    router.register("D1", "/api/breakdown/quote", breakdown_quote,
+                    methods=("GET", "POST"))
     router.register("D1", "/api/prompt-reverse/upload", reverse_upload, methods=("POST",))
     router.register("D1", "/api/prompt-reverse/media", reverse_media)
     router.register("D1", "/api/prompt-reverse/to-canvas", reverse_to_canvas,

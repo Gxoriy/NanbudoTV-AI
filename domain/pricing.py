@@ -116,7 +116,10 @@ def visual_profile_defaults() -> dict[str, Any]:
             {"model": "banana-pro", "media": "image",
              "displayName": "Banana Pro", "enabled": True, "gatewayReady": True},
             {"model": "seedance-2.0-anci", "media": "video",
-             "displayName": "Seedance 2.0", "enabled": True, "gatewayReady": True},
+             "displayName": "Seedance 2.0", "enabled": True, "gatewayReady": True,
+             "supportsVideoReference": True, "supportsVideoEdit": False,
+             "supportsPreciseEdit": False,
+             "supportedAspectRatios": ["16:9", "9:16", "1:1"]},
         ],
     }
 
@@ -134,6 +137,7 @@ TEXT_MODELS: list[dict[str, Any]] = [
 
 
 def client_config_pricing() -> dict[str, Any]:
+    profile = visual_profile_defaults()
     return {
         "pointsPerCny": POINTS_PER_CNY,
         "textButtonBindings": {key: dict(value)
@@ -141,7 +145,12 @@ def client_config_pricing() -> dict[str, Any]:
         "textModelPricing": [dict(row) for row in TEXT_MODEL_PRICING],
         # 图像/视频/文本三类模型目录都放这里（前端按 media 过滤取用）
         "visualModels": ([dict(row) for row in TEXT_MODELS]
-                         + [dict(row) for row in visual_profile_defaults()["visualModels"]]),
+                         + [dict(row) for row in profile["visualModels"]]),
+        # 爆款拆解的 generationProfile() 读这两个键算价与填模型下拉
+        "visualVideoPricing": [dict(row) for row in profile["videoPricing"]],
+        "visualImagePricing": [dict(row) for row in profile["imagePricing"]],
+        "videoRouteGroups": [],
+        "visualCatalogPublished": False,
         "breakdownModels": dict(BREAKDOWN_MODELS),
         "textTaskCapabilities": {
             "workflow-outline-203": {"buttonId": "workflow-cut",
