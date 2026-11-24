@@ -57,33 +57,63 @@ class TextAssist:
         except KeyError:
             return False
 
-    def _call(self, messages: list[dict[str, str]]) -> str:
-        provider = llm.get(self.provider_name)
+    def _targets(self) -> list[dict[str, str]]:
         effective = self.store.effective(self.provider_name)
+        targets = [{
+            "baseUrl": str(effective.get("baseUrl") or ""),
+            "apiKey": self.store.api_key(self.provider_name),
+            "model": str(effective.get("model") or ""),
+        }]
+        try:
+            raw = json.loads(self.profiles_path.read_text(encoding="utf-8"))
+            custom = dict(raw.get(self.provider_name) or {})
+            fallback = dict(custom.get("fallback") or {})
+            if fallback.get("baseUrl") and fallback.get("apiKey") \
+                    and fallback.get("model"):
+                targets.append({
+                    "baseUrl": str(fallback["baseUrl"]),
+                    "apiKey": str(fallback["apiKey"]),
+                    "model": str(fallback["model"]),
+                })
+        except (OSError, json.JSONDecodeError):
+            pass
+        return targets
+
+    def _call(self, messages: list[dict[str, str]], target: dict[str, str]) -> str:
+        provider = llm.get(self.provider_name)
         return llm.complete(provider, messages,
-                            api_key=self.store.api_key(self.provider_name),
-                            base_url=effective["baseUrl"], model=effective["model"],
+                            api_key=target["apiKey"],
+                            base_url=target["baseUrl"],
+                            model=target["model"],
                             retries=0, max_tokens=self.max_tokens, stream=True)
+
+    @staticmethod
+    def _outage(text: str) -> bool:
+        value = str(text or "").strip()
+        return (not value) or any(phrase in value for phrase in
+                                  ("服务暂不可用", "请稍后再试",
+                                   "Service Unavailable", "upstream unavailable"))
 
     def complete(self, system: str, user: str) -> str:
         if not self.ready():
             raise AssistError(503, "model_unconfigured",
                               "LLM 未配置：请在 data/llm-profiles.json 填 "
                               "baseUrl/apiKey/model。")
-        try:
-            return self._call([{"role": "system", "content": system},
-                               {"role": "user", "content": user}])
-        except llm.LLMError as exc:
-            if "Remote end closed" in str(exc):
-                # 该渠道对长输出会直接断连（实测），降级为单条短消息再试一次
-                try:
-                    return self._call([{"role": "user", "content": f"{system}\n\n{user}"}])
-                except llm.LLMError as retry_exc:
-                    raise AssistError(502, "upstream_closed",
-                                      "上游中断连接（长输出被掐），请缩短输入或换渠道。"
-                                      ) from retry_exc
-            status = 503 if exc.code in ("auth", "quota") else 502
-            raise AssistError(status, exc.code, f"模型调用失败: {exc}") from exc
+        last_text = ""
+        for target in self._targets():
+            try:
+                value = self._call([{"role": "system", "content": system},
+                                    {"role": "user", "content": user}], target)
+            except llm.LLMError:
+                continue
+            if not self._outage(value):
+                return value
+            last_text = value
+        if last_text:
+            raise AssistError(502, "upstream_unavailable",
+                              "上游文本模型暂不可用：" + last_text[:120])
+        raise AssistError(502, "upstream_unavailable",
+                          "所有文本渠道均不可用。")
 
     def json_call(self, system: str, user: str,
                   attempts: int = 3) -> dict[str, Any]:

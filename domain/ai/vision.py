@@ -44,10 +44,15 @@ def sample_frames(video: pathlib.Path, start: float, limit: float,
 
 def _credentials(profiles_path: pathlib.Path) -> tuple[str, str, str]:
     data = json.loads(profiles_path.read_text(encoding="utf-8"))
+    vision = dict(data.get("vision") or {})
     custom = dict(data.get("custom") or {})
-    base = str(custom.get("baseUrl") or "https://api.lk888.ai/v1").rstrip("/")
-    return base, str(custom.get("apiKey") or ""), str(
-        custom.get("visionModel") or "gem-3.8-flash")
+    base = str(vision.get("baseUrl") or custom.get("visionBaseUrl")
+               or custom.get("baseUrl") or "").rstrip("/")
+    key = str(vision.get("apiKey") or custom.get("visionApiKey")
+              or custom.get("apiKey") or "")
+    model = str(vision.get("model") or custom.get("visionModel")
+                or "gemini-3.1-pro")
+    return base, key, model
 
 
 def analyze_frames(frames: list[bytes], prompt: str, *,

@@ -69,13 +69,46 @@ class VisualAssist:
         except KeyError:
             return False
 
-    def _call(self, messages: list[dict[str, str]]) -> str:
+    def _targets(self) -> list[dict[str, str]]:
+        effective = self.store.effective(self.provider_name)
+        targets = [{
+            "baseUrl": str(effective.get("baseUrl") or ""),
+            "apiKey": self.store.api_key(self.provider_name),
+            "model": str(effective.get("model") or ""),
+        }]
+        try:
+            import json  # noqa: PLC0415
+
+            raw = json.loads(self.profiles_path.read_text(encoding="utf-8"))
+            fallback = dict((raw.get(self.provider_name) or {}).get("fallback") or {})
+            if fallback.get("baseUrl") and fallback.get("apiKey") \
+                    and fallback.get("model"):
+                targets.append({
+                    "baseUrl": str(fallback["baseUrl"]),
+                    "apiKey": str(fallback["apiKey"]),
+                    "model": str(fallback["model"]),
+                })
+        except (OSError, ValueError):
+            pass
+        return targets
+
+    def _call(self, messages: list[dict[str, str]],
+              target: dict[str, str] | None = None) -> str:
         provider = llm.get(self.provider_name)
         effective = self.store.effective(self.provider_name)
+        target = target or {"baseUrl": effective["baseUrl"],
+                            "apiKey": self.store.api_key(self.provider_name),
+                            "model": effective["model"]}
         return llm.complete(provider, messages,
-                            api_key=self.store.api_key(self.provider_name),
-                            base_url=effective["baseUrl"], model=effective["model"],
-                            retries=0, max_tokens=512)
+                            api_key=target["apiKey"], base_url=target["baseUrl"],
+                            model=target["model"], retries=0, max_tokens=1200)
+
+    @staticmethod
+    def _outage(value: str) -> bool:
+        content = str(value or "").strip()
+        return (not content) or any(phrase in content for phrase in
+                                    ("服务暂不可用", "请稍后再试",
+                                     "Service Unavailable", "upstream unavailable"))
 
     def complete(self, system: str, user: str) -> str:
         if not self.ready():
@@ -84,6 +117,18 @@ class VisualAssist:
                               "baseUrl/apiKey/model。")
         messages = [{"role": "system", "content": system},
                     {"role": "user", "content": user}]
+        last = ""
+        for target in self._targets():
+            try:
+                value = self._call(messages, target)
+            except llm.LLMError:
+                continue
+            if not self._outage(value):
+                return value
+            last = value
+        if last:
+            raise AssistError(502, "upstream_unavailable",
+                              "上游文本模型暂不可用：" + last[:120])
         try:
             return self._call(messages)
         except llm.LLMError as exc:
