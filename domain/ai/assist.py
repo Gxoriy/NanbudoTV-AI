@@ -23,6 +23,39 @@ class AssistError(RuntimeError):
         self.message = message
 
 
+def _repair_truncated_json(text: str) -> dict[str, Any]:
+    """模型被 max_tokens 截断时，尽量补全字符串/括号后解析。"""
+    start = text.find("{")
+    if start < 0:
+        raise ValueError("没有 JSON 起始括号")
+    chunk = text[start:]
+    stack: list[str] = []
+    in_string = False
+    escaped = False
+    for char in chunk:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            stack.append("}")
+        elif char == "[":
+            stack.append("]")
+        elif char in "}]" and stack:
+            stack.pop()
+    if in_string:
+        chunk += '"'
+    chunk = re.sub(r",\s*$", "", chunk)
+    chunk += "".join(reversed(stack))
+    return json.loads(chunk)
+
+
 def extract_json(text: str) -> dict[str, Any]:
     cleaned = text.strip()
     if cleaned.startswith("```"):
@@ -30,10 +63,15 @@ def extract_json(text: str) -> dict[str, Any]:
     try:
         data = json.loads(cleaned)
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", cleaned, re.S)
-        if not match:
-            raise
-        data = json.loads(match.group(0))
+        try:
+            # 先按全文补齐（re.search 的 .* 会在最后一个 } 处截断，
+            # 丢掉后面的对象，正是 proposal 被截断时只剩 1 条的原因）
+            data = _repair_truncated_json(cleaned)
+        except (ValueError, json.JSONDecodeError):
+            match = re.search(r"\{.*\}", cleaned, re.S)
+            if not match:
+                raise
+            data = _repair_truncated_json(match.group(0))
     if not isinstance(data, dict):
         raise ValueError("模型返回的不是 JSON 对象")
     return data
@@ -43,7 +81,7 @@ class TextAssist:
     """`complete()` 出文本，`json_call()` 出 JSON；两者都带一次"单消息"降级重试。"""
 
     def __init__(self, profiles_path: str | pathlib.Path | None = None,
-                 provider: str = "custom", *, max_tokens: int = 900) -> None:
+                 provider: str = "custom", *, max_tokens: int = 3000) -> None:
         self.profiles_path = pathlib.Path(
             profiles_path or pathlib.Path.cwd() / "data" / "llm-profiles.json")
         self.provider_name = provider

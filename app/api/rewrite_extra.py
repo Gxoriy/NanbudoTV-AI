@@ -335,9 +335,18 @@ def build(router: Router, store: DocStore, *, assist=None, task_store=None,
                 result = work()
                 safe(task_store.succeed, task_id, result)
             except Exception as exc:  # noqa: BLE001
-                safe(task_store.fail, task_id,
-                     str(getattr(exc, "code", "internal")),
-                     str(getattr(exc, "message", exc)))
+                code = str(getattr(exc, "code", "internal") or "internal")
+                from infra.tasks.models import ERROR_CODES  # noqa: PLC0415
+
+                if code not in ERROR_CODES:
+                    detail_code = code
+                    code = "internal"
+                else:
+                    detail_code = ""
+                detail = str(getattr(exc, "message", exc))
+                if detail_code:
+                    detail = f"[{detail_code}] {detail}"
+                safe(task_store.fail, task_id, code, detail)
 
         task = task_store.create(f"rewrite.{kind}", "D1", {"kind": kind})
         import threading  # noqa: PLC0415
